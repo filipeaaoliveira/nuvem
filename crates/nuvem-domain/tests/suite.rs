@@ -12,6 +12,8 @@ mod configuration_display_test;
 mod diagnostics_classify_test;
 #[path = "diagnostics_sanitize_test.rs"]
 mod diagnostics_sanitize_test;
+#[path = "docs_completeness_test.rs"]
+mod docs_completeness_test;
 #[path = "filter_grammar_test.rs"]
 mod filter_grammar_test;
 #[path = "finops_domain_test.rs"]
