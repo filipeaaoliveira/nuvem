@@ -1,98 +1,433 @@
 ---
-// Placeholder home page. It states what nuvem is and points to the docs and
-// the source; nothing more until the real landing page exists.
-import '../styles/tokens.css';
-import { REPO_URL } from '../lib/docs-source.mjs';
+// The home page. It is a Starlight page with the splash template, so it
+// shares the docs' header, search (`/`), skip link and footer. The hero is
+// Starlight's, restyled below; everything after it is this page's own.
+//
+// Every docs link goes through docHref(), which fails the build when the
+// page or anchor it names does not exist.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import InstallCommand from '../components/landing/InstallCommand.astro';
+import DemoRecording from '../components/landing/DemoRecording.astro';
+import TerminalFrame from '../components/landing/TerminalFrame.astro';
+import { demoPath } from '../lib/demo-assets.mjs';
+import { docHref } from '../lib/doc-links.mjs';
+import { REPO_BLOB_URL, REPO_URL } from '../lib/docs-source.mjs';
 
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const description = 'nuvem is a terminal UI for Google Cloud.';
+const INSTALL = 'brew install filipeaaoliveira/tap/nuvem';
+const pageTitle = 'nuvem: a terminal UI for Google Cloud';
+const description =
+	'nuvem is a terminal UI for Google Cloud, in the spirit of k9s. Browse and operate your projects from the keyboard, with the gcloud configurations you already have.';
+
+const docs = {
+	install: await docHref('getting-started/install.md'),
+	requirements: await docHref('getting-started/install.md#requirements'),
+	release: await docHref('getting-started/install.md#download-a-release'),
+	source: await docHref('getting-started/install.md#build-from-source'),
+	firstRun: await docHref('getting-started/first-run.md'),
+	credentials: await docHref('troubleshooting/faq.md#does-nuvem-store-my-credentials'),
+};
+
+/** Each capability, introduced by the key or flag that reaches it. */
+const groups = [
+	{
+		heading: 'Browse and operate',
+		items: [
+			{
+				key: ['g'],
+				name: 'Every service',
+				href: 'reference/services/overview.md',
+				text: 'Compute Engine, GKE, Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager, persistent disks, Pub/Sub, BigQuery, VPC and IAM. Each is a list with a detail pane.',
+			},
+			{
+				key: ['Space'],
+				name: 'Lifecycle actions',
+				href: 'guides/batch-actions.md',
+				text: 'Start, stop or restart Compute Engine and Cloud SQL instances, one row or every row you marked.',
+			},
+			{
+				key: ['l'],
+				name: 'Cloud Logging',
+				href: 'guides/cloud-logging.md',
+				text: 'Read, tail and search the project’s logs, or press L for the selected resource only.',
+			},
+			{
+				key: ['t'],
+				name: 'Tunnels',
+				href: 'guides/tunnels.md',
+				text: 'IAP, SSH and Cloud SQL Auth Proxy port forwards, started from a row and kept in one list.',
+			},
+			{
+				key: ['c'],
+				name: 'gcloud configurations',
+				href: 'guides/switch-configurations.md',
+				text: 'Switch configuration, project, region or zone without leaving nuvem.',
+			},
+			{
+				key: ['Ctrl', 'f'],
+				name: 'FinOps',
+				href: 'guides/finops.md',
+				text: 'Cost recommendations and budgets for the active project.',
+			},
+		],
+	},
+	{
+		heading: 'Move by keyboard',
+		items: [
+			{
+				key: ['/'],
+				name: 'Filter a list',
+				href: 'guides/filter-a-list.md',
+				text: 'Narrow any list by regex, fuzzy match, label or inverse match.',
+			},
+			{
+				key: [':'],
+				name: 'Command palette',
+				href: 'guides/command-palette.md',
+				text: 'Run any command by name, from any view.',
+			},
+			{
+				key: ['J'],
+				name: 'Related-resource jumps',
+				href: 'guides/related-resource-jumps.md',
+				text: 'Go from a resource to the resources it is attached to.',
+			},
+			{
+				key: ['?'],
+				name: 'Keys',
+				href: 'reference/keys.md',
+				text: 'Help for the view you are in. The Keys page lists every key in every view.',
+			},
+		],
+	},
+	{
+		heading: 'Look without risk',
+		items: [
+			{
+				flag: '--demo',
+				name: 'Demo mode',
+				href: 'guides/demo-mode.md',
+				text: 'The whole interface on built-in sample data. No account and no credentials, and commands change nothing.',
+			},
+			{
+				flag: '--read-only',
+				name: 'Read-only mode',
+				href: 'guides/read-only-mode.md',
+				text: 'Refuses every command that changes a cloud resource.',
+			},
+		],
+	},
+	{
+		heading: 'Make it yours',
+		items: [
+			{
+				key: [','],
+				name: 'Plugins',
+				href: 'plugins/overview.md',
+				text: 'Your own gcloud commands, offered against the selected row behind the same confirmation.',
+			},
+			{
+				flag: 'config.toml',
+				name: 'Config file',
+				href: 'configuration/config-file.md',
+				text: 'Rebind keys, choose columns and sort order, pick a theme and colour the frame per project.',
+			},
+		],
+	},
+];
+
+for (const group of groups) {
+	for (const item of group.items) item.href = await docHref(item.href);
+}
 ---
 
-<!doctype html>
-<html lang="en" dir="ltr">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="color-scheme" content="dark" />
-		<meta name="theme-color" content="#423b36" />
-		<meta name="description" content={description} />
-		<link rel="canonical" href={canonical} />
-		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-		<link rel="sitemap" href="/sitemap-index.xml" />
-		<meta property="og:type" content="website" />
-		<meta property="og:site_name" content="nuvem" />
-		<meta property="og:title" content="nuvem" />
-		<meta property="og:description" content={description} />
-		<meta property="og:url" content={canonical} />
-		<meta property="og:image" content={new URL('/og.png', Astro.site)} />
-		<meta property="og:image:width" content="1200" />
-		<meta property="og:image:height" content="630" />
-		<meta property="og:image:alt" content="nuvem: a terminal UI for Google Cloud." />
-		<meta name="twitter:card" content="summary_large_image" />
-		<title>nuvem</title>
-	</head>
-	<body>
-		<main>
-			<h1>nuvem</h1>
-			<p>A terminal UI for Google Cloud.</p>
-			<nav aria-label="Site">
-				<a href="/docs/">Documentation</a>
-				<a href={REPO_URL}>Source on GitHub</a>
-			</nav>
-		</main>
-	</body>
-</html>
+<StarlightPage
+	frontmatter={{
+		title: 'nuvem',
+		description,
+		template: 'splash',
+		pagefind: false,
+		prev: false,
+		next: false,
+		hero: {
+			title: 'A terminal UI for Google&nbsp;Cloud',
+			tagline:
+				'nuvem lets you browse and operate Compute Engine, GKE, Cloud Run, Cloud SQL, Pub/Sub, IAM and more from the keyboard, in the spirit of k9s. It works with the gcloud configurations you already have, and shows you the exact gcloud command before it changes anything.',
+		},
+		head: [
+			{ tag: 'title', content: pageTitle },
+			{ tag: 'meta', attrs: { property: 'og:title', content: pageTitle } },
+			{ tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
+			{ tag: 'meta', attrs: { name: 'theme-color', content: '#423b36' } },
+			{ tag: 'meta', attrs: { name: 'color-scheme', content: 'dark' } },
+		],
+	}}
+>
+	<div class="nv-landing not-content">
+		<section class="get-it">
+			<InstallCommand id="install-top" command={INSTALL} caption="Homebrew, macOS and Linux" />
+			<p class="also">Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>. nuvem needs the <a href={docs.requirements}>gcloud CLI</a>, signed in.</p>
+			<p class="next">Then run <code>nuvem --demo</code> to try it on built-in sample data, with no Google Cloud account. <a href={docs.firstRun}>First run</a> shows how to start it on your own project.</p>
+		</section>
+
+		<DemoRecording
+			description="A tour of nuvem --demo on its built-in sample data: Home, a resource list, a filter, a detail view, the command palette and help."
+		/>
+
+		<section aria-labelledby="what">
+			<h2 id="what">What you can do with it</h2>
+			<div class="groups">
+				{
+					groups.map((group) => (
+						<div class="group">
+							<h3>{group.heading}</h3>
+							<ul class="keyed">
+								{group.items.map((item) => (
+									<li>
+										<span class="reach">
+											{item.key ? (
+												item.key.map((k, i) => (
+													<>
+														{i > 0 && <span class="plus">-</span>}
+														<kbd>{k}</kbd>
+													</>
+												))
+											) : (
+												<code>{item.flag}</code>
+											)}
+										</span>
+										<span class="body">
+											<a href={item.href}>{item.name}</a>
+											<span class="text">{item.text}</span>
+										</span>
+									</li>
+								))}
+							</ul>
+						</div>
+					))
+				}
+			</div>
+			<TerminalFrame
+				id="palette-frame"
+				file={demoPath('frame')}
+				caption="The command palette, as nuvem draws it: press : in any view"
+				description="nuvem's command palette open over the GCE instances list. It offers commands for the selected instance: stop, reset, suspend, SSH, start a tunnel, copy its fields and open its logs."
+			/>
+		</section>
+
+		<section aria-labelledby="how">
+			<h2 id="how">How it works</h2>
+			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. BigQuery is read through <code>bq</code>. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
+			<p>Everything that changes something, from starting an instance to running a plugin, goes through the <code>gcloud</code> CLI you already have, after a confirmation that shows the exact command.</p>
+			<p>More in the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
+		</section>
+
+		<section aria-labelledby="install">
+			<h2 id="install">Install</h2>
+			<InstallCommand id="install-bottom" command={INSTALL} caption="Homebrew, macOS and Linux" />
+			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page. The source is on <a href={REPO_URL}>GitHub</a>.</p>
+		</section>
+	</div>
+</StarlightPage>
+
+<style is:global>
+	/* The hero is Starlight's; here it hangs from the page's one left edge. */
+	main:has(.nv-landing) .hero {
+		display: block;
+		padding-block: var(--nv-space-6) var(--nv-space-4);
+	}
+
+	main:has(.nv-landing) .hero .stack {
+		gap: 0;
+		text-align: start;
+	}
+
+	main:has(.nv-landing) .hero .copy {
+		align-items: flex-start;
+		gap: var(--nv-space-4);
+	}
+
+	main:has(.nv-landing) .hero .copy > * {
+		max-width: none;
+	}
+
+	main:has(.nv-landing) .hero h1 {
+		color: var(--nv-naples);
+		font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem);
+		font-weight: 700;
+		line-height: 1.08;
+		letter-spacing: -0.025em;
+		text-wrap: balance;
+	}
+
+	main:has(.nv-landing) .hero .tagline {
+		max-width: 44rem;
+		color: var(--nv-text);
+		font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+		line-height: 1.55;
+	}
+
+	.sl-markdown-content > .nv-landing.not-content {
+		max-width: none;
+	}
+</style>
 
 <style>
-	body {
-		margin: 0;
-		min-height: 100vh;
-		min-height: 100dvh;
-		display: grid;
-		background-color: var(--nv-bg);
+	.nv-landing {
 		color: var(--nv-text);
-		font-family: var(--nv-font-sans);
 		font-size: var(--nv-text-body);
 		line-height: var(--nv-leading-body);
 	}
 
-	main {
-		align-self: center;
-		width: min(100% - 2 * var(--nv-space-4), 40rem);
-		margin-inline: auto;
-		padding-block: var(--nv-space-8);
-		border-top: 1px solid var(--nv-methyl);
-	}
-
-	h1 {
-		margin: var(--nv-space-5) 0 var(--nv-space-2);
-		color: var(--nv-naples);
-		font-size: clamp(2.5rem, 1.5rem + 5vw, 4rem);
-		font-weight: 700;
-		line-height: 1;
-		letter-spacing: -0.03em;
-	}
-
-	p {
-		margin: 0 0 var(--nv-space-6);
-		color: var(--nv-text);
-		font-size: 1.25rem;
-	}
-
-	nav {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--nv-space-3) var(--nv-space-6);
-	}
-
-	a {
+	.nv-landing a {
 		color: var(--nv-coral);
 		text-decoration-line: underline;
 		text-decoration-thickness: 1px;
 		text-underline-offset: 0.2em;
 	}
 
-	a:hover {
+	.nv-landing a:hover {
 		text-decoration-thickness: 2px;
+	}
+
+	.nv-landing p {
+		max-width: var(--nv-measure);
+		margin: 0;
+	}
+
+	.nv-landing :not(pre) > code {
+		padding: 0.1em 0.35em;
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate-raised);
+		color: var(--nv-text);
+		font-family: var(--nv-font-mono);
+		font-size: 0.875em;
+		white-space: nowrap;
+	}
+
+	/* Install, alternatives and the first-run step, then the recording. */
+	.get-it {
+		display: grid;
+		gap: var(--nv-space-3);
+		margin-bottom: var(--nv-space-5);
+	}
+
+	.also,
+	.next {
+		color: var(--nv-text-muted);
+		font-size: 0.9375rem;
+	}
+
+	.next {
+		color: var(--nv-text);
+	}
+
+	section + section,
+	.nv-landing > figure + section {
+		margin-top: var(--nv-space-8);
+	}
+
+	h2 {
+		margin: 0 0 var(--nv-space-5);
+		padding-top: var(--nv-space-4);
+		border-top: 1px solid var(--nv-rule);
+		color: var(--nv-text);
+		font-size: var(--nv-text-h2);
+		font-weight: 650;
+		line-height: var(--nv-leading-tight);
+		letter-spacing: -0.01em;
+	}
+
+	section > p + p {
+		margin-top: var(--nv-space-4);
+	}
+
+	/* What you can do: each capability, reached by its key or flag. */
+	.groups {
+		display: grid;
+		gap: var(--nv-space-6) var(--nv-space-7);
+		margin-bottom: var(--nv-space-7);
+	}
+
+	@media (min-width: 64rem) {
+		.groups {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	h3 {
+		margin: 0 0 var(--nv-space-2);
+		color: var(--nv-text);
+		font-size: var(--nv-text-h4);
+		font-weight: 650;
+		line-height: var(--nv-leading-tight);
+	}
+
+	.keyed {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.keyed li {
+		display: grid;
+		grid-template-columns: 7.5rem 1fr;
+		gap: var(--nv-space-4);
+		padding-block: var(--nv-space-3);
+		border-bottom: 1px solid var(--nv-rule);
+	}
+
+	.reach {
+		display: flex;
+		align-items: baseline;
+		gap: 0.15em;
+		padding-top: 0.1em;
+		color: var(--nv-text-muted);
+		font-family: var(--nv-font-mono);
+		font-size: 0.8125rem;
+	}
+
+	.reach code {
+		padding: 0;
+		background: none;
+		font-size: 0.875rem;
+		color: var(--nv-text);
+	}
+
+	kbd {
+		display: inline-block;
+		min-width: 1.75em;
+		padding: 0 0.45em;
+		border: 1px solid var(--nv-rule-strong);
+		border-bottom-width: 2px;
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate-raised);
+		color: var(--nv-text);
+		font-family: var(--nv-font-mono);
+		font-size: 0.875rem;
+		line-height: 1.6;
+		text-align: center;
+	}
+
+	.body {
+		display: grid;
+		gap: var(--nv-space-1);
+	}
+
+	.body a {
+		justify-self: start;
+		font-weight: 650;
+	}
+
+	.text {
+		color: var(--nv-text-muted);
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	@media (max-width: 30rem) {
+		.keyed li {
+			grid-template-columns: 1fr;
+			gap: var(--nv-space-2);
+		}
 	}
 </style>

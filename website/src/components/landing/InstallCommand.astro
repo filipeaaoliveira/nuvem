@@ -1,0 +1,148 @@
+---
+// A shell command on a captioned plate, with a Copy button. The `$` prompt is
+// drawn by CSS, so selecting the text gives the command alone. Without
+// JavaScript the button stays hidden and the command is plain selectable text.
+interface Props {
+	command: string;
+	caption: string;
+	/** Unique on the page: the button finds its command by this id. */
+	id: string;
+}
+
+const { command, caption, id } = Astro.props;
+---
+
+<div class="install">
+	<div class="bar">
+		<span class="caption" id={`${id}-caption`}>{caption}</span>
+		<button type="button" class="copy" data-copy={id} aria-describedby={`${id}-caption`} hidden>
+			<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+				<rect x="5.5" y="5.5" width="8" height="8" rx="1"></rect>
+				<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"></path>
+			</svg>
+			<span data-copy-label>Copy</span><span class="sr-only"> the command</span>
+		</button>
+	</div>
+	<pre class="command"><code id={id}>{command}</code></pre>
+	<span class="sr-only" role="status" data-copy-status={id}></span>
+</div>
+
+<script>
+	const RESET_AFTER_MS = 2000;
+
+	for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
+		const id = button.dataset.copy!;
+		const code = document.getElementById(id);
+		const label = button.querySelector<HTMLElement>('[data-copy-label]');
+		const status = document.querySelector<HTMLElement>(`[data-copy-status="${id}"]`);
+		if (!code || !label || !status) continue;
+		let timer: number | undefined;
+
+		const say = (text: string, copied: boolean) => {
+			// Clear first so the same message is announced again on a second press.
+			status.textContent = '';
+			requestAnimationFrame(() => (status.textContent = text));
+			label.textContent = copied ? 'Copied' : 'Copy';
+			button.toggleAttribute('data-copied', copied);
+			window.clearTimeout(timer);
+			timer = window.setTimeout(() => {
+				label.textContent = 'Copy';
+				button.removeAttribute('data-copied');
+			}, RESET_AFTER_MS);
+		};
+
+		button.addEventListener('click', async () => {
+			const text = code.textContent ?? '';
+			try {
+				await navigator.clipboard.writeText(text);
+				say('Command copied to the clipboard.', true);
+			} catch {
+				// No clipboard access (an insecure context, or permission denied):
+				// select the command so the reader can copy it by hand.
+				const range = document.createRange();
+				range.selectNodeContents(code);
+				const selection = window.getSelection();
+				selection?.removeAllRanges();
+				selection?.addRange(range);
+				say('Could not copy. The command is selected: press Ctrl-C or Cmd-C to copy it.', false);
+			}
+		});
+		button.hidden = false;
+	}
+</script>
+
+<style>
+	.install {
+		max-width: 40rem;
+		border: 1px solid var(--nv-rule);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--nv-space-4);
+		min-height: 2.75rem;
+		padding: var(--nv-space-1) var(--nv-space-2) var(--nv-space-1) var(--nv-space-4);
+		border-bottom: 1px solid var(--nv-rule);
+		color: var(--nv-text-muted);
+		font-size: var(--nv-text-small);
+	}
+
+	.copy {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--nv-space-2);
+		min-height: 2rem;
+		padding: 0 var(--nv-space-3);
+		border: 1px solid var(--nv-rule-strong);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+		color: var(--nv-coral);
+		font: inherit;
+		font-weight: 650;
+		cursor: pointer;
+	}
+
+	.copy:hover {
+		border-color: var(--nv-coral);
+	}
+
+	.copy[data-copied] {
+		border-color: var(--nv-naples);
+		color: var(--nv-naples);
+	}
+
+	.copy[hidden] {
+		display: none;
+	}
+
+	.command {
+		margin: 0;
+		/* The prompt hangs: a wrapped command continues under the command, not the prompt. */
+		padding: var(--nv-space-3) var(--nv-space-4) var(--nv-space-3) calc(var(--nv-space-4) + 2ch);
+		text-indent: -2ch;
+		background: none;
+		color: var(--nv-text);
+		font-family: var(--nv-font-mono);
+		font-size: clamp(0.8125rem, 0.75rem + 0.4vw, 1rem);
+		line-height: 1.6;
+		white-space: pre-wrap;
+	}
+
+	.command code {
+		padding: 0;
+		background: none;
+		font: inherit;
+		color: inherit;
+	}
+
+	.command::before {
+		content: '$ ';
+		color: var(--nv-naples);
+		user-select: none;
+		-webkit-user-select: none;
+	}
+</style>

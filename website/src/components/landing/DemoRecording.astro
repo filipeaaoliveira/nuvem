@@ -1,0 +1,186 @@
+---
+// The recording of `nuvem --demo`, in a terminal plate with a Pause/Play
+// control. The files come from demo/out/ (see src/lib/demo-assets.mjs).
+//
+// - Nothing loads before the page does: the video has preload="none" and
+//   starts only after the load event, once it is on screen.
+// - It is muted and loops. It pauses while scrolled out of view.
+// - With prefers-reduced-motion it never starts by itself: the poster shows,
+//   and the control reads Play.
+// - Without JavaScript the browser's own controls are shown instead.
+import { getImage } from 'astro:assets';
+import webm from '../../../../demo/out/nuvem-demo.webm?url';
+import mp4 from '../../../../demo/out/nuvem-demo.mp4?url';
+import posterSource from '../../../../demo/out/nuvem-demo-poster.png';
+
+interface Props {
+	/** What the recording shows, for readers who cannot see it. */
+	description: string;
+}
+
+const { description } = Astro.props;
+const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 });
+---
+
+<figure class="recording" data-recording>
+	<div class="bar">
+		<span class="caption"><span class="prompt" aria-hidden="true">$ </span>nuvem --demo</span>
+		<button type="button" class="toggle" data-state="paused" aria-controls="recording-video" hidden>
+			<svg class="icon-play" aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
+				<path d="M2.5 1.2v9.6L10.5 6z" fill="currentColor"></path>
+			</svg>
+			<svg class="icon-pause" aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
+				<path d="M2 1h3v10H2zM7 1h3v10H7z" fill="currentColor"></path>
+			</svg>
+			<span data-label>Play</span><span class="sr-only"> the recording</span>
+		</button>
+	</div>
+	<video
+		id="recording-video"
+		width={posterSource.width}
+		height={posterSource.height}
+		style={`aspect-ratio: ${posterSource.width} / ${posterSource.height}`}
+		poster={poster.src}
+		preload="none"
+		muted
+		loop
+		playsinline
+		controls
+		aria-describedby="recording-description"
+	>
+		<source src={webm} type="video/webm" />
+		<source src={mp4} type="video/mp4" />
+	</video>
+	<figcaption id="recording-description">{description}</figcaption>
+</figure>
+
+<script>
+	const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+	for (const figure of document.querySelectorAll<HTMLElement>('[data-recording]')) {
+		const video = figure.querySelector('video');
+		const button = figure.querySelector<HTMLButtonElement>('button.toggle');
+		const label = button?.querySelector<HTMLElement>('[data-label]');
+		if (!video || !button || !label) continue;
+
+		let onScreen = false;
+		let stoppedByReader = false;
+
+		const show = () => {
+			const playing = !video.paused;
+			button.dataset.state = playing ? 'playing' : 'paused';
+			label.textContent = playing ? 'Pause' : 'Play';
+		};
+
+		const autoplay = () => {
+			if (!onScreen) {
+				video.pause();
+			} else if (!stoppedByReader && !reducedMotion.matches) {
+				video.play().catch(show);
+			}
+		};
+
+		video.addEventListener('play', show);
+		video.addEventListener('pause', show);
+		button.addEventListener('click', () => {
+			if (video.paused) {
+				stoppedByReader = false;
+				video.play().catch(show);
+			} else {
+				stoppedByReader = true;
+				video.pause();
+			}
+		});
+		reducedMotion.addEventListener('change', () => {
+			if (reducedMotion.matches) video.pause();
+			else autoplay();
+		});
+
+		video.controls = false;
+		button.hidden = false;
+		show();
+
+		const start = () =>
+			new IntersectionObserver(
+				([entry]) => {
+					onScreen = entry.isIntersecting;
+					autoplay();
+				},
+				{ threshold: 0.25 },
+			).observe(video);
+		if (document.readyState === 'complete') start();
+		else window.addEventListener('load', start, { once: true });
+	}
+</script>
+
+<style>
+	.recording {
+		margin: 0;
+		border: 1px solid var(--nv-rule);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--nv-space-4);
+		min-height: 2.75rem;
+		padding: var(--nv-space-1) var(--nv-space-2) var(--nv-space-1) var(--nv-space-4);
+		border-bottom: 1px solid var(--nv-rule);
+	}
+
+	.caption {
+		color: var(--nv-text-muted);
+		font-family: var(--nv-font-mono);
+		font-size: var(--nv-text-small);
+	}
+
+	.prompt {
+		color: var(--nv-naples);
+	}
+
+	.toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--nv-space-2);
+		min-height: 2rem;
+		padding: 0 var(--nv-space-3);
+		border: 1px solid var(--nv-rule-strong);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+		color: var(--nv-coral);
+		font: inherit;
+		font-size: var(--nv-text-small);
+		font-weight: 650;
+		cursor: pointer;
+	}
+
+	.toggle:hover {
+		border-color: var(--nv-coral);
+	}
+
+	.toggle[hidden] {
+		display: none;
+	}
+
+	.toggle[data-state='playing'] .icon-play,
+	.toggle[data-state='paused'] .icon-pause {
+		display: none;
+	}
+
+	video {
+		display: block;
+		width: 100%;
+		height: auto;
+		background-color: var(--nv-plate);
+	}
+
+	figcaption {
+		padding: var(--nv-space-3) var(--nv-space-4);
+		border-top: 1px solid var(--nv-rule);
+		color: var(--nv-text-muted);
+		font-size: var(--nv-text-small);
+	}
+</style>
