@@ -574,7 +574,7 @@ fn cloud_run_searchable_fields(service: &CloudRunService) -> Vec<String> {
     vec![
         service.name.clone(),
         service.region.clone(),
-        format!("{:?}", service.status),
+        service.status.label().into_owned(),
         service.url.clone().unwrap_or_default(),
         service.latest_ready_revision.clone().unwrap_or_default(),
         service.latest_created_revision.clone().unwrap_or_default(),
@@ -590,9 +590,7 @@ fn compare_cloud_run_services(
 ) -> std::cmp::Ordering {
     let primary = match sort_field {
         CloudRunSortField::Name => left.name.cmp(&right.name),
-        CloudRunSortField::Status => {
-            format!("{:?}", left.status).cmp(&format!("{:?}", right.status))
-        }
+        CloudRunSortField::Status => left.status.label().cmp(&right.status.label()),
         CloudRunSortField::Region => left.region.cmp(&right.region),
         CloudRunSortField::Url => left
             .url

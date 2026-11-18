@@ -625,7 +625,7 @@ fn compare_subscriptions(
             parent_topic_label(left).cmp(&parent_topic_label(right))
         }
         PubSubSubscriptionSortField::Delivery => left.delivery.label().cmp(right.delivery.label()),
-        PubSubSubscriptionSortField::State => left.state.label().cmp(right.state.label()),
+        PubSubSubscriptionSortField::State => left.state.label().cmp(&right.state.label()),
         // Numerically, not by the rendered label: `100` sorts after `60` in the
         // column an operator sorted to find the slowest ack, which text
         // ordering gets backwards. An absent deadline sorts as absent rather

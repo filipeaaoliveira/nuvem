@@ -230,8 +230,8 @@ fn every_state_variant_round_trips_through_its_api_string_and_has_a_label() {
     );
     assert_eq!(
         CloudFunctionState::Unrecognized("MOLTEN".into()).label(),
-        "MOLTEN",
-        "an unrecognised state renders as what the API said, not as a guess",
+        "Molten",
+        "an unrecognised state renders as what the API said, spelled as a label rather than a constant, not as a guess",
     );
 }
 
@@ -273,7 +273,7 @@ fn every_environment_variant_round_trips_through_its_api_string_and_has_a_label(
     );
     assert_eq!(
         CloudFunctionEnvironment::Unrecognized("GEN_9".into()).label(),
-        "GEN_9",
+        "Gen 9",
     );
 }
 

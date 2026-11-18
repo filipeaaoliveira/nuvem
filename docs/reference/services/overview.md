@@ -57,6 +57,11 @@ own names with [`[aliases]`](../../configuration/aliases.md).
 
 [Plugins](../../plugins/overview.md) can add your own commands to any service.
 
+Status and state columns show each value as a short label, such as `Running`
+or `Not ready`. When the API reports a value this version of nuvem does not
+know yet, it is shown the same way: `MAINTENANCE_WINDOW` appears as
+`Maintenance window`, painted in the neutral colour.
+
 ## How nuvem reads
 
 Reads are native. Every list and detail load below is a Google Cloud

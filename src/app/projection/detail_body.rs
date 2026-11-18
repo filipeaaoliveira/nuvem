@@ -265,7 +265,7 @@ pub fn compute_detail_body(detail: &ComputeInstanceDetail, tab: ComputeDetailTab
     match tab {
         ComputeDetailTab::Summary => vec![
             DetailLine::field("Name", &detail.name),
-            DetailLine::field("Status", format!("{:?}", detail.status)),
+            DetailLine::field("Status", detail.status.label()),
             DetailLine::field("Zone", &detail.zone),
             DetailLine::field("Machine type", &detail.machine_type),
             DetailLine::field(
@@ -289,7 +289,7 @@ pub fn gke_detail_body(detail: &GkeClusterDetail, active_tab: GkeDetailTab) -> D
     match active_tab {
         GkeDetailTab::Summary => vec![
             DetailLine::field("Name", &detail.name),
-            DetailLine::field("Status", format!("{:?}", detail.status)),
+            DetailLine::field("Status", detail.status.label()),
             DetailLine::field("Location", &detail.location),
             DetailLine::field(
                 "Master version",
@@ -325,7 +325,7 @@ pub fn cloud_sql_detail_body(
     match tab {
         CloudSqlDetailTab::Summary => vec![
             DetailLine::field("Name", &detail.name),
-            DetailLine::field("Status", format!("{:?}", detail.status)),
+            DetailLine::field("Status", detail.status.label()),
             DetailLine::field("Engine", &detail.engine),
             DetailLine::field("Database version", &detail.database_version),
             DetailLine::field("Region", &detail.region),
@@ -373,7 +373,7 @@ pub fn cloud_run_detail_body(
             DetailLine::field("Name", &detail.name),
             DetailLine::field("Region", &detail.region),
             DetailLine::field("URL", detail.url.as_deref().unwrap_or("-")),
-            DetailLine::field("Status", format!("{:?}", detail.status)),
+            DetailLine::field("Status", detail.status.label()),
             DetailLine::field(
                 "Latest ready revision",
                 detail.latest_ready_revision.as_deref().unwrap_or("-"),
@@ -520,7 +520,7 @@ pub fn cloud_run_revision_detail_body(
             DetailLine::field("Name", &detail.name),
             DetailLine::field("Service", detail.service.as_deref().unwrap_or("-")),
             DetailLine::field("Region", &detail.region),
-            DetailLine::field("Ready", format!("{:?}", detail.ready)),
+            DetailLine::field("Ready", detail.ready.label()),
             DetailLine::field("Image", detail.image.as_deref().unwrap_or("-")),
             DetailLine::field("CPU", detail.cpu.as_deref().unwrap_or("-")),
             DetailLine::field("Memory", detail.memory.as_deref().unwrap_or("-")),
@@ -676,8 +676,10 @@ fn cloud_run_revision_lines(revisions: &[CloudRunRevision], selected: usize) -> 
                 REVISION_UNSELECTED_MARKER
             };
             let line = format!(
-                "{marker}{}  {:?}  {}",
-                revision.name, revision.ready, percent
+                "{marker}{}  {}  {}",
+                revision.name,
+                revision.ready.label(),
+                percent
             );
             DetailLine::labeled(line, "Revision", &revision.name)
         })
@@ -887,10 +889,7 @@ fn gke_node_pool_lines(node_pools: &[GkeNodePool]) -> Vec<DetailLine> {
                 lines.push(DetailLine::text(String::new()));
             }
             lines.push(DetailLine::field("Name", &node_pool.name));
-            lines.push(DetailLine::field(
-                "Status",
-                format!("{:?}", node_pool.status),
-            ));
+            lines.push(DetailLine::field("Status", node_pool.status.label()));
             lines.push(DetailLine::field(
                 "Version",
                 node_pool.version.as_deref().unwrap_or("-"),

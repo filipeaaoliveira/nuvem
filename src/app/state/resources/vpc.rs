@@ -269,7 +269,7 @@ fn compare_networks(
         // On the rendered labels, which is what the cells say and what an
         // operator sorting this column is grouping by.
         VpcNetworkSortField::Mode => left.subnet_mode.label().cmp(right.subnet_mode.label()),
-        VpcNetworkSortField::Routing => left.routing_mode.label().cmp(right.routing_mode.label()),
+        VpcNetworkSortField::Routing => left.routing_mode.label().cmp(&right.routing_mode.label()),
         // Numerically, not by the rendered digits: `10` sorts after `9` in the
         // column an operator sorted to find the widest network, which text
         // ordering gets backwards.

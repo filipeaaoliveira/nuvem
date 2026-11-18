@@ -11,7 +11,38 @@
 //! list that roughly fifteen exhaustiveness walks across this workspace iterate
 //! to prove every per-service site is wired.
 
+use std::borrow::Cow;
+
 use serde::{Deserialize, Serialize};
+
+/// The label a status or state value nuvem does not recognise renders as.
+///
+/// An API adds enum values over time, and a value this build has no variant
+/// for is kept verbatim in an `Unknown`/`Unrecognized` arm so it renders as
+/// itself rather than as a guess. "As itself" means readable, though: a
+/// `MAINTENANCE_WINDOW` cell is spelled `Maintenance window`, the way the
+/// labels beside it are spelled, and never as the Rust value that carries it.
+///
+/// Only an API constant is respelled: a value with no lowercase letter in it,
+/// such as `SUSPENDED` or `GEN_3`. Anything else is the API's own prose and is
+/// returned as it came. An empty value is `Unknown`, because a blank cell in a
+/// status column reads as "no problem".
+pub fn readable_api_value(raw: &str) -> Cow<'_, str> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Cow::Borrowed("Unknown");
+    }
+    if trimmed.chars().any(char::is_lowercase) {
+        return Cow::Borrowed(trimmed);
+    }
+    let spaced = trimmed.replace(['_', '-'], " ").to_lowercase();
+    let mut characters = spaced.chars();
+    let label = match characters.next() {
+        Some(first) => first.to_uppercase().chain(characters).collect(),
+        None => String::new(),
+    };
+    Cow::Owned(label)
+}
 
 /// Declares [`ResourceServiceKind`] and generates its `ALL` from the same
 /// variant list, so the two cannot diverge.
@@ -146,6 +177,19 @@ pub enum ResourceStatus {
     Unknown(String),
 }
 
+impl ResourceStatus {
+    /// The status as a table cell and a detail field show it.
+    pub fn label(&self) -> Cow<'_, str> {
+        match self {
+            Self::Running => Cow::Borrowed("Running"),
+            Self::Stopped => Cow::Borrowed("Stopped"),
+            Self::Suspended => Cow::Borrowed("Suspended"),
+            Self::Pending => Cow::Borrowed("Pending"),
+            Self::Unknown(raw) => readable_api_value(raw),
+        }
+    }
+}
+
 /// A Compute Engine instance's table row, from `compute instances list`.
 ///
 /// Not asked for the network tags and service accounts a firewall rule can
@@ -259,6 +303,20 @@ pub enum GkeClusterStatus {
     Unknown(String),
 }
 
+impl GkeClusterStatus {
+    /// The status as a table cell and a detail field show it, for a cluster
+    /// and for a node pool alike.
+    pub fn label(&self) -> Cow<'_, str> {
+        match self {
+            Self::Running => Cow::Borrowed("Running"),
+            Self::Reconciling => Cow::Borrowed("Reconciling"),
+            Self::Stopping => Cow::Borrowed("Stopping"),
+            Self::Error => Cow::Borrowed("Error"),
+            Self::Unknown(raw) => readable_api_value(raw),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EndpointVisibility {
     Public,
@@ -368,6 +426,20 @@ pub enum CloudRunServiceStatus {
     Reconciling,
     Failed,
     Unknown(String),
+}
+
+impl CloudRunServiceStatus {
+    /// The status as a table cell and a detail field show it, for a service
+    /// and for a revision alike.
+    pub fn label(&self) -> Cow<'_, str> {
+        match self {
+            Self::Ready => Cow::Borrowed("Ready"),
+            Self::NotReady => Cow::Borrowed("Not ready"),
+            Self::Reconciling => Cow::Borrowed("Reconciling"),
+            Self::Failed => Cow::Borrowed("Failed"),
+            Self::Unknown(raw) => readable_api_value(raw),
+        }
+    }
 }
 
 /// A Cloud Run service's table row.
@@ -535,6 +607,21 @@ pub enum CloudSqlStatus {
     Unknown(String),
 }
 
+impl CloudSqlStatus {
+    /// The status as a table cell and a detail field show it.
+    pub fn label(&self) -> Cow<'_, str> {
+        match self {
+            Self::Runnable => Cow::Borrowed("Runnable"),
+            Self::Stopped => Cow::Borrowed("Stopped"),
+            Self::PendingCreate => Cow::Borrowed("Pending create"),
+            Self::Maintenance => Cow::Borrowed("Maintenance"),
+            Self::Failed => Cow::Borrowed("Failed"),
+            Self::Suspended => Cow::Borrowed("Suspended"),
+            Self::Unknown(raw) => readable_api_value(raw),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CloudSqlAvailability {
     Zonal,
@@ -696,17 +783,17 @@ impl CloudFunctionState {
     }
 
     /// The one-word rendering for a table cell.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Unspecified => "Unspecified",
-            Self::Active => "Active",
-            Self::Failed => "Failed",
-            Self::Deploying => "Deploying",
-            Self::Deleting => "Deleting",
-            Self::Unknown => "Unknown",
-            Self::Detaching => "Detaching",
-            Self::DetachFailed => "Detach failed",
-            Self::Unrecognized(raw) => raw,
+            Self::Unspecified => Cow::Borrowed("Unspecified"),
+            Self::Active => Cow::Borrowed("Active"),
+            Self::Failed => Cow::Borrowed("Failed"),
+            Self::Deploying => Cow::Borrowed("Deploying"),
+            Self::Deleting => Cow::Borrowed("Deleting"),
+            Self::Unknown => Cow::Borrowed("Unknown"),
+            Self::Detaching => Cow::Borrowed("Detaching"),
+            Self::DetachFailed => Cow::Borrowed("Detach failed"),
+            Self::Unrecognized(raw) => readable_api_value(raw),
         }
     }
 
@@ -761,12 +848,12 @@ impl CloudFunctionEnvironment {
 
     /// The generation as the console words it ("1st gen"), not as the API
     /// spells it.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Unspecified => "unspecified",
-            Self::Gen1 => "1st gen",
-            Self::Gen2 => "2nd gen",
-            Self::Unrecognized(raw) => raw,
+            Self::Unspecified => Cow::Borrowed("unspecified"),
+            Self::Gen1 => Cow::Borrowed("1st gen"),
+            Self::Gen2 => Cow::Borrowed("2nd gen"),
+            Self::Unrecognized(raw) => readable_api_value(raw),
         }
     }
 
@@ -842,15 +929,15 @@ impl DiskStatus {
     }
 
     /// The one-word rendering for a table cell.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Creating => "Creating",
-            Self::Restoring => "Restoring",
-            Self::Failed => "Failed",
-            Self::Ready => "Ready",
-            Self::Deleting => "Deleting",
-            Self::Unavailable => "Unavailable",
-            Self::Unrecognized(raw) => raw,
+            Self::Creating => Cow::Borrowed("Creating"),
+            Self::Restoring => Cow::Borrowed("Restoring"),
+            Self::Failed => Cow::Borrowed("Failed"),
+            Self::Ready => Cow::Borrowed("Ready"),
+            Self::Deleting => Cow::Borrowed("Deleting"),
+            Self::Unavailable => Cow::Borrowed("Unavailable"),
+            Self::Unrecognized(raw) => readable_api_value(raw),
         }
     }
 
@@ -1046,12 +1133,12 @@ impl PubSubSubscriptionState {
 
     /// The state column's text, spaced for reading ("Resource error") rather
     /// than the API's `RESOURCE_ERROR`.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Unspecified => "Unspecified",
-            Self::Active => "Active",
-            Self::ResourceError => "Resource error",
-            Self::Unrecognized(raw) => raw,
+            Self::Unspecified => Cow::Borrowed("Unspecified"),
+            Self::Active => Cow::Borrowed("Active"),
+            Self::ResourceError => Cow::Borrowed("Resource error"),
+            Self::Unrecognized(raw) => readable_api_value(raw),
         }
     }
 
@@ -1314,12 +1401,12 @@ impl SecretVersionState {
     /// The version's state as the detail pane shows it. An unrecognised state
     /// renders as the raw string rather than as a guess at which of the three
     /// known states it resembles.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Enabled => "Enabled",
-            Self::Disabled => "Disabled",
-            Self::Destroyed => "Destroyed",
-            Self::Unknown(raw) => raw,
+            Self::Enabled => Cow::Borrowed("Enabled"),
+            Self::Disabled => Cow::Borrowed("Disabled"),
+            Self::Destroyed => Cow::Borrowed("Destroyed"),
+            Self::Unknown(raw) => readable_api_value(raw),
         }
     }
 }
@@ -1696,12 +1783,14 @@ pub enum VpcRoutingMode {
 impl VpcRoutingMode {
     /// The cell. An unspecified mode paints as the empty string so the column
     /// renders its dash rather than a word the API never sent.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Unspecified => "",
-            Self::Regional => "REGIONAL",
-            Self::Global => "GLOBAL",
-            Self::Unrecognized(raw) => raw,
+            Self::Unspecified => Cow::Borrowed(""),
+            Self::Regional => Cow::Borrowed("REGIONAL"),
+            Self::Global => Cow::Borrowed("GLOBAL"),
+            // This column spells the API's constants as the API does, so an
+            // unrecognised one is spelled the same way.
+            Self::Unrecognized(raw) => Cow::Borrowed(raw),
         }
     }
 
@@ -2039,12 +2128,14 @@ impl FirewallDirection {
     /// The `DIRECTION` column's text, upper-case as GCP writes it. Empty for
     /// `Unspecified`, so a rule whose direction the API omitted paints a blank
     /// rather than a word that would claim something.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Cow<'_, str> {
         match self {
-            Self::Ingress => "INGRESS",
-            Self::Egress => "EGRESS",
-            Self::Unspecified => "",
-            Self::Unrecognized(raw) => raw,
+            Self::Ingress => Cow::Borrowed("INGRESS"),
+            Self::Egress => Cow::Borrowed("EGRESS"),
+            Self::Unspecified => Cow::Borrowed(""),
+            // This column spells the API's constants as the API does, so an
+            // unrecognised one is spelled the same way.
+            Self::Unrecognized(raw) => Cow::Borrowed(raw),
         }
     }
 

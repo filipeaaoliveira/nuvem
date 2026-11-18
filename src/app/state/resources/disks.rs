@@ -279,7 +279,7 @@ fn compare_disks(
         DiskSortField::Location => left.location.cmp(&right.location),
         // By the label, which is what the column paints and what the sort arrow
         // above it claims to have ordered.
-        DiskSortField::Status => left.status.label().cmp(right.status.label()),
+        DiskSortField::Status => left.status.label().cmp(&right.status.label()),
         // Numerically, on the integer rather than on the rendered cell: as text
         // `9 GB` sorts after `20 GB`, which is the opposite of what an operator
         // scanning for the biggest waste is asking the column for.

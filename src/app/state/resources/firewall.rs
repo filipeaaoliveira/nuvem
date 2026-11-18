@@ -304,7 +304,7 @@ fn compare_firewall_rules(
     let primary = match sort_field {
         FirewallSortField::Name => left.name.cmp(&right.name),
         FirewallSortField::Network => left.network.cmp(&right.network),
-        FirewallSortField::Direction => left.direction.label().cmp(right.direction.label()),
+        FirewallSortField::Direction => left.direction.label().cmp(&right.direction.label()),
         // Numerically, and this is the column an operator sorts to read the
         // rules in evaluation order: lower priority wins, so ascending is the
         // order traffic actually meets them in. A text sort would put 1000

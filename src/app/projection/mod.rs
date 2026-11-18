@@ -828,7 +828,7 @@ fn build_workspace_projection(
                         .into_iter()
                         .map(|instance| ComputeInstanceProjection {
                             name: instance.name.clone(),
-                            status: format!("{:?}", instance.status),
+                            status: sanitize_display_text(&instance.status.label()),
                             status_semantic: StatusSemantic::from_resource_status(&instance.status),
                             zone: instance.zone.clone(),
                             machine_type: instance.machine_type.clone(),
@@ -870,7 +870,7 @@ fn build_workspace_projection(
                         .into_iter()
                         .map(|cluster| GkeClusterProjection {
                             name: cluster.name.clone(),
-                            status: format!("{:?}", cluster.status),
+                            status: sanitize_display_text(&cluster.status.label()),
                             status_semantic: StatusSemantic::from_gke_status(&cluster.status),
                             location: cluster.location.clone(),
                             version: cluster.current_master_version.clone(),
@@ -962,7 +962,7 @@ fn build_workspace_projection(
                         .into_iter()
                         .map(|service| CloudRunServiceProjection {
                             name: service.name.clone(),
-                            status: format!("{:?}", service.status),
+                            status: sanitize_display_text(&service.status.label()),
                             status_semantic: StatusSemantic::from_cloud_run_status(&service.status),
                             region: service.region.clone(),
                             url: service.url.clone(),
@@ -1519,7 +1519,10 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
             Some(ResourcePreviewProjection {
                 title: instance.name.clone(),
                 lines: vec![
-                    ("Status".to_string(), format!("{:?}", instance.status)),
+                    (
+                        "Status".to_string(),
+                        sanitize_display_text(&instance.status.label()),
+                    ),
                     ("Zone".to_string(), instance.zone.clone()),
                     ("Machine Type".to_string(), instance.machine_type.clone()),
                     (
@@ -1544,7 +1547,10 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
             Some(ResourcePreviewProjection {
                 title: cluster.name.clone(),
                 lines: vec![
-                    ("Status".to_string(), format!("{:?}", cluster.status)),
+                    (
+                        "Status".to_string(),
+                        sanitize_display_text(&cluster.status.label()),
+                    ),
                     ("Location".to_string(), cluster.location.clone()),
                     (
                         "Version".to_string(),
@@ -1595,7 +1601,10 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
             Some(ResourcePreviewProjection {
                 title: service.name.clone(),
                 lines: vec![
-                    ("Status".to_string(), format!("{:?}", service.status)),
+                    (
+                        "Status".to_string(),
+                        sanitize_display_text(&service.status.label()),
+                    ),
                     ("Region".to_string(), service.region.clone()),
                     (
                         "URL".to_string(),
@@ -1628,7 +1637,7 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
                     ),
                     (
                         "Status".to_string(),
-                        sanitize_display_text(disk.status.label()),
+                        sanitize_display_text(&disk.status.label()),
                     ),
                     ("Size".to_string(), disk_size_label(disk.size_gb)),
                     ("Type".to_string(), sanitize_display_text(&disk.disk_type)),
@@ -1661,11 +1670,11 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
                     ),
                     (
                         "State".to_string(),
-                        sanitize_display_text(function.state.label()),
+                        sanitize_display_text(&function.state.label()),
                     ),
                     (
                         "Generation".to_string(),
-                        sanitize_display_text(function.environment.label()),
+                        sanitize_display_text(&function.environment.label()),
                     ),
                     (
                         "Updated".to_string(),
@@ -1789,7 +1798,7 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
                     ("Network".to_string(), sanitize_display_text(&rule.network)),
                     (
                         "Direction".to_string(),
-                        sanitize_display_text(rule.direction.label()),
+                        sanitize_display_text(&rule.direction.label()),
                     ),
                     (
                         "Action".to_string(),
@@ -1854,7 +1863,7 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
                         // this is the one field on the pane that is not a value
                         // this binary chose. The row builder sanitizes it for the
                         // same reason; the two must not disagree.
-                        sanitize_display_text(subscription.state.label()),
+                        sanitize_display_text(&subscription.state.label()),
                     ),
                     (
                         "Ack deadline".to_string(),
@@ -2199,22 +2208,7 @@ fn cloud_sql_availability_label(availability: CloudSqlAvailability) -> String {
 }
 
 fn cloud_sql_status_label(status: &nuvem_domain::gcp::resource::CloudSqlStatus) -> String {
-    use nuvem_domain::gcp::resource::CloudSqlStatus;
-    match status {
-        CloudSqlStatus::Runnable => "Runnable".to_string(),
-        CloudSqlStatus::Stopped => "Stopped".to_string(),
-        CloudSqlStatus::PendingCreate => "Pending create".to_string(),
-        CloudSqlStatus::Maintenance => "Maintenance".to_string(),
-        CloudSqlStatus::Failed => "Failed".to_string(),
-        CloudSqlStatus::Suspended => "Suspended".to_string(),
-        CloudSqlStatus::Unknown(other) => {
-            if other.is_empty() {
-                "Unknown".to_string()
-            } else {
-                other.clone()
-            }
-        }
-    }
+    sanitize_display_text(&status.label())
 }
 
 /// Builds one service's header specs and data rows from its catalog and the
@@ -2620,7 +2614,7 @@ fn vpc_network_row(network: &VpcNetwork) -> VpcNetworkRowProjection {
         // chose, not one of ours.
         routing: match network.routing_mode {
             VpcRoutingMode::Unspecified => None,
-            _ => Some(sanitize_display_text(network.routing_mode.label())),
+            _ => Some(sanitize_display_text(&network.routing_mode.label())),
         },
         subnets: network.subnet_count.to_string(),
     }
@@ -2640,7 +2634,7 @@ fn firewall_rule_row(rule: &FirewallRule) -> FirewallRuleRowProjection {
         network: sanitize_display_text(&rule.network),
         direction: match rule.direction {
             FirewallDirection::Unspecified => None,
-            _ => Some(sanitize_display_text(rule.direction.label())),
+            _ => Some(sanitize_display_text(&rule.direction.label())),
         },
         priority: rule.priority.map(|priority| priority.to_string()),
         // `Unspecified` becomes `None` so the cell paints its dash. Rendering
@@ -2719,7 +2713,7 @@ fn pubsub_subscription_row(subscription: &PubSubSubscription) -> PubSubSubscript
         // single places that decide these spellings, so the cell and the
         // filter cannot disagree about them.
         delivery: subscription.delivery.label().to_string(),
-        state: sanitize_display_text(subscription.state.label()),
+        state: sanitize_display_text(&subscription.state.label()),
         status_semantic: subscription_status_semantic(&subscription.state),
         // Rendered bare, without a `s` suffix: the column is right-aligned and
         // headed `ACK(S)`, and a unit in every cell would cost width the
@@ -2883,7 +2877,7 @@ fn persistent_disk_row(disk: &PersistentDisk) -> PersistentDiskRowProjection {
     PersistentDiskRowProjection {
         name: sanitize_display_text(&disk.name),
         location: sanitize_display_text(&disk.location),
-        status: sanitize_display_text(disk.status.label()),
+        status: sanitize_display_text(&disk.status.label()),
         status_semantic: StatusSemantic::from_disk_status(&disk.status),
         orphan: if disk.is_orphan() {
             ORPHAN_BADGE.to_string()
@@ -2932,9 +2926,9 @@ fn cloud_function_row(function: &CloudFunction) -> CloudFunctionRowProjection {
     CloudFunctionRowProjection {
         name: sanitize_display_text(&function.name),
         region: sanitize_display_text(&function.region),
-        state: sanitize_display_text(function.state.label()),
+        state: sanitize_display_text(&function.state.label()),
         status_semantic: StatusSemantic::from_cloud_function_state(&function.state),
-        generation: sanitize_display_text(function.environment.label()),
+        generation: sanitize_display_text(&function.environment.label()),
         updated: function.update_time.as_deref().map(sanitize_display_text),
         url: function.url.as_deref().map(sanitize_display_text),
     }

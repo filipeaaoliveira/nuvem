@@ -234,7 +234,8 @@ Jump "compute:disks" renders an invalid name for this GCE instance
 
 Keep `{status}` to a `label`. A status is not a resource name, so a rule that
 selects on one names nothing that exists; and the statuses that are worded with
-a space (`Unknown (...)`, Cloud SQL's `Pending create`) fail the check outright,
+a space (Cloud SQL's `Pending create`, or a new status such as `Maintenance
+window`) fail the check outright,
 so such a rule is offered for some rows and refused for others.
 
 Finally, a jump that *is* offered lands only on a resource

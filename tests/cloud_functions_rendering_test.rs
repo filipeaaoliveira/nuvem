@@ -389,7 +389,7 @@ fn the_preview_scrubs_control_characters_the_api_sent() {
     assert_eq!(preview.title, "hos\u{FFFD}tile");
     for (key, value) in [
         ("Region", "europe\u{FFFD}west1"),
-        ("State", "BAK\u{FFFD}ING"),
+        ("State", "Bak\u{FFFD}ing"),
         ("Updated", "2026-03-01\u{FFFD}T10:00:00Z"),
         ("URL", "https://example\u{FFFD}.test/f"),
     ] {
