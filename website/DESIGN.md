@@ -50,11 +50,25 @@ typography:
     fontSize: "1.0625rem"
     fontWeight: 400
     lineHeight: 1.65
+  lead:
+    fontFamily: "Schibsted Grotesk Variable, sans-serif"
+    fontSize: "clamp(1.0625rem, 1rem + 0.3vw, 1.25rem)"
+    fontWeight: 400
+    lineHeight: 1.55
+  body-sm:
+    fontFamily: "Schibsted Grotesk Variable, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.55
   label:
     fontFamily: "Schibsted Grotesk Variable, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.65
+  command:
+    fontFamily: "ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace"
+    fontSize: "clamp(0.8125rem, 0.75rem + 0.4vw, 1rem)"
+    lineHeight: 1.6
   code:
     fontFamily: "ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace"
     fontSize: "0.875rem"
@@ -112,7 +126,7 @@ components:
   install-plate:
     backgroundColor: "{colors.plate}"
     textColor: "{colors.text}"
-    typography: "{typography.code}"
+    typography: "{typography.command}"
     rounded: "{rounded.base}"
   plate-button:
     backgroundColor: "{colors.plate}"
@@ -194,9 +208,12 @@ On the plate, the code colours measure: off-white 15.04:1, Coral 7.64:1, Methyl 
 - **Page title** (700, `--nv-text-h1`, 32px to 42px fluid, line height 1.2, -0.02em): one per page, in Naples Yellow, balanced wrap.
 - **Section heading** (650, `--nv-text-h2`, 26px): off-white, with a hairline above and 1rem of padding.
 - **Subheading** (650, `--nv-text-h3`, 21px; `--nv-text-h4`, 18px): off-white, -0.01em.
+- **Home title** (700, `--nv-text-display`, 34px to 56px, line height 1.08, -0.025em): the home page's one title, in Naples Yellow.
+- **Lead** (400, `--nv-text-lead`, 17px to 20px, line height 1.55): the home page's pitch, under its title.
 - **Body** (400, `--nv-text-body`, 17px, line height `--nv-leading-body` 1.65): within `--nv-measure` (68ch). The docs column is 38rem, about 70 characters.
+- **Small body** (400, `--nv-text-body-sm`, 15px): table cells, the home page's list detail and key caps.
 - **Small** (400, `--nv-text-small`, 14px): sidebar, table of contents, captions, aside titles.
-- **Code** (`--nv-text-code`, 14px, line height 1.6): set against the 17px body. Inline code is 0.875em of its context.
+- **Code** (`--nv-text-code`, 14px, line height 1.6): set against the 17px body. The home page's install command is larger, `--nv-text-command` (13px to 16px), so it reads as the page's action. Inline code is 0.875em of its context.
 - **Emphasis** (`strong`, 650): bold steps to 650, not 700, so it sits below the title.
 
 Headings use `--nv-leading-tight` (1.2). The scale ratio is about 1.25.
@@ -289,12 +306,12 @@ Every page ends with a hairline and two lines of muted 14px text: the licence an
 
 The home page is a Starlight splash page, so the header, search, skip link and colophon are the docs' own. Its content hangs from the same single left edge, in the order the owner fixed: title and pitch, the install plate, the other ways to install, the first-run step, then the recording.
 
-- **Title:** the one Naples title, larger than a docs title (`display-home`, 34px to 56px), balanced, one line from 1024px up. The pitch below it is off-white at 17px to 20px, within 44rem.
-- **Install plate:** a plate with a caption strip. The caption names the method; the Copy button sits at the strip's right end. The command line has the Naples `$` prompt drawn by CSS and hangs it, so a wrapped command continues under the command. The button is Coral text with a strong-rule outline; after a copy it reads Copied in Naples for two seconds, and a hidden status line announces the result. Without JavaScript the button is not shown and the command is plain selectable text.
+- **Title:** the one Naples title, larger than a docs title (`--nv-text-display`), balanced, one line from 1024px up. The pitch below it is off-white in `--nv-text-lead`, within 44rem.
+- **Install plate:** a plate with a caption strip. The caption names the method; the Copy button sits at the strip's right end. The command line has the Naples `$` prompt drawn by CSS and hangs it, so a wrapped command continues under the command. The button is Coral text with a strong-rule outline; after a copy its label reads Copied in Naples for two seconds, and a hidden status line announces the result. Without JavaScript the button is not shown and the command is plain selectable text.
 - **Plate buttons** (Copy, Pause/Play): 14px to 17px, 650 weight, at least 32px tall, Coral on the plate (7.64:1), strong-rule outline (5.58:1). Hover turns the outline Coral.
-- **Recording plate:** the recording of `nuvem --demo` at the full content width, under a caption strip that names the command and holds the Pause/Play control, with a muted caption below saying what it shows and that the data is sample data. Width and height are set, so nothing moves when it loads. It loads nothing before the page has loaded, starts muted and looping once it is on screen, and pauses off screen. With `prefers-reduced-motion` it never starts by itself: the poster shows and the control reads Play. This is the page's only motion.
+- **Recording plate:** the recording of `nuvem --demo` at the full content width, under a caption strip that names the command and holds the Pause/Play control, with a muted caption below saying what it shows, that the data is sample data, and linking to the video file so a phone can open it full size. Width and height are set, so nothing moves when it loads. It loads nothing before the page has loaded, starts muted and looping once it is on screen, and pauses off screen. With `prefers-reduced-motion` it never starts by itself: the poster shows and the control reads Play. This is the page's only motion.
 - **Terminal frame:** a screen of nuvem as text, on a plate with a caption strip. It scales to fill the plate and stops at 11px, then scrolls sideways inside the plate with the Methyl scroll cue. Bright black and the selected-row colour are lightened for the site (see `src/lib/terminal-frame.mjs`), so all its text clears 4.5:1.
-- **Key column:** each capability is a row: the key or flag that reaches it on the left, as a key cap or code, then a Coral link to its docs page and one muted line. Rows are divided by hairlines; groups take an 18px heading and sit two to a row from 64rem up. Below 30rem the key moves above its text.
+- **Key column:** each capability is a row: the key or flag that reaches it on the left, as an off-white key cap (15px, 650) or code, then a Coral link to its docs page and one muted line. Rows are divided by hairlines. Groups of at most four rows take an 18px heading and flow into two balanced columns from 64rem up. Below 30rem the key moves above its text.
 - **Sections** open with the docs' section heading: a hairline, 1rem of padding, 26px at 650. 64px separates them.
 
 ## Do's and Don'ts

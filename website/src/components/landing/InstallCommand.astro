@@ -111,7 +111,6 @@ const { command, caption, id } = Astro.props;
 	}
 
 	.copy[data-copied] {
-		border-color: var(--nv-naples);
 		color: var(--nv-naples);
 	}
 
@@ -127,7 +126,7 @@ const { command, caption, id } = Astro.props;
 		background: none;
 		color: var(--nv-text);
 		font-family: var(--nv-font-mono);
-		font-size: clamp(0.8125rem, 0.75rem + 0.4vw, 1rem);
+		font-size: var(--nv-text-command);
 		line-height: 1.6;
 		white-space: pre-wrap;
 	}
