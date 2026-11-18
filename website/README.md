@@ -79,7 +79,9 @@ from the repository's `demo/` directory in place:
   are the recording. The build copies them into `dist/_astro/` with a
   content hash and converts the poster to WebP.
 - `demo/frames/palette.html` is a screen of the app as coloured text. The
-  build inlines it into the page.
+  build inlines it into the page, and for screens below 48rem also a cut of
+  just its command palette box, found by the box's title. If a re-captured
+  frame has no such box, the build says so.
 
 Re-render either with the scripts in `scripts/` (see `demo/README.md`) and
 rebuild; nothing under `website/` changes. The build stops with the command

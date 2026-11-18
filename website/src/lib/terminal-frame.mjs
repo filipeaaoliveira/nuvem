@@ -94,12 +94,88 @@ export function readTerminalFrame(absPath) {
 		throw new Error(`${where}: text below ${MIN_CONTRAST}:1 after the site's colours:\n  ${[...new Set(problems)].join('\n  ')}`);
 	}
 
-	const lines = html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;|&#\d+;/g, 'x').split('\n');
-	return {
-		html,
-		color: frame.color,
-		background: frame.background,
-		columns: Math.max(...lines.map((line) => [...line].length)),
-		rows: lines.length,
-	};
+	return { ...measure(html), html, color: frame.color, background: frame.background };
+}
+
+const ENTITIES = { '&lt;': '<', '&gt;': '>', '&amp;': '&', '&quot;': '"', '&#39;': "'" };
+const decode = (text) => text.replace(/&(?:lt|gt|amp|quot|#39);/g, (e) => ENTITIES[e]);
+const encode = (text) => text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c]);
+
+/** Size of a frame's text in columns and rows. */
+function measure(html) {
+	const lines = decode(html.replace(/<[^>]*>/g, '')).split('\n');
+	return { columns: Math.max(...lines.map((line) => [...line].length)), rows: lines.length };
+}
+
+/** The frame as rows of cells, each a character and the style it is drawn in. */
+function toCells(html) {
+	const rows = [[]];
+	let style = '';
+	for (const [, tag, text] of html.matchAll(/(<[^>]*>)|([^<]+)/g)) {
+		if (tag) {
+			style = tag === '</span>' ? '' : /style="([^"]*)"/.exec(tag)[1];
+			continue;
+		}
+		for (const ch of decode(text)) {
+			if (ch === '\n') rows.push([]);
+			else rows.at(-1).push({ ch, style });
+		}
+	}
+	return rows;
+}
+
+function fromCells(rows) {
+	return rows
+		.map((row) => {
+			let out = '';
+			let open = null;
+			for (const { ch, style } of row) {
+				if (style !== open) {
+					if (open) out += '</span>';
+					if (style) out += `<span style="${style}">`;
+					open = style || null;
+				}
+				out += encode(ch);
+			}
+			return open ? `${out}</span>` : out;
+		})
+		.join('\n');
+}
+
+/**
+ * `width` cells of `row` from `left`. When that would cut text that goes on
+ * inside the box (before column `right`), the line ends at the last gap
+ * between words instead, preferring a run of two or more spaces (the gap
+ * between a palette command and its aliases), so no word is cut in half.
+ */
+function trimToWord(row, left, width, right) {
+	const cut = row.slice(left, left + width);
+	const rest = row.slice(left + width, right).map((c) => c.ch).join('');
+	const last = cut.at(-1)?.ch ?? ' ';
+	if (rest.trim() === '' || /[\s─━═]/.test(last + rest[0])) return cut;
+	const line = cut.map((c) => c.ch).join('');
+	const gaps = [...line.matchAll(/(?<=\S) {2,}(?=\S)/g)];
+	const end = gaps.length > 0 ? gaps.at(-1).index : line.lastIndexOf(' ');
+	if (end <= 0) return cut;
+	return [...cut.slice(0, end), ...cut.slice(end).map(() => ({ ch: ' ', style: '' }))];
+}
+
+/**
+ * A narrow view of a frame for small screens: the box whose title starts
+ * with `title`, from its top-left corner, `width` columns wide. Fails the build when no such box exists, so a
+ * re-captured frame cannot silently lose its subject on phones.
+ */
+export function cropToBox(frame, title, width) {
+	const rows = toCells(frame.html);
+	const text = rows.map((row) => row.map((c) => c.ch).join(''));
+	const top = text.findIndex((line) => line.includes(`┌${title}`));
+	if (top === -1) throw new Error(`the frame has no box titled "${title}" to show on narrow screens`);
+	const left = [...text[top].slice(0, text[top].indexOf(`┌${title}`))].length;
+	let bottom = text.findIndex((line, i) => i > top && [...line][left] === '└');
+	if (bottom === -1) bottom = rows.length - 1;
+	const topRow = [...text[top]];
+	const right = topRow.indexOf('┐', left) === -1 ? topRow.length : topRow.indexOf('┐', left);
+	const cropped = rows.slice(top, bottom + 1).map((row) => trimToWord(row, left, width, right));
+	const html = fromCells(cropped);
+	return { ...frame, ...measure(html), html };
 }
