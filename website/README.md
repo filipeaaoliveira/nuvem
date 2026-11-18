@@ -69,6 +69,31 @@ broken, and lists every broken link with the file it is in:
 is `src/lib/doc-links.mjs`. It reads the Markdown directly, so it does not
 depend on the page cache described above.
 
+## The home page
+
+`src/pages/index.astro` is a Starlight page with the splash template, so it
+shares the docs' header, search and footer. It shows the real tool, read
+from the repository's `demo/` directory in place:
+
+- `demo/out/nuvem-demo.webm`, `nuvem-demo.mp4` and `nuvem-demo-poster.png`
+  are the recording. The build copies them into `dist/_astro/` with a
+  content hash and converts the poster to WebP.
+- `demo/frames/palette.html` is a screen of the app as coloured text. The
+  build inlines it into the page.
+
+Re-render either with the scripts in `scripts/` (see `demo/README.md`) and
+rebuild; nothing under `website/` changes. The build stops with the command
+to run when one of these files is missing (`src/lib/demo-assets.mjs`).
+
+A frame is accepted only as the single `<pre>` of coloured `<span>` runs that
+`scripts/ansi2html.py` writes. Two terminal colours are shown lighter than in
+the recordings so that every run of text reads at 4.5:1 or better, and the
+build fails on any pair below that (`src/lib/terminal-frame.mjs`).
+
+Links from the home page into the docs go through `docHref()` in
+`src/lib/doc-links.mjs`, so a renamed page or heading fails the build, as a
+broken link inside the docs does.
+
 ## Headers and the social card
 
 `public/_headers` sets the response headers on Cloudflare Pages: long-lived
@@ -90,10 +115,13 @@ than a rebuild. The site loads nothing from other origins; keep it that way.
 | `src/lib/doc-links.mjs` | Resolves docs links and fails the build on broken ones |
 | `src/lib/code-plates.mjs` | Code block captions and the shell prompt |
 | `src/lib/security-headers.mjs` | Fills the CSP script hashes in `dist/_headers` |
+| `src/lib/demo-assets.mjs` | The demo files the home page uses; fails the build when one is missing |
+| `src/lib/terminal-frame.mjs` | Reads a frame from `demo/frames/`, checks its markup and contrast |
 | `src/routeData.ts` | Hides a one-entry contents list; no canonical on the 404 page |
 | `src/styles/tokens.css` | Colours, type, spacing: shared by every page |
 | `src/styles/docs.css` | The docs theme, mapped onto Starlight |
 | `src/styles/code-theme.json` | Syntax colours for code blocks |
-| `src/components/` | Starlight overrides: one theme, `/` opens search |
+| `src/components/` | Starlight overrides: one theme, `/` opens search, a Docs link in the header, the site footer |
+| `src/components/landing/` | The home page's install plate, recording and terminal frame |
 | `src/pages/index.astro` | The home page |
 | `DESIGN.md` | The design system: palette, type, components |

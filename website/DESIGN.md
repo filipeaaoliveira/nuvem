@@ -21,6 +21,12 @@ typography:
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.02em"
+  display-home:
+    fontFamily: "Schibsted Grotesk Variable, sans-serif"
+    fontSize: "clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem)"
+    fontWeight: 700
+    lineHeight: 1.08
+    letterSpacing: "-0.025em"
   headline:
     fontFamily: "Schibsted Grotesk Variable, sans-serif"
     fontSize: "1.625rem"
@@ -100,6 +106,26 @@ components:
   table-cell:
     textColor: "{colors.text}"
     padding: "0.5rem 0.75rem"
+  home-title:
+    textColor: "{colors.naples-yellow}"
+    typography: "{typography.display-home}"
+  install-plate:
+    backgroundColor: "{colors.plate}"
+    textColor: "{colors.text}"
+    typography: "{typography.code}"
+    rounded: "{rounded.base}"
+  plate-button:
+    backgroundColor: "{colors.plate}"
+    textColor: "{colors.coral-red}"
+    rounded: "{rounded.base}"
+    padding: "0 0.75rem"
+  recording-plate:
+    backgroundColor: "{colors.plate}"
+    textColor: "{colors.text-muted}"
+    rounded: "{rounded.base}"
+  colophon:
+    textColor: "{colors.text-muted}"
+    typography: "{typography.label}"
 ---
 
 # Design System: nuvem
@@ -184,7 +210,7 @@ Spacing runs on a 4px step: `--nv-space-1` (4px) through `--nv-space-8` (64px), 
 - **Docs frame:** header, a 17rem left sidebar, a content area up to `--nv-wide` (52rem) and a right-hand "On this page" list. All share the ground. Hairlines (`--nv-rule`) separate them.
 - **Measure:** prose (paragraphs, lists, headings, asides) stops at `--nv-measure` (38rem, about 70 characters). Tables and code plates may use the whole content area.
 - **Contents list:** shown only when a page has at least one section heading; a page that is one block of text has none.
-- **Header:** the `nuvem` wordmark left in Naples Yellow (1.375rem, 700), search in the middle, the source link right. A 1px Methyl rule runs under it on every page.
+- **Header:** the `nuvem` wordmark left in Naples Yellow (1.375rem, 700), search in the middle, a Docs link and the GitHub icon right. A 1px Methyl rule runs under it on every page. Inside the docs, Docs is Naples at 650 with no underline, marking the section. Below 50rem on docs pages the two links move into the menu; the home page has no menu, so there they stay in the header.
 - **One left edge:** headings, plates, tables and asides all hang from the column's left edge.
 - **Sections:** an `h2` opens with 2.25em of space above, a hairline and 1rem of padding.
 - **Plates:** 1.5rem (`--nv-space-5`) above and below.
@@ -256,6 +282,21 @@ Previous and next links in a hairline box. The title is Coral, the direction is 
 - **Caret:** Naples. **Scrollbar:** strong rule on the ground.
 - **Reduced motion:** animations and transitions are cut to near zero when the reader asks for it.
 
+### Colophon
+Every page ends with a hairline and two lines of muted 14px text: the licence and source link, then the trademark notice. Its links are Coral.
+
+## Home page
+
+The home page is a Starlight splash page, so the header, search, skip link and colophon are the docs' own. Its content hangs from the same single left edge, in the order the owner fixed: title and pitch, the install plate, the other ways to install, the first-run step, then the recording.
+
+- **Title:** the one Naples title, larger than a docs title (`display-home`, 34px to 56px), balanced, one line from 1024px up. The pitch below it is off-white at 17px to 20px, within 44rem.
+- **Install plate:** a plate with a caption strip. The caption names the method; the Copy button sits at the strip's right end. The command line has the Naples `$` prompt drawn by CSS and hangs it, so a wrapped command continues under the command. The button is Coral text with a strong-rule outline; after a copy it reads Copied in Naples for two seconds, and a hidden status line announces the result. Without JavaScript the button is not shown and the command is plain selectable text.
+- **Plate buttons** (Copy, Pause/Play): 14px to 17px, 650 weight, at least 32px tall, Coral on the plate (7.64:1), strong-rule outline (5.58:1). Hover turns the outline Coral.
+- **Recording plate:** the recording of `nuvem --demo` at the full content width, under a caption strip that names the command and holds the Pause/Play control, with a muted caption below saying what it shows and that the data is sample data. Width and height are set, so nothing moves when it loads. It loads nothing before the page has loaded, starts muted and looping once it is on screen, and pauses off screen. With `prefers-reduced-motion` it never starts by itself: the poster shows and the control reads Play. This is the page's only motion.
+- **Terminal frame:** a screen of nuvem as text, on a plate with a caption strip. It scales to fill the plate and stops at 11px, then scrolls sideways inside the plate with the Methyl scroll cue. Bright black and the selected-row colour are lightened for the site (see `src/lib/terminal-frame.mjs`), so all its text clears 4.5:1.
+- **Key column:** each capability is a row: the key or flag that reaches it on the left, as a key cap or code, then a Coral link to its docs page and one muted line. Rows are divided by hairlines; groups take an 18px heading and sit two to a row from 64rem up. Below 30rem the key moves above its text.
+- **Sections** open with the docs' section heading: a hairline, 1rem of padding, 26px at 650. 64px separates them.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -268,6 +309,8 @@ Previous and next links in a hairline box. The title is Coral, the direction is 
 - **Do** mark position with the hairline tick and a Naples label.
 - **Do** keep every corner at 2px and every divider at 1px.
 - **Do** check new text against the ratios in Colors. Body text needs 4.5:1 on its own ground.
+- **Do** link from the home page into the docs through `docHref()`, so a broken link fails the build.
+- **Do** keep the recording the home page's only motion.
 
 ### Don't:
 - **Don't** introduce another hue, a decorative gradient, or a light theme. (The scroll cue is the one gradient, and it carries information.)
