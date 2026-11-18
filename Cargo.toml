@@ -7,6 +7,7 @@ edition = "2024"
 rust-version = "1.94"
 license = "MIT"
 repository = "https://github.com/filipeaaoliveira/nuvem"
+homepage = "https://nuvem.fyi"
 
 [package]
 name = "nuvem"
@@ -16,9 +17,29 @@ rust-version.workspace = true
 description = "Terminal UI for Google Cloud resources using native gcloud configurations"
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+# The user guide, not the API reference: nuvem is used as a program.
+documentation = "https://nuvem.fyi"
 readme = "README.md"
 keywords = ["gcp", "gcloud", "tui", "terminal", "google-cloud"]
 categories = ["command-line-utilities", "development-tools"]
+# What crates.io receives: the sources, the JSON captures that `--demo` embeds
+# with include_str!, and the documents a user reads. That is everything the
+# binary needs to build and run. The tests are another matter: the
+# integration suite reads the workflows, docs/ and ARCHITECTURE.md from a full
+# checkout, and some unit tests include_str! ARCHITECTURE.md and
+# docs/features.md, none of which ship. So the suite stays out (cargo drops
+# its target from the published manifest) and the tests run from a clone of
+# the repository, not from the package. Listed as an allowlist so a new
+# top-level directory (recordings, the website) stays out of the package
+# without anyone remembering to exclude it.
+include = [
+    "/src/**/*.rs",
+    "/tests/fixtures/*.json",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+]
 # One integration-test binary, not one per file: each test target statically
 # links the whole library, so per-file targets meant ~140 links of it per
 # build. tests/suite.rs mounts the files.
