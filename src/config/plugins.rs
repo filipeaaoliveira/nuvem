@@ -38,14 +38,14 @@ const FALLBACK: &str = "ignoring this plugin";
 
 /// Every key a `[[plugins]]` entry may carry; anything else is a typo and
 /// rejects the entry.
-const SETTINGS: [&str; 7] = ["id", "scope", "key", "label", "args", "dangerous", "inputs"];
+pub const SETTINGS: [&str; 7] = ["id", "scope", "key", "label", "args", "dangerous", "inputs"];
 
 /// Every key a `[[plugins.inputs]]` entry may carry.
-const INPUT_SETTINGS: [&str; 4] = ["name", "type", "choices", "default"];
+pub const INPUT_SETTINGS: [&str; 4] = ["name", "type", "choices", "default"];
 
 /// Every key the plugin file may carry at the top level. Anything else is a
 /// typo — `[[plugin]]` for `[[plugins]]` above all.
-const SECTIONS: [&str; 2] = ["version", "plugins"];
+pub const SECTIONS: [&str; 2] = ["version", "plugins"];
 
 /// What an input asks the operator for, and therefore what its value may be.
 ///
@@ -76,11 +76,11 @@ impl PluginInputKind {
     /// Every spelling `type` accepts. Named in the warning a wrong one earns,
     /// so the list a user is offered cannot drift from the one that parses.
     ///
-    /// `pub(crate)` for a second reader with the same stake: the kind walk in
-    /// `app::state::plugins` asserts that every kind reaches the prompt, and a
-    /// walk over a hand-copied list would silently stop covering a kind added
-    /// here.
-    pub(crate) const SPELLINGS: [&str; 5] = ["string", "number", "integer", "bool", "dropdown"];
+    /// Public for the readers with the same stake: the kind walk in
+    /// `app::state::plugins` asserts that every kind reaches the prompt, and
+    /// the documentation test asserts that every kind is documented. A walk
+    /// over a hand-copied list would silently stop covering a kind added here.
+    pub const SPELLINGS: [&str; 5] = ["string", "number", "integer", "bool", "dropdown"];
 }
 
 /// What a typed field will accept as text.

@@ -31,7 +31,7 @@ const FALLBACK: &str = "ignoring this rule";
 
 /// Every key a `[[jumps]]` rule may carry; anything else is a typo and
 /// rejects the rule.
-const SETTINGS: [&str; 6] = ["from", "to", "name", "location", "label", "select"];
+pub const SETTINGS: [&str; 6] = ["from", "to", "name", "location", "label", "select"];
 
 /// One value a template may substitute. The union of every service's fields;
 /// which of them a given service actually offers is [`fields_for`].

@@ -40,7 +40,7 @@ const KEPT: &str = "ignoring this block, keeping the column settings already in 
 
 /// Every setting a `[columns.<service>]` block may carry; anything else in
 /// the block is a typo and rejects it.
-const SETTINGS: [&str; 3] = ["columns", "sort", "sort_direction"];
+pub const SETTINGS: [&str; 3] = ["columns", "sort", "sort_direction"];
 
 /// A validated, per-service column layout: catalog indices in display order,
 /// plus the resolved default sort. `None` means "keep the built-in default",
