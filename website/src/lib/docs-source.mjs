@@ -13,8 +13,13 @@ import { parse as parseYaml } from 'yaml';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-/** Absolute path of the repository root. */
-export const REPO_ROOT = resolve(here, '../../..');
+/**
+ * Absolute path of the repository root. Pages that import this module are
+ * bundled into `dist/` before they render, which moves `import.meta.url`, so
+ * astro.config.mjs (which loads it in place) records the root in
+ * NUVEM_REPO_ROOT for them.
+ */
+export const REPO_ROOT = process.env.NUVEM_REPO_ROOT || resolve(here, '../../..');
 
 /** Absolute path of the docs directory the site renders. */
 export const DOCS_DIR = join(REPO_ROOT, 'docs');
