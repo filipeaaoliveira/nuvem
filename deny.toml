@@ -1,0 +1,70 @@
+[advisories]
+version = 2
+ignore = [
+    # chrono is reported unmaintained, with no safe upgrade. nuvem uses it
+    # directly for timestamps; this is not a vulnerability, and moving to jiff
+    # or time is its own change. Remove this entry when that lands.
+    { id = "RUSTSEC-2026-0543", reason = "chrono unmaintained; direct dependency, moving to jiff or time is its own change" },
+]
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "Unicode-3.0",
+    "MPL-2.0",        # option-ext, via dirs/dirs-sys; weak copyleft, file-scoped
+    "Zlib",
+    # The three below arrive with the native Google Cloud clients and their TLS
+    # stack, and only with them — see
+    # docs/decisions/0001-native-sdk-for-read-paths.md, which records this
+    # widening as part of the decision rather than as drift. All three are
+    # permissive and OSI-approved.
+    "ISC",            # ring, untrusted, rustls-webpki
+    "BSD-3-Clause",   # subtle, and the aws-lc bindings
+    "CDLA-Permissive-2.0",  # webpki-roots' bundled Mozilla CA set
+]
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+skip = [
+    # Three copies, none of them nuvem's own: tokio-util is on 0.15,
+    # ratatui-core/kasuari pins 0.16, and toml/indexmap is on 0.17. Each is
+    # named rather than skipped by tree, so a fourth still fails.
+    { crate = "hashbrown@0.15.5", reason = "Transitive via tokio-util, which the transport and nuvem both use." },
+    { crate = "hashbrown@0.16.1", reason = "Transitive via ratatui-core/kasuari. Goes away when kasuari bumps." },
+    # syn is a proc-macro dependency: it is compiled to run the derive macros
+    # and none of it reaches the shipped binary, so a second copy costs build
+    # time and nothing else. thiserror-impl moved to syn 3 ahead of the rest of
+    # the ecosystem (clap_derive, serde_derive, tokio-macros and the others are
+    # still on syn 2), and that split will exist for as long as the transition
+    # takes. Denying it would mean pinning thiserror to the last syn-2 release
+    # and doing the same for every other proc-macro crate that moves first.
+    { crate = "syn@2.0.119", reason = "syn 2/3 ecosystem transition: thiserror-impl is on syn 3, the other proc-macro crates are still on syn 2. Build-time only. Remove when the rest of the graph moves to syn 3." },
+
+    # The rest of this list arrived with the native Google Cloud clients. Each
+    # is a transitive duplicate the generated crates and their transport pull
+    # in alongside a copy this workspace already had; none is a second copy of
+    # anything nuvem itself depends on directly. They go away as that graph
+    # converges, and each is listed by name rather than skipped by tree so a
+    # new duplicate still fails.
+    { crate = "base64", reason = "nuvem and google-cloud-auth are on base64 0.23; the rest of the transport (reqwest, tonic, hyper-util) is still on 0.22." },
+    { crate = "darling", reason = "Derive plumbing behind the generated clients; build-time only." },
+    { crate = "darling_core", reason = "As darling." },
+    { crate = "darling_macro", reason = "As darling." },
+    { crate = "getrandom", reason = "Three copies: the TLS stack, rand, and the wasm shim each pin a different major." },
+    { crate = "itertools", reason = "The generated clients and an existing dependency pin different majors." },
+    { crate = "r-efi", reason = "Target-specific, reached only through getrandom's UEFI backend." },
+    { crate = "rand", reason = "Retry jitter in the transport against the existing copy." },
+    { crate = "rand_core", reason = "As rand." },
+]
+skip-tree = [
+    { crate = "windows-sys", reason = "Target-specific transitive crate with multiple major versions across rustix, tokio, dirs, tempfile, and console styling dependencies." },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = []

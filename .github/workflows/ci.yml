@@ -1,0 +1,178 @@
+name: CI
+
+"on":
+  # Branches are covered by `pull_request`, so `push` is scoped to the default
+  # branch. Unscoped, every push to a branch with a PR open ran this whole
+  # workflow twice against the same commit -- once for the push and once for
+  # the pull request -- which on a two-runner pool is a queue rather than a
+  # duplicate. What is lost is a run for a branch nobody has opened a PR for,
+  # and that is the intended trade: the gates exist to decide whether a change
+  # may merge, and a branch with no PR is not asking.
+  #
+  # Merges to main still run here, which is what keeps the default branch's
+  # own state checked rather than inferred from whatever the PR looked like
+  # before it merged.
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel any in-progress run for the same workflow + ref (branch/PR) when a
+# new commit supersedes it, so we don't burn CI time on stale pushes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Nothing here writes to the repo, posts statuses, or publishes: every job
+# only reads the checkout (upload-artifact uses its own artifact scope, not
+# the token). Declaring the floor stops a compromised action from doing more.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: fmt, clippy, test
+    # The runner group, when this repository defines one, and a hosted runner
+    # otherwise. The label is a repository variable rather than a literal so
+    # that no private runner group is named in a tree that is going to be
+    # public: a fork, a clone and a public copy all read the fallback and run
+    # on GitHub's own runners, while this repository points the variable at its
+    # own group. An unset or empty variable is the fallback, so nothing has to
+    # be configured for the hosted path to work.
+    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    # Backstop against a hung test binary, not a performance budget. A parked
+    # gate wait on a `spawn_blocking` thread can wedge `Runtime::drop` and hang
+    # the harness forever, and GitHub's default would let that burn 360 minutes.
+    # The real work is a cold-cache build (the suite itself runs in seconds), so
+    # 20 minutes leaves ample headroom while turning any future hang into a
+    # cheap fast failure. Raise it if a legitimate cold build ever approaches
+    # this; do not lower it to police build time.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # This repo pins its toolchain in rust-toolchain.toml (stable 1.94.1,
+      # with the rustfmt and clippy components declared there). Running
+      # `rustup show` in a directory with a rust-toolchain.toml causes
+      # rustup to read that file and install exactly the pinned toolchain
+      # plus its declared components, so no separate toolchain action or
+      # hardcoded version is needed here.
+      - name: Install pinned Rust toolchain (via rust-toolchain.toml)
+        run: rustup show
+
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      # This also runs inside the full suite below, so calling it out here buys
+      # no coverage — it buys a name. Documentation drift is the one failure
+      # whose fix is in a Markdown file rather than the code under review, and a
+      # step titled for it says so from the checks list, before anyone opens the
+      # log of a suite that ran two thousand other tests.
+      # The tests live inside the consolidated suite target (tests/suite.rs),
+      # so this filters the suite by module path rather than naming a per-file
+      # target that no longer exists.
+      - name: Check ARCHITECTURE.md module tree matches the source tree
+        run: 'cargo test --test suite architecture_layout_test::'
+
+      # nextest gives each test its own process: the active theme is a
+      # process-global arc-swap that some tests store to while others render,
+      # and the consolidated suite target no longer isolates them per binary.
+      # Doctests run separately because nextest does not run them.
+      - name: Install cargo-nextest
+        run: curl -LsSf https://get.nexte.st/0.9.144/linux | tar zxf - -C "${CARGO_HOME:-$HOME/.cargo}/bin"
+      - name: Run test suite
+        run: cargo nextest run --all
+      - name: Run doctests
+        run: cargo test --doc --all
+
+      # Rustdoc warnings — broken intra-doc links, mostly — are invisible in
+      # every other gate: clippy does not read doc comments and the suite does
+      # not render them. Deny them here so a moved or renamed item cannot
+      # silently rot the links that reference it.
+      - name: Check documentation (deny rustdoc warnings)
+        run: cargo doc --no-deps --workspace --locked
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  shellcheck:
+    name: shellcheck
+    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    # Its own job rather than a step in `check`: shellcheck needs neither the
+    # Rust toolchain nor the cargo cache, and a shell defect should surface in
+    # seconds under its own name instead of behind a cold Rust build.
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The hosted image carries a shellcheck of its own whose version moves
+      # with the image, so a pinned build is fetched instead: the analyzer
+      # cannot change underneath the repo without a commit saying so, and a
+      # lint cannot appear or vanish with an image bump. Printing the version
+      # still records which analyzer produced (or missed) a finding.
+      - name: Ensure shellcheck is present
+        env:
+          SHELLCHECK_VERSION: v0.10.0
+        run: |
+          if ! shellcheck --version 2>/dev/null | grep -q "version: ${SHELLCHECK_VERSION#v}$"; then
+            mkdir -p "$HOME/.local/bin"
+            curl -LsSf \
+              "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+              | tar -xJ -C "$HOME/.local/bin" --strip-components=1 \
+                "shellcheck-${SHELLCHECK_VERSION}/shellcheck"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Show shellcheck version
+        run: shellcheck --version
+
+      # The glob is unquoted and unguarded on purpose. If scripts/ ever stops
+      # holding .sh files the pattern reaches shellcheck literally, shellcheck
+      # fails on the missing file, and the job goes red — the alternative
+      # (`|| true`, or a `find`-driven loop over an empty set) would report
+      # green for having analysed nothing.
+      - name: Lint shell scripts
+        run: shellcheck scripts/*.sh
+
+  cargo-deny:
+    name: cargo-deny (advisories, licenses, bans, sources)
+    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    # deny.toml has been in the repo since early on, but nothing enforced it:
+    # the config drifted (a duplicate-crate ban fired locally) while every CI
+    # run stayed green. This job is what makes deny.toml a contract rather
+    # than documentation.
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # A prebuilt binary at a pinned version, fetched the same way shellcheck
+      # is above rather than through the Docker-based action, so the analyzer
+      # moves only with a commit. Pinning matters for the same reason as
+      # shellcheck: cargo-deny verdicts move with its advisory handling.
+      - name: Ensure cargo-deny is present
+        env:
+          CARGO_DENY_VERSION: "0.20.2"
+        run: |
+          if ! cargo-deny --version 2>/dev/null | grep -q "$CARGO_DENY_VERSION"; then
+            mkdir -p "$HOME/.local/bin"
+            curl -LsSf \
+              "https://github.com/EmbarkStudios/cargo-deny/releases/download/${CARGO_DENY_VERSION}/cargo-deny-${CARGO_DENY_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+              | tar zxf - -C "$HOME/.local/bin" --strip-components=1 \
+                  "cargo-deny-${CARGO_DENY_VERSION}-x86_64-unknown-linux-musl/cargo-deny"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+          "$HOME/.local/bin/cargo-deny" --version || cargo-deny --version
+
+      - name: Run cargo-deny
+        run: cargo-deny check
+

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "projects/dev-project/locations/europe-west1-b/recommenders/google.compute.instance.MachineTypeRecommender/recommendations/2d2f1f9b-1f4d-4c3b-8f1f-5c8b3f2e0002",
+    "description": "Save cost by changing machine type from e2-medium to e2-small.",
+    "priority": "P3",
+    "xorGroupId": "e5f4a3b2-1c0d-4e9f-8a7b-6c5d4e3f2a1b",
+    "lastRefreshTime": "2026-08-24T03:12:07Z",
+    "stateInfo": { "state": "ACTIVE" },
+    "primaryImpact": {
+      "costProjection": {
+        "cost": { "currencyCode": "USD", "units": "-8", "nanos": -250000000 },
+        "duration": "2592000s"
+      }
+    },
+    "content": {
+      "operationGroups": [
+        {
+          "operations": [
+            {
+              "resource": "//compute.googleapis.com/projects/dev-project/zones/europe-west1-b/instances/api-dev-1"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

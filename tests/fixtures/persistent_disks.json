@@ -1,0 +1,52 @@
+[
+  {
+    "name": "gke-node-a",
+    "sizeGb": "100",
+    "status": "READY",
+    "type": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b/diskTypes/pd-balanced",
+    "zone": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b",
+    "users": [
+      "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b/instances/gke-node-a"
+    ],
+    "labels": {
+      "env": "prod",
+      "team": "platform"
+    }
+  },
+  {
+    "name": "detached-legacy",
+    "sizeGb": "20",
+    "status": "READY",
+    "type": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b/diskTypes/pd-ssd",
+    "zone": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b",
+    "lastDetachTimestamp": "2026-03-08T04:04:13.431-07:00"
+  },
+  {
+    "name": "being-built",
+    "sizeGb": "50",
+    "status": "CREATING",
+    "type": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c/diskTypes/pd-ssd",
+    "zone": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c"
+  },
+  {
+    "name": "broken-disk",
+    "sizeGb": "9",
+    "status": "FAILED",
+    "type": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c/diskTypes/pd-standard",
+    "zone": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c"
+  },
+  {
+    "name": "regional-share",
+    "sizeGb": "200",
+    "status": "READY",
+    "type": "https://www.googleapis.com/compute/v1/projects/dev-project/regions/europe-west1/diskTypes/pd-balanced",
+    "region": "https://www.googleapis.com/compute/v1/projects/dev-project/regions/europe-west1",
+    "users": [
+      "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b/instances/db-primary",
+      "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c/instances/db-standby"
+    ]
+  },
+  {
+    "name": "bare-row"
+  }
+]

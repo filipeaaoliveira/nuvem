@@ -1,0 +1,165 @@
+[
+  {
+    "name": "projects/dev-project/locations/europe-west1/services/orders-api",
+    "uri": "https://orders-api-abcde-ew.a.run.app",
+    "ingress": "INGRESS_TRAFFIC_ALL",
+    "creator": "deployer@example.com",
+    "template": {
+      "serviceAccount": "orders-api@example.iam.gserviceaccount.com",
+      "maxInstanceRequestConcurrency": 80,
+      "scaling": {
+        "minInstanceCount": 1,
+        "maxInstanceCount": 10
+      },
+      "containers": [
+        {
+          "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+          "ports": [{ "containerPort": 8080 }],
+          "resources": {
+            "limits": { "cpu": "1000m", "memory": "512Mi" }
+          }
+        }
+      ]
+    },
+    "latestReadyRevision": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00007-tabc",
+    "latestCreatedRevision": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00007-tabc",
+    "trafficStatuses": [
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST",
+        "revision": "orders-api-00007-tabc",
+        "percent": 100
+      }
+    ],
+    "terminalCondition": {
+      "type": "Ready",
+      "state": "CONDITION_SUCCEEDED",
+      "lastTransitionTime": "2026-07-18T09:12:44Z"
+    },
+    "conditions": [
+      { "type": "ConfigurationsReady", "state": "CONDITION_SUCCEEDED" },
+      { "type": "RoutesReady", "state": "CONDITION_SUCCEEDED" }
+    ]
+  },
+  {
+    "name": "projects/dev-project/locations/us-central1/services/billing-worker",
+    "uri": "https://billing-worker-fghij-uc.a.run.app",
+    "ingress": "INGRESS_TRAFFIC_INTERNAL_ONLY",
+    "template": {
+      "containers": [
+        {
+          "image": "us-docker.pkg.dev/example/apps/billing-worker:0.9.0",
+          "resources": {
+            "limits": { "cpu": "2000m", "memory": "1Gi" }
+          }
+        }
+      ]
+    },
+    "latestReadyRevision": "projects/dev-project/locations/us-central1/services/billing-worker/revisions/billing-worker-00003-qwer",
+    "latestCreatedRevision": "projects/dev-project/locations/us-central1/services/billing-worker/revisions/billing-worker-00004-zxcv",
+    "trafficStatuses": [
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+        "revision": "billing-worker-00003-qwer",
+        "percent": 100
+      }
+    ],
+    "terminalCondition": {
+      "type": "Ready",
+      "state": "CONDITION_FAILED",
+      "message": "Revision billing-worker-00004-zxcv is not ready.",
+      "lastTransitionTime": "2026-07-19T04:31:10Z"
+    },
+    "conditions": [
+      { "type": "ConfigurationsReady", "state": "CONDITION_FAILED" },
+      { "type": "RoutesReady", "state": "CONDITION_SUCCEEDED" }
+    ]
+  },
+  {
+    "name": "projects/dev-project/locations/europe-west1/services/checkout-api",
+    "uri": "https://checkout-api-klmno-ew.a.run.app",
+    "ingress": "INGRESS_TRAFFIC_ALL",
+    "template": {
+      "containers": [
+        {
+          "image": "europe-docker.pkg.dev/example/apps/checkout-api:2.0.1",
+          "resources": {
+            "limits": { "cpu": "1000m", "memory": "256Mi" }
+          }
+        }
+      ]
+    },
+    "latestReadyRevision": "projects/dev-project/locations/europe-west1/services/checkout-api/revisions/checkout-api-00011-aaaa",
+    "latestCreatedRevision": "projects/dev-project/locations/europe-west1/services/checkout-api/revisions/checkout-api-00012-bbbb",
+    "trafficStatuses": [
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+        "revision": "checkout-api-00011-aaaa",
+        "percent": 100
+      }
+    ],
+    "terminalCondition": {
+      "type": "Ready",
+      "state": "CONDITION_FAILED",
+      "revisionReason": "HEALTH_CHECK_CONTAINER_ERROR",
+      "message": "The user-provided container failed to start and listen on the port.",
+      "lastTransitionTime": "2026-07-19T06:02:55Z"
+    },
+    "conditions": [
+      {
+        "type": "ConfigurationsReady",
+        "state": "CONDITION_FAILED",
+        "revisionReason": "HEALTH_CHECK_CONTAINER_ERROR"
+      },
+      { "type": "RoutesReady", "state": "CONDITION_SUCCEEDED" }
+    ]
+  },
+  {
+    "name": "projects/dev-project/locations/europe-west1/services/payments-api",
+    "uri": "https://payments-api-pqrst-ew.a.run.app",
+    "ingress": "INGRESS_TRAFFIC_ALL",
+    "template": {
+      "containers": [
+        {
+          "image": "europe-docker.pkg.dev/example/apps/payments-api:3.1.0"
+        }
+      ]
+    },
+    "latestReadyRevision": "projects/dev-project/locations/europe-west1/services/payments-api/revisions/payments-api-00019-old0",
+    "latestCreatedRevision": "projects/dev-project/locations/europe-west1/services/payments-api/revisions/payments-api-00020-new0",
+    "trafficStatuses": [
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+        "revision": "payments-api-00019-old0",
+        "percent": 80
+      },
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST",
+        "revision": "payments-api-00020-new0",
+        "percent": 20,
+        "tag": "canary",
+        "uri": "https://canary---payments-api-pqrst-ew.a.run.app"
+      }
+    ],
+    "terminalCondition": {
+      "type": "Ready",
+      "state": "CONDITION_RECONCILING",
+      "revisionReason": "PENDING",
+      "message": "Deploying revision payments-api-00020-new0.",
+      "lastTransitionTime": "2026-07-19T07:15:00Z"
+    },
+    "conditions": [
+      { "type": "ConfigurationsReady", "state": "CONDITION_RECONCILING" },
+      { "type": "RoutesReady", "state": "CONDITION_RECONCILING" }
+    ]
+  },
+  {
+    "name": "projects/dev-project/locations/asia-northeast1/services/legacy-frontend",
+    "template": {
+      "containers": [{}]
+    },
+    "terminalCondition": {
+      "type": "Ready",
+      "state": "STATE_UNSPECIFIED"
+    }
+  }
+]

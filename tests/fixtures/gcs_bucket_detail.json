@@ -1,0 +1,23 @@
+{
+  "name": "alpha-bucket",
+  "location": "US",
+  "location_type": "multi-region",
+  "default_storage_class": "STANDARD",
+  "versioning_enabled": true,
+  "uniform_bucket_level_access": true,
+  "public_access_prevention": "enforced",
+  "requester_pays": true,
+  "retention_policy": {
+    "retentionPeriod": "2592000"
+  },
+  "default_kms_key": "projects/dev-project/locations/us/keyRings/gcs-ring/cryptoKeys/gcs-key",
+  "labels": {
+    "env": "prod",
+    "team": "platform"
+  },
+  "storage_url": "gs://alpha-bucket/",
+  "generation": 1700000000000002,
+  "metageneration": 3,
+  "creation_time": "2024-01-02T03:04:05Z",
+  "update_time": "2024-02-03T04:05:06Z"
+}

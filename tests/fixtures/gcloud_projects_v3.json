@@ -1,0 +1,14 @@
+[
+  {
+    "name": "projects/1001",
+    "projectId": "dev-project",
+    "displayName": "Development",
+    "state": "ACTIVE"
+  },
+  {
+    "name": "projects/1002",
+    "projectId": "prod-project",
+    "displayName": "Production",
+    "state": "ACTIVE"
+  }
+]

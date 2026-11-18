@@ -1,0 +1,25 @@
+{
+  "name": "projects/_/buckets/alpha-bucket",
+  "bucketId": "alpha-bucket",
+  "project": "projects/482910233714",
+  "location": "US",
+  "locationType": "multi-region",
+  "storageClass": "STANDARD",
+  "metageneration": "3",
+  "versioning": { "enabled": true },
+  "iamConfig": {
+    "uniformBucketLevelAccess": { "enabled": true },
+    "publicAccessPrevention": "enforced"
+  },
+  "billing": { "requesterPays": true },
+  "retentionPolicy": { "retentionDuration": "2592000s" },
+  "encryption": {
+    "defaultKmsKey": "projects/dev-project/locations/us/keyRings/gcs-ring/cryptoKeys/gcs-key"
+  },
+  "labels": {
+    "env": "prod",
+    "team": "platform"
+  },
+  "createTime": "2024-01-02T03:04:05Z",
+  "updateTime": "2024-02-03T04:05:06Z"
+}

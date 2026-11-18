@@ -1,0 +1,38 @@
+name: Audit
+
+# Advisories land between commits: a lockfile that was clean when it merged
+# can carry a published vulnerability a week later, and nothing in ci.yml
+# runs until someone pushes. This job checks the lockfile on main against the
+# current RustSec database on a schedule, so a new advisory turns a run red
+# without waiting for an unrelated change to surface it.
+"on":
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  advisories:
+    name: cargo-deny advisories
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Same pinned binary as the cargo-deny job in ci.yml.
+      - name: Ensure cargo-deny is present
+        env:
+          CARGO_DENY_VERSION: "0.20.2"
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -LsSf \
+            "https://github.com/EmbarkStudios/cargo-deny/releases/download/${CARGO_DENY_VERSION}/cargo-deny-${CARGO_DENY_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            | tar zxf - -C "$HOME/.local/bin" --strip-components=1 \
+                "cargo-deny-${CARGO_DENY_VERSION}-x86_64-unknown-linux-musl/cargo-deny"
+          "$HOME/.local/bin/cargo-deny" --version
+
+      - name: Check advisories
+        run: '"$HOME/.local/bin/cargo-deny" check advisories'

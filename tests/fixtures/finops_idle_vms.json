@@ -1,0 +1,26 @@
+[
+  {
+    "name": "projects/dev-project/locations/europe-west1-b/recommenders/google.compute.instance.IdleResourceRecommender/recommendations/1c1f0f8a-0f3c-4b2a-9f0e-4b7a2f1d0001",
+    "description": "Save cost by stopping idle VM instance 'worker-dev-1'.",
+    "priority": "P2",
+    "lastRefreshTime": "2026-08-24T03:12:07Z",
+    "stateInfo": { "state": "ACTIVE" },
+    "primaryImpact": {
+      "costProjection": {
+        "cost": { "currencyCode": "USD", "units": "-24", "nanos": -500000000 },
+        "duration": "2592000s"
+      }
+    },
+    "content": {
+      "operationGroups": [
+        {
+          "operations": [
+            {
+              "resource": "//compute.googleapis.com/projects/dev-project/zones/europe-west1-b/instances/worker-dev-1"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

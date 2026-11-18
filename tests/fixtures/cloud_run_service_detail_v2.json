@@ -1,0 +1,55 @@
+{
+  "name": "projects/dev-project/locations/europe-west1/services/orders-api",
+  "uri": "https://orders-api-abcde-ew.a.run.app",
+  "ingress": "INGRESS_TRAFFIC_ALL",
+  "creator": "deployer@example.com",
+  "observedGeneration": "7",
+  "labels": {
+    "team": "commerce",
+    "env": "prod"
+  },
+  "template": {
+    "revision": "orders-api-00007-tabc",
+    "serviceAccount": "orders-api@example.iam.gserviceaccount.com",
+    "maxInstanceRequestConcurrency": 80,
+    "timeout": "300s",
+    "scaling": {
+      "minInstanceCount": 2,
+      "maxInstanceCount": 20
+    },
+    "containers": [
+      {
+        "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+        "ports": [{ "name": "http1", "containerPort": 8080 }],
+        "resources": {
+          "limits": { "cpu": "1000m", "memory": "512Mi" }
+        }
+      }
+    ]
+  },
+  "latestReadyRevision": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00007-tabc",
+  "latestCreatedRevision": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00007-tabc",
+  "trafficStatuses": [
+    {
+      "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST",
+      "revision": "orders-api-00007-tabc",
+      "percent": 100
+    },
+    {
+      "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+      "revision": "orders-api-00006-sxyz",
+      "percent": 0,
+      "tag": "previous",
+      "uri": "https://previous---orders-api-abcde-ew.a.run.app"
+    }
+  ],
+  "terminalCondition": {
+    "type": "Ready",
+    "state": "CONDITION_SUCCEEDED",
+    "lastTransitionTime": "2026-07-18T09:12:44Z"
+  },
+  "conditions": [
+    { "type": "ConfigurationsReady", "state": "CONDITION_SUCCEEDED" },
+    { "type": "RoutesReady", "state": "CONDITION_SUCCEEDED" }
+  ]
+}

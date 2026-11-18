@@ -1,0 +1,32 @@
+[
+  {
+    "creationTime": "1495683814344",
+    "id": "bigquery-public-data:austin_bikeshare.bikeshare_stations",
+    "kind": "bigquery#table",
+    "tableReference": {
+      "datasetId": "austin_bikeshare",
+      "projectId": "bigquery-public-data",
+      "tableId": "bikeshare_stations"
+    },
+    "type": "TABLE"
+  },
+  {
+    "creationTime": "1689612093433",
+    "id": "bigquery-public-data:austin_bikeshare.bikeshare_trips",
+    "kind": "bigquery#table",
+    "labels": {
+      "dataplex-data-documentation-published-location": "us-central1",
+      "dataplex-data-documentation-published-project": "example-scan-project",
+      "dataplex-data-documentation-published-scan": "0f3e8b2a4-1c7d-4e9f-8a6b-2d5c7e9f1a3b",
+      "dataplex-dp-published-location": "us-central1",
+      "dataplex-dp-published-project": "example-publisher-project",
+      "dataplex-dp-published-scan": "6b1d4f2e9-3a8c-47b5-9e2d-1c4f6a8b0d3e"
+    },
+    "tableReference": {
+      "datasetId": "austin_bikeshare",
+      "projectId": "bigquery-public-data",
+      "tableId": "bikeshare_trips"
+    },
+    "type": "TABLE"
+  }
+]

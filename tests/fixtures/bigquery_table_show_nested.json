@@ -1,0 +1,97 @@
+{
+  "creationTime": "1611187200000",
+  "etag": "mNoP987654321=",
+  "id": "bigquery-public-data:ga4_obfuscated_sample_ecommerce.events_20210131",
+  "kind": "bigquery#table",
+  "lastModifiedTime": "1787306613694",
+  "location": "US",
+  "numBytes": "13208066",
+  "numLongTermBytes": "13208066",
+  "numRows": "4238",
+  "schema": {
+    "fields": [
+      {
+        "description": "The date on which the event was logged.",
+        "mode": "NULLABLE",
+        "name": "event_date",
+        "type": "STRING"
+      },
+      {
+        "description": "The time, in microseconds UTC, at which the event was logged.",
+        "mode": "NULLABLE",
+        "name": "event_timestamp",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "event_name",
+        "type": "STRING"
+      },
+      {
+        "description": "A repeated record of the parameters associated with this event.",
+        "fields": [
+          {
+            "description": "The event parameter's key.",
+            "mode": "NULLABLE",
+            "name": "key",
+            "type": "STRING"
+          },
+          {
+            "description": "A record of the event parameter's value.",
+            "fields": [
+              {
+                "description": "If the value is a string, it is populated here.",
+                "mode": "NULLABLE",
+                "name": "string_value",
+                "type": "STRING"
+              },
+              {
+                "mode": "NULLABLE",
+                "name": "int_value",
+                "type": "INTEGER"
+              }
+            ],
+            "mode": "NULLABLE",
+            "name": "value",
+            "type": "RECORD"
+          }
+        ],
+        "mode": "REPEATED",
+        "name": "event_params",
+        "type": "RECORD"
+      },
+      {
+        "description": "The pseudonymous id for the user.",
+        "mode": "NULLABLE",
+        "name": "user_pseudo_id",
+        "type": "STRING"
+      },
+      {
+        "description": "A record of device information.",
+        "fields": [
+          {
+            "description": "The device category: mobile, tablet or desktop.",
+            "mode": "NULLABLE",
+            "name": "category",
+            "type": "STRING"
+          },
+          {
+            "description": "The device's mobile brand name.",
+            "mode": "NULLABLE",
+            "name": "mobile_brand_name",
+            "type": "STRING"
+          }
+        ],
+        "mode": "NULLABLE",
+        "name": "device",
+        "type": "RECORD"
+      }
+    ]
+  },
+  "tableReference": {
+    "datasetId": "ga4_obfuscated_sample_ecommerce",
+    "projectId": "bigquery-public-data",
+    "tableId": "events_20210131"
+  },
+  "type": "TABLE"
+}

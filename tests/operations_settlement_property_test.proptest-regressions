@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 6f2689be31d6ac5ab039eaf6a3f739931916074bc8a6584d6e63937b8ce450a7 # shrinks to steps = [ConfirmComputeBatch { size: 2 }, SwitchConfiguration { config: 1 }]

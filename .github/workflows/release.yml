@@ -1,0 +1,300 @@
+name: Release
+
+# Tag-driven: pushing v<semver> builds release binaries for every supported
+# platform, attests their provenance, and publishes a GitHub Release. The tag
+# is the release decision; nothing here bumps versions or edits changelogs.
+#
+# A manual dispatch is the rehearsal of that: it builds, tests, smoke-tests and
+# packages every target and then stops, so the parts of this file that only run
+# under a tag can be proven green before a tag exists. Everything a dispatch
+# skips is guarded by `github.event_name == 'push'` below.
+#
+# Linux only, and native. The runner label is the repository's own variable
+# with a hosted fallback, exactly as ci.yml does it: the public tree names no
+# private group, and a fork with the variable unset still names a runner
+# instead of queueing forever against one it cannot reach.
+#
+# The macOS archives are built on a Mac and attached to the release by hand,
+# because this pool is x86_64 Linux and nothing in it can produce a Darwin
+# binary. They therefore carry no build-provenance attestation: that signature
+# is minted from the Actions OIDC identity, which a local build has no access
+# to. If the macOS builds ever move onto a runner of their own, add them back
+# to the matrix here and they regain it.
+#
+# nuvem is Unix-only (POSIX process control), so there is no Windows leg.
+"on":
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  # GitHub only offers this for workflow files that are on the default branch,
+  # so the rehearsal is dispatchable once this has merged, not from a branch.
+  workflow_dispatch:
+
+# Least privilege per job, below: the build jobs sign attestations and never
+# write to the repository; only the release job creates the release.
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  # The oldest glibc the release binary is linked against, and the ceiling the
+  # check below enforces. 2.28 covers Pop!_OS 22.04, Debian 10 and RHEL 8; the
+  # runner's own glibc would have made it 2.39.
+  GLIBC_FLOOR: "2.28"
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    # Sized against measurement, not habit. At 30 the job was killed mid-build:
+    # fetching Zig from ziglang.org took 16.9 minutes on this runner (53 MB,
+    # and there is no mirror to fetch it from), the suite 3, and the release
+    # build had only 10 of the ~15 it needs. The build is the part that must
+    # not be cut off, so the ceiling covers a cold run of all three.
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned Rust toolchain (via rust-toolchain.toml)
+        run: rustup show
+
+      # The tag is the release decision, so it has to agree with the version the
+      # binary will report; a mismatch here is caught before anything is built
+      # or published rather than discovered on the release page.
+      - name: Check the tag matches Cargo.toml
+        run: |
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "nuvem") | .version')"
+          if [ -z "$version" ]; then
+            echo "::error::could not read the nuvem version out of Cargo.toml"; exit 1
+          fi
+          # Unguarded on purpose: a dispatch runs the read, which is what
+          # proves `cargo metadata` and `jq` exist on this image, and stops
+          # before the comparison, which has no tag to compare against.
+          if [ "$GITHUB_EVENT_NAME" != "push" ]; then
+            echo "rehearsal: Cargo.toml reports $version, no tag to compare"; exit 0
+          fi
+          case "$GITHUB_REF_NAME" in
+            "v$version"|"v$version-"*|"v$version+"*) ;;
+            *) echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $version"; exit 1 ;;
+          esac
+
+      # The first release could not run on Pop!_OS 22.04, Debian 12 or RHEL 9:
+      # a binary linked against this image's glibc requires GLIBC_2.39, and
+      # those ship 2.35, 2.36 and 2.34. Zig's linker targets an explicit older
+      # glibc, and it brings its own C toolchain — which is what makes it
+      # usable here, because aws-lc-sys compiles C and assembly through cmake
+      # and this image has no root to install a cross toolchain with.
+      #
+      # Both downloads are checked against a digest recorded here rather than
+      # piped straight into tar. This is the compiler and linker that produce
+      # the binary people download: fetching either over the wire and running
+      # it unverified would put whatever the network returned into the release,
+      # which is the same class of problem the release's own .sha256 exists to
+      # answer for.
+      - name: Install Zig and cargo-zigbuild
+        env:
+          ZIG_VERSION: 0.16.0
+          ZIG_SHA256: 70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+          CARGO_ZIGBUILD_VERSION: 0.23.4
+          CARGO_ZIGBUILD_SHA256: 9e3cf73485edbd45905c8aadbc0fdf869c7ddc3848f0c898229f2680db52e44b
+        run: |
+          mkdir -p "$HOME/.local/bin" "$HOME/.local/zig"
+          tmp="$(mktemp -d)"
+
+          curl -LsSf -o "$tmp/zig.tar.xz" \
+            "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz"
+          echo "${ZIG_SHA256}  $tmp/zig.tar.xz" | sha256sum -c -
+          tar -xJf "$tmp/zig.tar.xz" -C "$HOME/.local/zig" --strip-components=1
+
+          curl -LsSf -o "$tmp/cargo-zigbuild.tar.xz" \
+            "https://github.com/rust-cross/cargo-zigbuild/releases/download/v${CARGO_ZIGBUILD_VERSION}/cargo-zigbuild-x86_64-unknown-linux-musl.tar.xz"
+          echo "${CARGO_ZIGBUILD_SHA256}  $tmp/cargo-zigbuild.tar.xz" | sha256sum -c -
+          tar -xJf "$tmp/cargo-zigbuild.tar.xz" -C "$HOME/.local/bin" --strip-components=1 \
+            "cargo-zigbuild-x86_64-unknown-linux-musl/cargo-zigbuild"
+
+          rm -rf "$tmp"
+          echo "$HOME/.local/zig" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Show the build toolchain versions
+        run: |
+          zig version
+          # `cargo zigbuild --version` hands the flag to the subcommand, which
+          # takes cargo build's arguments and not this one; the binary answers
+          # it directly.
+          cargo-zigbuild --version
+
+      # A tag is not a review: the suite runs here so a release cannot ship a
+      # tree that CI never saw green. nextest rather than libtest, for the same
+      # per-process isolation every other gate needs.
+      - name: Install cargo-nextest
+        run: curl -LsSf "https://get.nexte.st/0.9.144/${{ runner.os == 'macOS' && 'mac' || 'linux' }}" | tar zxf - -C "${CARGO_HOME:-$HOME/.cargo}/bin"
+      - name: Run the test suite
+        run: cargo nextest run --all --locked
+
+
+      - name: Build release binary
+        run: cargo zigbuild --release --locked --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }}
+
+      # The flag is not the guarantee. A --target suffix that was ignored, or
+      # a dependency that pulls in a newer symbol anyway, would ship a 2.39
+      # binary behind a 2.28 promise in the README — and the failure lands on
+      # whoever downloads it, at exec time, as "GLIBC_2.39 not found". So the
+      # floor is read back off the binary itself. `grep -a` rather than
+      # `strings`, which is binutils and not guaranteed on this image.
+      - name: Check the glibc floor of the built binary
+        run: |
+          BIN=target/${{ matrix.target }}/release/nuvem
+          highest="$(grep -ao 'GLIBC_[0-9]\+\.[0-9]\+' "$BIN" | sed 's/GLIBC_//' | sort -uV | tail -1)"
+          if [ -z "$highest" ]; then
+            echo "::error::no GLIBC_ version symbols found in $BIN, so its floor cannot be read"; exit 1
+          fi
+          echo "highest glibc symbol required: $highest (ceiling ${GLIBC_FLOOR})"
+          if [ "$(printf '%s\n%s\n' "$highest" "${GLIBC_FLOOR}" | sort -V | tail -1)" != "${GLIBC_FLOOR}" ]; then
+            echo "::error::binary requires glibc $highest, above the ${GLIBC_FLOOR} floor this release promises"; exit 1
+          fi
+
+      # The suite never runs the shipped artifact: unit and integration tests
+      # link the library, so argv parsing, the entrypoint, and exit codes ship
+      # untested without this. Three assertions, all offline: `info` is the
+      # one subcommand that works headless and proves the binary starts and
+      # resolves paths; the TUI without a terminal must refuse fast with the
+      # guard's message rather than garble the caller's pipe; an unknown flag
+      # exits 2 (clap's usage error), which scripts are entitled to rely on.
+      # `set +e` per probe because the error paths are the assertion, not a
+      # step failure.
+      - name: Smoke-test the built binary
+        run: |
+          set -u
+          BIN=target/${{ matrix.target }}/release/nuvem
+
+          "$BIN" info | grep -q "config:" || { echo "::error::'nuvem info' did not print the config path"; exit 1; }
+
+          set +e
+          "$BIN" --demo </dev/null >/dev/null 2>demo-stderr.txt
+          DEMO_EXIT=$?
+          set -e
+          if [ "$DEMO_EXIT" -eq 0 ]; then
+            echo "::error::'nuvem --demo' without a terminal must refuse, exited 0"; exit 1
+          fi
+          grep -q "interactive terminal" demo-stderr.txt || { echo "::error::the non-terminal refusal lost its message"; cat demo-stderr.txt; exit 1; }
+
+          set +e
+          "$BIN" --definitely-not-a-flag >/dev/null 2>&1
+          FLAG_EXIT=$?
+          set -e
+          if [ "$FLAG_EXIT" -ne 2 ]; then
+            echo "::error::an unknown flag must exit 2 (clap usage error), got $FLAG_EXIT"; exit 1
+          fi
+
+      # Binary + docs in a tarball named <name>-<target>.tar.gz, with a .sha256
+      # sidecar whose relative path makes `shasum -a 256 -c` work from the
+      # download dir.
+      - name: Package archive
+        run: |
+          ARCHIVE="nuvem-${{ matrix.target }}.tar.gz"
+          STAGE="$(mktemp -d)/nuvem-${{ matrix.target }}"
+          mkdir -p "$STAGE"
+          cp target/${{ matrix.target }}/release/nuvem LICENSE README.md CHANGELOG.md "$STAGE"/
+          tar -C "$(dirname "$STAGE")" -czf "$ARCHIVE" "$(basename "$STAGE")"
+          shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
+
+      # Two conditions, and each fails differently without the other. A
+      # rehearsal's binaries are thrown away, so signing them would put
+      # provenance in the store for artifacts no one can download. And GitHub
+      # issues no attestation at all for a user-owned private repository — it
+      # answers "Feature not available", which is an error, so an unguarded
+      # step fails the build and takes the publish job down with it. The tag
+      # v0.1.0-rc.1 was cut and lost its release exactly that way.
+      #
+      # Written as a condition rather than continue-on-error on purpose: when
+      # this repository goes public the step starts working again on its own,
+      # and a genuine signing failure still fails the release.
+      - name: Attest build provenance
+        if: github.event_name == 'push' && github.event.repository.private == false
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: nuvem-${{ matrix.target }}.tar.gz
+
+      - name: Upload archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: archive-${{ matrix.target }}
+          path: |
+            nuvem-${{ matrix.target }}.tar.gz
+            nuvem-${{ matrix.target }}.tar.gz.sha256
+          if-no-files-found: error
+
+  release:
+    name: publish GitHub release
+    needs: build
+    # Without this a dispatch would reach `gh release create` with a branch
+    # name in GITHUB_REF_NAME and cut a release called `main`.
+    if: github.event_name == 'push'
+    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: archive-*
+          merge-multiple: true
+          path: dist
+
+      # A hosted image ships the GitHub CLI; this pool's image does not, and
+      # the first tag run discovered that here, with `gh: command not found`
+      # after a green build — the release job is the only place in this
+      # workflow that needs it. Pinned and fetched for the same reason ci.yml
+      # pins shellcheck: the tool that publishes a release must not change
+      # underneath the repository without a commit saying so.
+      - name: Ensure the GitHub CLI is present
+        env:
+          GH_VERSION: 2.101.0
+        run: |
+          if ! gh --version 2>/dev/null | grep -q "gh version ${GH_VERSION} "; then
+            mkdir -p "$HOME/.local/bin"
+            curl -LsSf \
+              "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+              | tar -xz -C "$HOME/.local/bin" --strip-components=2 \
+                "gh_${GH_VERSION}_linux_amd64/bin/gh"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Show the GitHub CLI version
+        run: gh --version
+
+      # --verify-tag refuses to invent a release for a tag that vanished
+      # between trigger and run; the release notes stay in CHANGELOG.md and
+      # the autogenerated commit list rather than being duplicated here.
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A hyphen in a semver tag is a pre-release identifier: v0.1.0-rc.1
+          # is a candidate for 0.1.0, not 0.1.0 itself. Unmarked, GitHub makes
+          # whichever release is newest the repository's "Latest release" —
+          # the one the releases page offers first and the one an install
+          # script that asks for `latest` downloads — so an rc would be handed
+          # to everyone who never reads a version number.
+          flags=(--verify-tag --title "$GITHUB_REF_NAME" --generate-notes)
+          case "$GITHUB_REF_NAME" in
+            *-*) flags+=(--prerelease) ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" "${flags[@]}" dist/*

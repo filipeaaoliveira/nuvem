@@ -1,0 +1,26 @@
+[
+  {
+    "name": "projects/dev-project/topics/orders",
+    "messageRetentionDuration": "604800s",
+    "kmsKeyName": "projects/dev-project/locations/europe-west1/keyRings/nuvem/cryptoKeys/pubsub",
+    "labels": {
+      "team": "platform",
+      "env": "prod"
+    },
+    "schemaSettings": {
+      "schema": "projects/dev-project/schemas/order-v1",
+      "encoding": "JSON"
+    },
+    "messageStoragePolicy": {
+      "allowedPersistenceRegions": ["europe-west1", "europe-west4"]
+    }
+  },
+  {
+    "name": "projects/dev-project/topics/back-orders",
+    "messageRetentionDuration": "86400s",
+    "labels": {}
+  },
+  {
+    "name": "projects/dev-project/topics/audit-log"
+  }
+]

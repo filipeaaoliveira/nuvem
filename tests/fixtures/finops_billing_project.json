@@ -1,0 +1,6 @@
+{
+  "name": "projects/dev-project/billingInfo",
+  "projectId": "dev-project",
+  "billingAccountName": "billingAccounts/01ABCD-2345EF-6789AB",
+  "billingEnabled": true
+}

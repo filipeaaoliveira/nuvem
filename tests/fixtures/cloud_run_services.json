@@ -1,0 +1,243 @@
+[
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "orders-api",
+      "namespace": "482910233714",
+      "labels": {
+        "cloud.googleapis.com/location": "europe-west1"
+      },
+      "annotations": {
+        "run.googleapis.com/ingress": "all",
+        "serving.knative.dev/creator": "deployer@example.com"
+      }
+    },
+    "spec": {
+      "template": {
+        "metadata": {
+          "annotations": {
+            "autoscaling.knative.dev/minScale": "1",
+            "autoscaling.knative.dev/maxScale": "10"
+          }
+        },
+        "spec": {
+          "containerConcurrency": 80,
+          "serviceAccountName": "orders-api@example.iam.gserviceaccount.com",
+          "containers": [
+            {
+              "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+              "ports": [{ "containerPort": 8080 }],
+              "resources": {
+                "limits": { "cpu": "1000m", "memory": "512Mi" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "status": {
+      "url": "https://orders-api-abcde-ew.a.run.app",
+      "latestReadyRevisionName": "orders-api-00007-tabc",
+      "latestCreatedRevisionName": "orders-api-00007-tabc",
+      "traffic": [
+        {
+          "revisionName": "orders-api-00007-tabc",
+          "percent": 100,
+          "latestRevision": true
+        }
+      ],
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-07-18T09:12:44Z"
+        },
+        { "type": "ConfigurationsReady", "status": "True" },
+        { "type": "RoutesReady", "status": "True" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "billing-worker",
+      "namespace": "482910233714",
+      "labels": {
+        "cloud.googleapis.com/location": "us-central1"
+      },
+      "annotations": {
+        "run.googleapis.com/ingress": "internal"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "image": "us-docker.pkg.dev/example/apps/billing-worker:0.9.0",
+              "resources": {
+                "limits": { "cpu": "2000m", "memory": "1Gi" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "status": {
+      "url": "https://billing-worker-fghij-uc.a.run.app",
+      "latestReadyRevisionName": "billing-worker-00003-qwer",
+      "latestCreatedRevisionName": "billing-worker-00004-zxcv",
+      "traffic": [
+        {
+          "revisionName": "billing-worker-00003-qwer",
+          "percent": 100,
+          "latestRevision": false
+        }
+      ],
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "False",
+          "message": "Revision billing-worker-00004-zxcv is not ready.",
+          "lastTransitionTime": "2026-07-19T04:31:10Z"
+        },
+        { "type": "ConfigurationsReady", "status": "False" },
+        { "type": "RoutesReady", "status": "True" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "checkout-api",
+      "namespace": "482910233714",
+      "labels": {
+        "cloud.googleapis.com/location": "europe-west1"
+      },
+      "annotations": {
+        "run.googleapis.com/ingress": "all"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "image": "europe-docker.pkg.dev/example/apps/checkout-api:2.0.1",
+              "resources": {
+                "limits": { "cpu": "1000m", "memory": "256Mi" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "status": {
+      "url": "https://checkout-api-klmno-ew.a.run.app",
+      "latestReadyRevisionName": "checkout-api-00011-aaaa",
+      "latestCreatedRevisionName": "checkout-api-00012-bbbb",
+      "traffic": [
+        {
+          "revisionName": "checkout-api-00011-aaaa",
+          "percent": 100,
+          "latestRevision": false
+        }
+      ],
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "False",
+          "reason": "HealthCheckContainerError",
+          "message": "The user-provided container failed to start and listen on the port.",
+          "lastTransitionTime": "2026-07-19T06:02:55Z"
+        },
+        { "type": "ConfigurationsReady", "status": "False", "reason": "HealthCheckContainerError" },
+        { "type": "RoutesReady", "status": "True" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "payments-api",
+      "namespace": "482910233714",
+      "labels": {
+        "cloud.googleapis.com/location": "europe-west1"
+      },
+      "annotations": {
+        "run.googleapis.com/ingress": "all"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "image": "europe-docker.pkg.dev/example/apps/payments-api:3.1.0"
+            }
+          ]
+        }
+      }
+    },
+    "status": {
+      "url": "https://payments-api-pqrst-ew.a.run.app",
+      "latestReadyRevisionName": "payments-api-00019-old0",
+      "latestCreatedRevisionName": "payments-api-00020-new0",
+      "traffic": [
+        {
+          "revisionName": "payments-api-00019-old0",
+          "percent": 80,
+          "latestRevision": false
+        },
+        {
+          "revisionName": "payments-api-00020-new0",
+          "percent": 20,
+          "tag": "canary",
+          "latestRevision": true,
+          "url": "https://canary---payments-api-pqrst-ew.a.run.app"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "Unknown",
+          "reason": "Deploying",
+          "message": "Deploying revision payments-api-00020-new0.",
+          "lastTransitionTime": "2026-07-19T07:15:00Z"
+        },
+        { "type": "ConfigurationsReady", "status": "Unknown" },
+        { "type": "RoutesReady", "status": "Unknown" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "legacy-frontend",
+      "namespace": "482910233714",
+      "labels": {
+        "cloud.googleapis.com/location": "asia-northeast1"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [{}]
+        }
+      }
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "Unknown"
+        }
+      ]
+    }
+  }
+]

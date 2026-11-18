@@ -1,0 +1,49 @@
+[
+  {
+    "name": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00007-tabc",
+    "service": "projects/dev-project/locations/europe-west1/services/orders-api",
+    "createTime": "2026-07-18T09:11:58Z",
+    "serviceAccount": "orders-api@example.iam.gserviceaccount.com",
+    "maxInstanceRequestConcurrency": 80,
+    "scaling": {
+      "minInstanceCount": 2,
+      "maxInstanceCount": 20
+    },
+    "containers": [
+      {
+        "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+        "resources": { "limits": { "cpu": "1000m", "memory": "512Mi" } }
+      }
+    ],
+    "conditions": [
+      {
+        "type": "Ready",
+        "state": "CONDITION_SUCCEEDED",
+        "lastTransitionTime": "2026-07-18T09:12:40Z"
+      },
+      { "type": "Active", "state": "CONDITION_SUCCEEDED" },
+      { "type": "ContainerHealthy", "state": "CONDITION_SUCCEEDED" }
+    ]
+  },
+  {
+    "name": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00006-sxyz",
+    "service": "projects/dev-project/locations/europe-west1/services/orders-api",
+    "createTime": "2026-07-10T14:05:22Z",
+    "maxInstanceRequestConcurrency": 80,
+    "containers": [
+      {
+        "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.1",
+        "resources": { "limits": { "cpu": "1000m", "memory": "512Mi" } }
+      }
+    ],
+    "conditions": [
+      {
+        "type": "Ready",
+        "state": "CONDITION_FAILED",
+        "revisionReason": "RETIRED",
+        "message": "The revision was retired.",
+        "lastTransitionTime": "2026-07-18T09:13:01Z"
+      }
+    ]
+  }
+]

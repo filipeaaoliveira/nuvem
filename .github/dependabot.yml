@@ -1,0 +1,18 @@
+# Weekly dependency PRs. Advisories are caught between updates by the
+# scheduled cargo-deny job in audit.yml; this keeps the update itself from
+# depending on someone remembering to run `cargo update`.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+    # Lockfile-only bumps stay quiet; manifest-range bumps are rare because
+    # the manifests use major-version ranges.
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

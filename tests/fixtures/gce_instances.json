@@ -1,0 +1,27 @@
+[
+  {
+    "id": "1001",
+    "name": "api-dev-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b",
+    "status": "RUNNING",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-b/machineTypes/e2-medium",
+    "networkInterfaces": [
+      {
+        "networkIP": "10.0.0.4",
+        "accessConfigs": [
+          { "natIP": "34.10.10.10" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1002",
+    "name": "worker-dev-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c",
+    "status": "TERMINATED",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/dev-project/zones/europe-west1-c/machineTypes/e2-small",
+    "networkInterfaces": [
+      { "networkIP": "10.0.0.5" }
+    ]
+  }
+]

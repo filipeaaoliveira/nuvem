@@ -1,0 +1,4 @@
+[
+  {"name": "postgres", "host": "", "type": "BUILT_IN"},
+  {"name": "app", "host": "%", "type": "BUILT_IN"}
+]

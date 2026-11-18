@@ -1,0 +1,37 @@
+[
+  {
+    "name": "projects/dev-project/subscriptions/orders-worker",
+    "topic": "projects/dev-project/topics/orders",
+    "ackDeadlineSeconds": 60,
+    "messageRetentionDuration": "604800s",
+    "state": "ACTIVE",
+    "labels": {
+      "team": "platform"
+    }
+  },
+  {
+    "name": "projects/dev-project/subscriptions/orders-audit",
+    "topic": "projects/dev-project/topics/orders",
+    "pushConfig": {
+      "pushEndpoint": "https://audit.example.com/pubsub"
+    },
+    "ackDeadlineSeconds": 10,
+    "state": "RESOURCE_ERROR",
+    "deadLetterPolicy": {
+      "deadLetterTopic": "projects/dev-project/topics/dead-letters",
+      "maxDeliveryAttempts": 5
+    }
+  },
+  {
+    "name": "projects/dev-project/subscriptions/back-orders-worker",
+    "topic": "projects/dev-project/topics/back-orders",
+    "pushConfig": {},
+    "ackDeadlineSeconds": 20
+  },
+  {
+    "name": "projects/dev-project/subscriptions/orphaned",
+    "topic": "_deleted-topic_",
+    "ackDeadlineSeconds": 10,
+    "state": "ACTIVE"
+  }
+]

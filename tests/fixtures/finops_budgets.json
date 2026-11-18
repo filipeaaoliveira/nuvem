@@ -1,0 +1,20 @@
+[
+  {
+    "displayName": "dev-project monthly ceiling",
+    "amount": {
+      "specifiedAmount": { "currencyCode": "USD", "units": "500", "nanos": 0 }
+    },
+    "thresholdRules": [
+      { "thresholdPercent": 0.5 },
+      { "thresholdPercent": 0.9 },
+      { "thresholdPercent": 1.0 }
+    ],
+    "budgetFilter": { "projects": ["projects/dev-project"] }
+  },
+  {
+    "displayName": "All projects, tracking last month",
+    "amount": { "lastPeriodAmount": {} },
+    "thresholdRules": [{ "thresholdPercent": 1.0 }],
+    "budgetFilter": {}
+  }
+]

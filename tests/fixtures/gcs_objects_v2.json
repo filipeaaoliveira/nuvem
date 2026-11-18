@@ -1,0 +1,141 @@
+[
+  {
+    "name": "photos/img1.jpg",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "2048",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "image/jpeg",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z"
+  },
+  {
+    "name": "photos/img2.jpg",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "4096",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "image/jpeg",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z"
+  },
+  {
+    "name": "docs/readme.md",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "512",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "text/markdown",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z"
+  },
+  {
+    "name": "reports/2024/mañana-测试.txt",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "1024",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "text/plain",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z"
+  },
+  {
+    "name": "top-level.txt",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "128",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "text/plain",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z"
+  },
+  {
+    "name": "name.bin",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "256",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "application/octet-stream",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z",
+    "kmsKey": "projects/dev-project/locations/us/keyRings/gcs-ring/cryptoKeys/gcs-key"
+  },
+  {
+    "name": "temp-hold.txt",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "64",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "text/plain",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z",
+    "temporaryHold": true
+  },
+  {
+    "name": "event-hold.txt",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "64",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "text/plain",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z",
+    "eventBasedHold": true
+  },
+  {
+    "name": "retained.txt",
+    "bucket": "projects/_/buckets/alpha-bucket",
+    "size": "64",
+    "storageClass": "STANDARD",
+    "generation": "1700000000000001",
+    "metageneration": "1",
+    "contentType": "text/plain",
+    "checksums": {
+      "crc32c": 0,
+      "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+    },
+    "createTime": "2024-03-01T10:00:00Z",
+    "updateTime": "2024-03-01T10:00:00Z",
+    "retentionExpireTime": "2025-01-01T00:00:00Z"
+  }
+]
