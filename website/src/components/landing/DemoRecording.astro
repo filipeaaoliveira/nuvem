@@ -5,8 +5,11 @@
 // - Nothing loads before the page does: the video has preload="none" and
 //   starts only after the load event, once it is on screen.
 // - It is muted and loops. It pauses while scrolled out of view.
-// - With prefers-reduced-motion it never starts by itself: the poster shows,
-//   and the control reads Play.
+// - It starts by itself only on screens wider than 48rem, without
+//   prefers-reduced-motion and without the browser's data saver. Otherwise
+//   the poster shows, the control reads Play, and nothing is downloaded until
+//   the reader presses it. On a phone the terminal text would be too small
+//   to read anyway; the caption links to the file to watch it full size.
 // - Without JavaScript the browser's own controls are shown instead.
 import { getImage } from 'astro:assets';
 import webm from '../../../../demo/out/nuvem-demo.webm?url';
@@ -56,6 +59,9 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 
 <script>
 	const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+	const narrow = matchMedia('(max-width: 48rem)');
+	const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+	const mayStartItself = () => !reducedMotion.matches && !narrow.matches && !saveData;
 
 	for (const figure of document.querySelectorAll<HTMLElement>('[data-recording]')) {
 		const video = figure.querySelector('video');
@@ -64,7 +70,8 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 		if (!video || !button || !label) continue;
 
 		let onScreen = false;
-		let stoppedByReader = false;
+		// What the reader asked for with the button: play, pause, or nothing yet.
+		let wanted: 'play' | 'pause' | null = null;
 
 		const show = () => {
 			const playing = !video.paused;
@@ -72,29 +79,21 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 			label.textContent = playing ? 'Pause' : 'Play';
 		};
 
-		const autoplay = () => {
-			if (!onScreen) {
-				video.pause();
-			} else if (!stoppedByReader && !reducedMotion.matches) {
-				video.play().catch(show);
-			}
+		const update = () => {
+			const play = onScreen && (wanted === 'play' || (wanted === null && mayStartItself()));
+			if (play) video.play().catch(show);
+			else video.pause();
 		};
 
 		video.addEventListener('play', show);
 		video.addEventListener('pause', show);
 		button.addEventListener('click', () => {
-			if (video.paused) {
-				stoppedByReader = false;
-				video.play().catch(show);
-			} else {
-				stoppedByReader = true;
-				video.pause();
-			}
+			wanted = video.paused ? 'play' : 'pause';
+			if (wanted === 'play') video.play().catch(show);
+			else video.pause();
 		});
-		reducedMotion.addEventListener('change', () => {
-			if (reducedMotion.matches) video.pause();
-			else autoplay();
-		});
+		reducedMotion.addEventListener('change', update);
+		narrow.addEventListener('change', update);
 
 		video.controls = false;
 		button.hidden = false;
@@ -104,7 +103,7 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 			new IntersectionObserver(
 				([entry]) => {
 					onScreen = entry.isIntersecting;
-					autoplay();
+					update();
 				},
 				{ threshold: 0.25 },
 			).observe(video);
