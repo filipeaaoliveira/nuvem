@@ -11,138 +11,81 @@ import DemoRecording from '../components/landing/DemoRecording.astro';
 import TerminalFrame from '../components/landing/TerminalFrame.astro';
 import { demoPath } from '../lib/demo-assets.mjs';
 import { docHref } from '../lib/doc-links.mjs';
-import { REPO_BLOB_URL, REPO_URL } from '../lib/docs-source.mjs';
+import { REPO_BLOB_URL } from '../lib/docs-source.mjs';
 
 const INSTALL = 'brew install filipeaaoliveira/tap/nuvem';
 const pageTitle = 'nuvem: a terminal UI for Google Cloud';
 const description =
-	'nuvem is a terminal UI for Google Cloud, in the spirit of k9s. Browse and operate your projects from the keyboard, with the gcloud configurations you already have.';
+	'nuvem is a terminal UI for Google Cloud in the spirit of k9s. Browse and operate your projects from the keyboard, with the gcloud configurations you already have.';
 
 const docs = {
 	install: await docHref('getting-started/install.md'),
-	requirements: await docHref('getting-started/install.md#requirements'),
 	release: await docHref('getting-started/install.md#download-a-release'),
 	source: await docHref('getting-started/install.md#build-from-source'),
 	firstRun: await docHref('getting-started/first-run.md'),
 	credentials: await docHref('troubleshooting/faq.md#does-nuvem-store-my-credentials'),
 };
 
-/** Each capability, introduced by the key or flag that reaches it. */
-const groups = [
+/**
+ * What someone deciding whether to install should know, each introduced by
+ * the key or flag that reaches it and linked to its docs page. The docs
+ * cover the rest.
+ */
+const capabilities = [
 	{
-		heading: 'Browse and operate',
-		items: [
-			{
-				key: ['g'],
-				name: 'Every service',
-				href: 'reference/services/overview.md',
-				text: 'Compute Engine, GKE, Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager, persistent disks, Pub/Sub, BigQuery, VPC and IAM. Each is a list with a detail pane.',
-			},
-			{
-				key: ['Space'],
-				name: 'Lifecycle actions',
-				href: 'guides/batch-actions.md',
-				text: 'Start, stop or restart Compute Engine and Cloud SQL instances, one row or every row you marked.',
-			},
-			{
-				key: ['c'],
-				name: 'gcloud configurations',
-				href: 'guides/switch-configurations.md',
-				text: 'Switch configuration, project, region or zone without leaving nuvem.',
-			},
-		],
+		reach: [{ key: 'g' }],
+		name: 'Services',
+		href: 'reference/services/overview.md',
+		text: 'Compute Engine, GKE, Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager, persistent disks, Pub/Sub topics and subscriptions, BigQuery, VPC networks and subnets, firewall rules, service accounts and IAM policy. Each is a sortable list; Compute Engine, GKE, Cloud SQL, Cloud Run, Cloud Storage, Secret Manager and BigQuery also open to more detail.',
 	},
 	{
-		heading: 'Logs, tunnels and costs',
-		items: [
-			{
-				key: ['l'],
-				name: 'Cloud Logging',
-				href: 'guides/cloud-logging.md',
-				text: 'Read, tail and search the project’s logs, or press L for the selected resource only.',
-			},
-			{
-				key: ['t'],
-				name: 'Tunnels',
-				href: 'guides/tunnels.md',
-				text: 'IAP, SSH and Cloud SQL Auth Proxy port forwards, started from a row and kept in one list.',
-			},
-			{
-				key: ['Ctrl', 'f'],
-				name: 'FinOps',
-				href: 'guides/finops.md',
-				text: 'Cost recommendations and budgets for the active project.',
-			},
-		],
+		reach: [{ key: '/' }],
+		name: 'Filter a list',
+		href: 'guides/filter-a-list.md',
+		text: 'Narrow a list by regex, fuzzy match, label or inverse match.',
 	},
 	{
-		heading: 'Move by keyboard',
-		items: [
-			{
-				key: ['/'],
-				name: 'Filter a list',
-				href: 'guides/filter-a-list.md',
-				text: 'Narrow any list by regex, fuzzy match, label or inverse match.',
-			},
-			{
-				key: [':'],
-				name: 'Command palette',
-				href: 'guides/command-palette.md',
-				text: 'Run any command by name, from any view.',
-			},
-			{
-				key: ['J'],
-				name: 'Related-resource jumps',
-				href: 'guides/related-resource-jumps.md',
-				text: 'Go from a resource to the resources it is attached to.',
-			},
-			{
-				key: ['?'],
-				name: 'Help and keys',
-				href: 'reference/keys.md',
-				text: 'Help lists the keys for the view you are in. The Keys page lists every key in every view.',
-			},
-		],
+		reach: [{ key: ':' }],
+		name: 'Command palette',
+		href: 'guides/command-palette.md',
+		text: 'Run a command by name instead of remembering its key.',
 	},
 	{
-		heading: 'Look without risk',
-		items: [
-			{
-				flag: '--demo',
-				name: 'Demo mode',
-				href: 'guides/demo-mode.md',
-				text: 'The whole interface on built-in sample data. No account and no credentials, and commands change nothing.',
-			},
-			{
-				flag: '--read-only',
-				name: 'Read-only mode',
-				href: 'guides/read-only-mode.md',
-				text: 'Refuses every command that changes a cloud resource.',
-			},
-		],
+		reach: [{ key: 'Space' }, { word: 'then' }, { key: ':' }],
+		name: 'Lifecycle actions',
+		href: 'guides/batch-actions.md',
+		text: 'Start, stop, reset, suspend or resume Compute Engine instances; start, stop, restart or fail over Cloud SQL. Mark rows with Space to act on several at once. A confirmation shows each gcloud command first.',
 	},
 	{
-		heading: 'Make it yours',
-		items: [
-			{
-				key: [','],
-				name: 'Plugins',
-				href: 'plugins/overview.md',
-				text: 'Your own gcloud commands, offered against the selected row behind the same confirmation.',
-			},
-			{
-				flag: 'config.toml',
-				name: 'Config file',
-				href: 'configuration/config-file.md',
-				text: 'Rebind keys, choose columns and sort order, pick a theme and colour the frame per project.',
-			},
-		],
+		reach: [{ key: 'l' }],
+		name: 'Cloud Logging',
+		href: 'guides/cloud-logging.md',
+		text: 'Read, tail and search the project’s logs. L opens them for the selected resource.',
+	},
+	{
+		reach: [{ key: 't' }],
+		name: 'Tunnels',
+		href: 'guides/tunnels.md',
+		text: 'Start IAP, SSH or Cloud SQL Auth Proxy port forwards from a Compute Engine or Cloud SQL row, and manage them from one list.',
+	},
+	{
+		reach: [{ flag: '--read-only' }],
+		name: 'Read-only mode',
+		href: 'guides/read-only-mode.md',
+		text: 'Refuses every command that changes a cloud resource.',
+	},
+	{
+		reach: [{ key: ',' }],
+		name: 'Plugins',
+		href: 'plugins/overview.md',
+		text: 'Add your own gcloud commands to a service. They run against the selected row, behind the same confirmation.',
 	},
 ];
 
-for (const group of groups) {
-	for (const item of group.items) item.href = await docHref(item.href);
-}
+for (const item of capabilities) item.href = await docHref(item.href);
+
+/** Spoken before the key column, so a screen reader hears "Key: g", not "g". */
+const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.key).length > 1 ? 'Keys:' : 'Key:');
 ---
 
 <StarlightPage
@@ -156,7 +99,7 @@ for (const group of groups) {
 		hero: {
 			title: 'A terminal UI for Google&nbsp;Cloud',
 			tagline:
-				'nuvem lets you browse and operate your Google Cloud projects from the keyboard, in the spirit of k9s. It works with the gcloud configurations you already have, and shows you the exact gcloud command before it changes anything.',
+				'In the spirit of k9s: browse and operate your Google Cloud projects from the keyboard. nuvem works with the gcloud configurations you already have, and shows you the exact gcloud command before it changes anything.',
 		},
 		head: [
 			{ tag: 'title', content: pageTitle },
@@ -170,8 +113,8 @@ for (const group of groups) {
 	<div class="nv-landing not-content">
 		<section class="get-it">
 			<InstallCommand id="install-top" command={INSTALL} caption="Homebrew, macOS and Linux" />
-			<p class="also">Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>. nuvem needs the <a href={docs.requirements}>gcloud CLI</a>, signed in.</p>
-			<p class="next">Then run <code>nuvem --demo</code> to try it on built-in sample data, with no Google Cloud account. <a href={docs.firstRun}>First run</a> shows how to start it on your own project.</p>
+			<p class="also">Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
+			<p class="next">Try it first with <code>nuvem --demo</code>: built-in sample data, no Google Cloud account. On your own projects nuvem needs the gcloud CLI, signed in; <a href={docs.firstRun}>First run</a> shows how.</p>
 		</section>
 
 		<DemoRecording
@@ -180,48 +123,38 @@ for (const group of groups) {
 
 		<section aria-labelledby="what">
 			<h2 id="what">What you can do with it</h2>
-			<div class="groups">
+			<ul class="keyed">
 				{
-					groups.map((group) => (
-						<div class="group">
-							<h3>{group.heading}</h3>
-							<ul class="keyed">
-								{group.items.map((item) => (
-									<li>
-										<span class="reach">
-											{item.key ? (
-												item.key.map((k, i) => (
-													<>
-														{i > 0 && <span class="plus">-</span>}
-														<kbd>{k}</kbd>
-													</>
-												))
-											) : (
-												<code>{item.flag}</code>
-											)}
-										</span>
-										<span class="body">
-											<a href={item.href}>{item.name}</a>
-											<span class="text">{item.text}</span>
-										</span>
-									</li>
-								))}
-							</ul>
-						</div>
+					capabilities.map((item) => (
+						<li>
+							<span class="reach">
+								<span class="sr-only">{reachLabel(item.reach)} </span>
+								{item.reach.map((r) =>
+									r.key ? <kbd>{r.key}</kbd> : r.flag ? <code>{r.flag}</code> : <span class="word"> {r.word} </span>,
+								)}
+							</span>
+							<span class="body">
+								<a href={item.href}>{item.name}</a>
+								<span class="text">{item.text}</span>
+							</span>
+						</li>
 					))
 				}
-			</div>
+			</ul>
+			<p class="rest">Configurations, FinOps, related-resource jumps, themes and every key are in the <a href="/docs/">documentation</a>.</p>
 			<TerminalFrame
 				id="palette-frame"
 				file={demoPath('frame')}
-				caption="The command palette, as nuvem draws it: press : in any view"
+				focus="commands"
 				description="nuvem's command palette open over the GCE instances list. It offers commands for the selected instance: stop, reset, suspend, SSH, start a tunnel, copy its fields and open its logs."
-			/>
+			>
+				The command palette, as nuvem draws it. Open it with <kbd>:</kbd>
+			</TerminalFrame>
 		</section>
 
 		<section aria-labelledby="how">
 			<h2 id="how">How it works</h2>
-			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. BigQuery is read through <code>bq</code>. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
+			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. A few reads, such as BigQuery, budgets and label filters, run the <code>bq</code> or <code>gcloud</code> command instead. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
 			<p>Everything that changes something, from starting an instance to running a plugin, goes through the <code>gcloud</code> CLI you already have, after a confirmation that shows the exact command.</p>
 			<p>More in the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
 		</section>
@@ -229,7 +162,7 @@ for (const group of groups) {
 		<section aria-labelledby="install">
 			<h2 id="install">Install</h2>
 			<InstallCommand id="install-bottom" command={INSTALL} caption="Homebrew, macOS and Linux" />
-			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page. The source is on <a href={REPO_URL}>GitHub</a>.</p>
+			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page.</p>
 		</section>
 	</div>
 </StarlightPage>
@@ -238,7 +171,7 @@ for (const group of groups) {
 	/* The hero is Starlight's; here it hangs from the page's one left edge. */
 	main:has(.nv-landing) .hero {
 		display: block;
-		padding-block: var(--nv-space-6) var(--nv-space-4);
+		padding-block: var(--nv-space-5) var(--nv-space-3);
 	}
 
 	main:has(.nv-landing) .hero .stack {
@@ -248,7 +181,7 @@ for (const group of groups) {
 
 	main:has(.nv-landing) .hero .copy {
 		align-items: flex-start;
-		gap: var(--nv-space-4);
+		gap: var(--nv-space-3);
 	}
 
 	main:has(.nv-landing) .hero .copy > * {
@@ -312,8 +245,8 @@ for (const group of groups) {
 	/* Install, alternatives and the first-run step, then the recording. */
 	.get-it {
 		display: grid;
-		gap: var(--nv-space-3);
-		margin-bottom: var(--nv-space-5);
+		gap: var(--nv-space-2);
+		margin-bottom: var(--nv-space-4);
 	}
 
 	.also,
@@ -346,32 +279,13 @@ for (const group of groups) {
 		margin-top: var(--nv-space-4);
 	}
 
-	/* What you can do: each capability, reached by its key or flag. */
-	.groups {
-		margin-bottom: var(--nv-space-7);
-		column-gap: var(--nv-space-7);
-	}
-
-	.group {
-		break-inside: avoid;
-		padding-bottom: var(--nv-space-6);
-	}
-
-	@media (min-width: 64rem) {
-		.groups {
-			columns: 2;
-		}
-	}
-
-	h3 {
-		margin: 0 0 var(--nv-space-2);
-		color: var(--nv-text);
-		font-size: var(--nv-text-h4);
-		font-weight: 650;
-		line-height: var(--nv-leading-tight);
-	}
-
+	/* What you can do: each capability, reached by its key or flag. The
+	   key column is as wide as its widest entry, so longer flags or larger
+	   text spacing widen it instead of overflowing. */
 	.keyed {
+		display: grid;
+		grid-template-columns: max-content minmax(0, 1fr);
+		column-gap: var(--nv-space-4);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -379,19 +293,46 @@ for (const group of groups) {
 
 	.keyed li {
 		display: grid;
-		grid-template-columns: 6.5rem 1fr;
-		gap: var(--nv-space-4);
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
 		padding-block: var(--nv-space-3);
 		border-bottom: 1px solid var(--nv-rule);
 	}
 
+	@media (min-width: 64rem) {
+		.keyed {
+			grid-template-columns: max-content minmax(0, 1fr) var(--nv-space-5) max-content minmax(0, 1fr);
+			column-gap: var(--nv-space-4);
+		}
+
+		.keyed li:nth-child(odd) {
+			grid-column: 1 / span 2;
+		}
+
+		.keyed li:nth-child(even) {
+			grid-column: 4 / span 2;
+		}
+	}
+
+	.nv-landing .rest {
+		margin-top: var(--nv-space-4);
+		margin-bottom: var(--nv-space-6);
+	}
+
 	.reach {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.2em;
+		gap: 0.25em;
 		color: var(--nv-text);
 		font-family: var(--nv-font-mono);
 		font-size: var(--nv-text-body-sm);
+	}
+
+	.reach .word {
+		color: var(--nv-text-muted);
+		font-family: var(--nv-font-sans);
+		font-size: var(--nv-text-small);
 	}
 
 	.reach code {
@@ -419,6 +360,7 @@ for (const group of groups) {
 
 	.body {
 		display: grid;
+		align-content: start;
 		gap: var(--nv-space-1);
 	}
 
@@ -434,8 +376,12 @@ for (const group of groups) {
 	}
 
 	@media (max-width: 30rem) {
+		.keyed {
+			display: block;
+		}
+
 		.keyed li {
-			grid-template-columns: 1fr;
+			display: grid;
 			gap: var(--nv-space-2);
 		}
 	}
