@@ -38,7 +38,7 @@
     },
     {
       "scope": ["constant.numeric", "constant.language", "constant.character", "support.constant"],
-      "settings": { "foreground": "#e2625e" }
+      "settings": { "foreground": "#f58e84" }
     },
     {
       "scope": ["variable", "variable.parameter", "variable.other"],
@@ -54,7 +54,7 @@
     },
     {
       "scope": ["markup.deleted"],
-      "settings": { "foreground": "#e2625e" }
+      "settings": { "foreground": "#f58e84" }
     },
     {
       "scope": ["markup.inserted"],

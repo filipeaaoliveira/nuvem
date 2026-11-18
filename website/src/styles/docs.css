@@ -330,6 +330,11 @@ mobile-starlight-toc nav {
 	overflow-wrap: anywhere;
 }
 
+/* Short spans (flags, keys, field names) stay on one line; long paths may wrap. */
+.sl-markdown-content code.nv-nowrap {
+	white-space: nowrap;
+}
+
 /* Tables: rules, not stripes. (Schibsted's tabular figures also widen
    commas, so tnum is left off running text in cells.) */
 .sl-markdown-content table:not(:where(.not-content *)) {
@@ -478,4 +483,14 @@ mobile-starlight-toc a[aria-current='true']:hover,
 mobile-starlight-toc a[aria-current='true']:focus {
 	background-color: transparent;
 	color: var(--nv-naples);
+}
+
+/* Plate captions sit at the left edge, whether the plate is a file or a shell. */
+.expressive-code .frame.is-terminal .header {
+	justify-content: flex-start;
+	padding-inline: 1rem;
+}
+
+.expressive-code .frame.is-terminal .header .title {
+	text-align: start;
 }

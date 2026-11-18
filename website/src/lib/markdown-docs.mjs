@@ -36,6 +36,12 @@ export default function docsMarkdown({ fileURL }) {
 		},
 		link: relink,
 		definition: relink,
+		// Short code spans such as `--config` must not break at a hyphen.
+		inlineCode(node, ctx) {
+			if (node.value.length <= 32 && !/\s/.test(node.value)) {
+				ctx.setProperty(node, 'data', { hProperties: { className: ['nv-nowrap'] } });
+			}
+		},
 	};
 }
 
