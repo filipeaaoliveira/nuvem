@@ -42,6 +42,10 @@
 	--nv-text-h3: 1.3125rem; /* 21px */
 	--nv-text-h2: 1.625rem; /* 26px */
 	--nv-text-h1: clamp(2rem, 1.4rem + 2.4vw, 2.625rem); /* 32px to 42px */
+	--nv-text-body-sm: 0.9375rem; /* 15px: table cells, list detail, key caps */
+	--nv-text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem); /* 17px to 20px: the home page's pitch */
+	--nv-text-display: clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem); /* 34px to 56px: the home page's title */
+	--nv-text-command: clamp(0.8125rem, 0.75rem + 0.4vw, 1rem); /* 13px to 16px: the home page's install command */
 	--nv-leading-body: 1.65;
 	--nv-leading-tight: 1.2;
 	--nv-measure: 38rem; /* about 70 characters of body text */

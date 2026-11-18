@@ -45,6 +45,17 @@ const groups = [
 				text: 'Start, stop or restart Compute Engine and Cloud SQL instances, one row or every row you marked.',
 			},
 			{
+				key: ['c'],
+				name: 'gcloud configurations',
+				href: 'guides/switch-configurations.md',
+				text: 'Switch configuration, project, region or zone without leaving nuvem.',
+			},
+		],
+	},
+	{
+		heading: 'Logs, tunnels and costs',
+		items: [
+			{
 				key: ['l'],
 				name: 'Cloud Logging',
 				href: 'guides/cloud-logging.md',
@@ -55,12 +66,6 @@ const groups = [
 				name: 'Tunnels',
 				href: 'guides/tunnels.md',
 				text: 'IAP, SSH and Cloud SQL Auth Proxy port forwards, started from a row and kept in one list.',
-			},
-			{
-				key: ['c'],
-				name: 'gcloud configurations',
-				href: 'guides/switch-configurations.md',
-				text: 'Switch configuration, project, region or zone without leaving nuvem.',
 			},
 			{
 				key: ['Ctrl', 'f'],
@@ -93,9 +98,9 @@ const groups = [
 			},
 			{
 				key: ['?'],
-				name: 'Keys',
+				name: 'Help and keys',
 				href: 'reference/keys.md',
-				text: 'Help for the view you are in. The Keys page lists every key in every view.',
+				text: 'Help lists the keys for the view you are in. The Keys page lists every key in every view.',
 			},
 		],
 	},
@@ -151,7 +156,7 @@ for (const group of groups) {
 		hero: {
 			title: 'A terminal UI for Google&nbsp;Cloud',
 			tagline:
-				'nuvem lets you browse and operate Compute Engine, GKE, Cloud Run, Cloud SQL, Pub/Sub, IAM and more from the keyboard, in the spirit of k9s. It works with the gcloud configurations you already have, and shows you the exact gcloud command before it changes anything.',
+				'nuvem lets you browse and operate your Google Cloud projects from the keyboard, in the spirit of k9s. It works with the gcloud configurations you already have, and shows you the exact gcloud command before it changes anything.',
 		},
 		head: [
 			{ tag: 'title', content: pageTitle },
@@ -252,7 +257,7 @@ for (const group of groups) {
 
 	main:has(.nv-landing) .hero h1 {
 		color: var(--nv-naples);
-		font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem);
+		font-size: var(--nv-text-display);
 		font-weight: 700;
 		line-height: 1.08;
 		letter-spacing: -0.025em;
@@ -262,7 +267,7 @@ for (const group of groups) {
 	main:has(.nv-landing) .hero .tagline {
 		max-width: 44rem;
 		color: var(--nv-text);
-		font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+		font-size: var(--nv-text-lead);
 		line-height: 1.55;
 	}
 
@@ -314,7 +319,7 @@ for (const group of groups) {
 	.also,
 	.next {
 		color: var(--nv-text-muted);
-		font-size: 0.9375rem;
+		font-size: var(--nv-text-body-sm);
 	}
 
 	.next {
@@ -343,14 +348,18 @@ for (const group of groups) {
 
 	/* What you can do: each capability, reached by its key or flag. */
 	.groups {
-		display: grid;
-		gap: var(--nv-space-6) var(--nv-space-7);
 		margin-bottom: var(--nv-space-7);
+		column-gap: var(--nv-space-7);
+	}
+
+	.group {
+		break-inside: avoid;
+		padding-bottom: var(--nv-space-6);
 	}
 
 	@media (min-width: 64rem) {
 		.groups {
-			grid-template-columns: 1fr 1fr;
+			columns: 2;
 		}
 	}
 
@@ -370,7 +379,7 @@ for (const group of groups) {
 
 	.keyed li {
 		display: grid;
-		grid-template-columns: 7.5rem 1fr;
+		grid-template-columns: 6.5rem 1fr;
 		gap: var(--nv-space-4);
 		padding-block: var(--nv-space-3);
 		border-bottom: 1px solid var(--nv-rule);
@@ -379,18 +388,17 @@ for (const group of groups) {
 	.reach {
 		display: flex;
 		align-items: baseline;
-		gap: 0.15em;
-		padding-top: 0.1em;
-		color: var(--nv-text-muted);
+		gap: 0.2em;
+		color: var(--nv-text);
 		font-family: var(--nv-font-mono);
-		font-size: 0.8125rem;
+		font-size: var(--nv-text-body-sm);
 	}
 
 	.reach code {
 		padding: 0;
 		background: none;
-		font-size: 0.875rem;
-		color: var(--nv-text);
+		font-size: inherit;
+		color: inherit;
 	}
 
 	kbd {
@@ -403,8 +411,9 @@ for (const group of groups) {
 		background-color: var(--nv-plate-raised);
 		color: var(--nv-text);
 		font-family: var(--nv-font-mono);
-		font-size: 0.875rem;
-		line-height: 1.6;
+		font-size: var(--nv-text-body-sm);
+		font-weight: 650;
+		line-height: 1.5;
 		text-align: center;
 	}
 
@@ -420,7 +429,7 @@ for (const group of groups) {
 
 	.text {
 		color: var(--nv-text-muted);
-		font-size: 0.9375rem;
+		font-size: var(--nv-text-body-sm);
 		line-height: 1.55;
 	}
 

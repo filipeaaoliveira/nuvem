@@ -51,7 +51,7 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 		<source src={webm} type="video/webm" />
 		<source src={mp4} type="video/mp4" />
 	</video>
-	<figcaption id="recording-description">{description}</figcaption>
+	<figcaption><span id="recording-description">{description}</span> <a href={mp4}>Open it full size</a>.</figcaption>
 </figure>
 
 <script>
@@ -182,5 +182,16 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 		border-top: 1px solid var(--nv-rule);
 		color: var(--nv-text-muted);
 		font-size: var(--nv-text-small);
+	}
+
+	figcaption a {
+		color: var(--nv-coral);
+		text-decoration-line: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	figcaption a:hover {
+		text-decoration-thickness: 2px;
 	}
 </style>
