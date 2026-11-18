@@ -1115,11 +1115,12 @@ fn a_status_rendered_into_a_name_is_only_refused_when_the_status_has_a_space() {
         )]
     );
 
-    // "Unknown (provisioning)": refused, because of the space and the brackets.
+    // "Maintenance window", a status this build has no variant for: refused,
+    // because of the space.
     let mut app = app_with_context();
     let context = app.root.current_context().expect("context exists");
     let mut provisioning = instance("web-01");
-    provisioning.status = ResourceStatus::Unknown("provisioning".to_string());
+    provisioning.status = ResourceStatus::Unknown("MAINTENANCE_WINDOW".to_string());
     reduce(
         &mut app,
         &Action::EffectResult(EffectResult::ComputeInstancesLoaded {

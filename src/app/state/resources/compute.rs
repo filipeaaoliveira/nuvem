@@ -731,9 +731,7 @@ fn compare_instances(
 ) -> std::cmp::Ordering {
     let primary = match sort_field {
         ComputeInstanceSortField::Name => left.name.cmp(&right.name),
-        ComputeInstanceSortField::Status => {
-            format!("{:?}", left.status).cmp(&format!("{:?}", right.status))
-        }
+        ComputeInstanceSortField::Status => left.status.label().cmp(&right.status.label()),
         ComputeInstanceSortField::Zone => left.zone.cmp(&right.zone),
         ComputeInstanceSortField::MachineType => left.machine_type.cmp(&right.machine_type),
     };

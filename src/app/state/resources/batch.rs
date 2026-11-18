@@ -101,40 +101,18 @@ impl BatchAction {
     }
 }
 
-/// Renders a [`ResourceStatus`] the way the batch modal reports it, including
-/// the raw value of an unrecognised status. Lives next to the batch types so
-/// the state layer can pre-render the label a [`BatchRowRef`] carries.
-///
-/// Note this is deliberately *not* the compute overview's status label, which
-/// collapses every `Unknown(_)` to a bare "Unknown" for its status counts.
+/// Renders a [`ResourceStatus`] the way the batch modal reports it: exactly as
+/// the table's STATUS cell paints it, unrecognised values included, so a skip
+/// line in the modal can be matched back to the row it names. Lives next to the
+/// batch types so the state layer can pre-render the label a [`BatchRowRef`]
+/// carries.
 pub fn resource_status_label(status: &ResourceStatus) -> String {
-    match status {
-        ResourceStatus::Running => "Running".to_string(),
-        ResourceStatus::Stopped => "Stopped".to_string(),
-        ResourceStatus::Suspended => "Suspended".to_string(),
-        ResourceStatus::Pending => "Pending".to_string(),
-        ResourceStatus::Unknown(value) => format!("Unknown ({value})"),
-    }
+    nuvem_domain::gcp::text::sanitize_display_text(&status.label())
 }
 
-/// Renders a [`CloudSqlStatus`] the way the batch modal reports it, including
-/// the raw value of an unrecognised status — the Cloud SQL twin of
-/// [`resource_status_label`].
-///
-/// Note this is deliberately *not* the Cloud SQL overview's status label, which
-/// collapses every `Unknown(_)` to a bare "Unknown" for its status counts.
-/// Keeping the raw value here is what lets a skip line in the batch modal be
-/// matched back to the row the table displays.
+/// The Cloud SQL twin of [`resource_status_label`].
 pub fn cloud_sql_status_label(status: &CloudSqlStatus) -> String {
-    match status {
-        CloudSqlStatus::Runnable => "Runnable".to_string(),
-        CloudSqlStatus::Stopped => "Stopped".to_string(),
-        CloudSqlStatus::PendingCreate => "Pending create".to_string(),
-        CloudSqlStatus::Maintenance => "Maintenance".to_string(),
-        CloudSqlStatus::Failed => "Failed".to_string(),
-        CloudSqlStatus::Suspended => "Suspended".to_string(),
-        CloudSqlStatus::Unknown(value) => format!("Unknown ({value})"),
-    }
+    nuvem_domain::gcp::text::sanitize_display_text(&status.label())
 }
 
 /// A [`ResourceService`] whose rows can be targeted by a marked-row batch

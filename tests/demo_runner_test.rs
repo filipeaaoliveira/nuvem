@@ -813,7 +813,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                 &[
                     [
                         "legacy-unknown",
-                        "neutral|Unknown(\"MAINTENANCE_WINDOW\")",
+                        "neutral|Maintenance window",
                         "us-central1",
                         "missing|-",
                         "missing|-",
@@ -921,7 +921,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                 &[
                     [
                         "billing-worker",
-                        "warning|NotReady",
+                        "warning|Not ready",
                         "us-central1",
                         "https://billing-worker-fghij-uc.a.run.app",
                         "billing-worker-00003-qwer",
@@ -937,7 +937,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     ],
                     [
                         "legacy-frontend",
-                        "neutral|Unknown(\"Unknown\")",
+                        "neutral|Unknown",
                         "asia-northeast1",
                         "missing|-",
                         "missing|-",
@@ -1029,9 +1029,9 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
 
             // STATE and GENERATION are display labels rather than model words:
             // `2nd gen`, `Detach failed`, and — for the values the API added after
-            // this client — the raw `SUSPENDED` and `GEN_3` painted verbatim, not
-            // wrapped in the `Unrecognized(...)` spelling the model carries them
-            // in. `bare-function` is the row that reported neither an update time
+            // this client — `SUSPENDED` and `GEN_3` respelled as `Suspended` and
+            // `Gen 3`, not wrapped in the `Unrecognized(...)` spelling the model
+            // carries them in. `bare-function` is the row that reported neither an update time
             // nor a URL.
             ResourceServiceKind::CloudFunctions => assert_table(
                 kind,
@@ -1089,8 +1089,8 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     [
                         "quarantined-job",
                         "us-east1",
-                        "neutral|SUSPENDED",
-                        "GEN_3",
+                        "neutral|Suspended",
+                        "Gen 3",
                         "2026-07-30T13:20:00Z",
                         "missing|-",
                     ],
@@ -1109,9 +1109,9 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
             // and the pair with `being-built` is what separates waste from a disk
             // still being made. `regional-share` is regional, which is what keeps
             // LOCATION from meaning "zone". `bare-row` is the document that carried
-            // no location, no type and no recognisable status: its STATUS cell is
-            // empty text painted neutral, not the `Unrecognized("")` the model
-            // holds.
+            // no location, no type and no recognisable status: its STATUS cell
+            // says `Unknown`, painted neutral, rather than the `Unrecognized("")`
+            // the model holds or a blank that reads as nothing wrong.
             ResourceServiceKind::PersistentDisks => assert_table(
                 kind,
                 &session,
@@ -1119,7 +1119,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     "NAME", "LOCATION", "STATUS", "ORPHAN", "SIZE", "TYPE", "ATTACHED",
                 ],
                 &[
-                    ["bare-row", "", "neutral|", "", "0 GB", "", ""],
+                    ["bare-row", "", "neutral|Unknown", "", "0 GB", "", ""],
                     [
                         "being-built",
                         "europe-west1-c",

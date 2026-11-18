@@ -253,9 +253,9 @@ fn compare_functions(
         // arrow above it claims to have ordered. The API values would sort
         // `DETACH_FAILED` before `DETACHING` while the screen reads the other
         // way round, and `GEN_1`/`GEN_2` appear on screen nowhere at all.
-        CloudFunctionSortField::State => left.state.label().cmp(right.state.label()),
+        CloudFunctionSortField::State => left.state.label().cmp(&right.state.label()),
         CloudFunctionSortField::Generation => {
-            left.environment.label().cmp(right.environment.label())
+            left.environment.label().cmp(&right.environment.label())
         }
         // RFC 3339 with a `Z` offset sorts chronologically as text. An
         // unreported time is the empty string, so those rows group together

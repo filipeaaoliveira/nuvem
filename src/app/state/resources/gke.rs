@@ -468,7 +468,7 @@ fn compare_gke_clusters(
 ) -> std::cmp::Ordering {
     let primary = match sort_field {
         GkeSortField::Name => left.name.cmp(&right.name),
-        GkeSortField::Status => format!("{:?}", left.status).cmp(&format!("{:?}", right.status)),
+        GkeSortField::Status => left.status.label().cmp(&right.status.label()),
         GkeSortField::Location => left.location.cmp(&right.location),
         GkeSortField::Version => left
             .current_master_version

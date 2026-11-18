@@ -286,6 +286,8 @@ mod logging_initial_selection_test;
 mod logging_projection_test;
 #[path = "logging_read_order_test.rs"]
 mod logging_read_order_test;
+#[path = "status_label_rendering_test.rs"]
+mod status_label_rendering_test;
 
 #[path = "logging_service_test.rs"]
 mod logging_service_test;

@@ -79,8 +79,8 @@ fn compute_unknown_status_exposes_no_debug_shell() {
 fn compute_unknown_status_still_matches_label_and_raw_value() {
     let row = compute_row(ResourceStatus::Unknown("REPAIRING".into()));
     assert!(
-        Compute::matches_filter(&row, &compiled("unknown")),
-        "the display label must stay searchable"
+        Compute::matches_filter(&row, &compiled("^repairing$")),
+        "the display label, `Repairing`, must stay searchable as painted"
     );
     assert!(
         Compute::matches_filter(&row, &compiled("repairing")),

@@ -174,10 +174,10 @@ fn compute_wraps_its_action_and_projects_a_row_ref() {
 }
 
 #[test]
-fn compute_row_ref_status_label_renders_unknown_with_its_raw_value() {
+fn compute_row_ref_status_label_renders_unknown_as_the_table_does() {
     let row = instance("api", ResourceStatus::Unknown("FOO".to_string()));
     let row_ref = Compute::row_ref(&row, &ctx(), ComputeInstanceAction::Stop);
-    assert_eq!(row_ref.status_label, "Unknown (FOO)");
+    assert_eq!(row_ref.status_label, "Foo");
 }
 
 #[test]
@@ -745,22 +745,22 @@ fn cloud_sql_stale_and_clear_closes_an_open_single_row_confirmation() {
     );
 }
 
-/// The batch path renders an unrecognised Cloud SQL status with its raw value,
-/// the way the table shows it, so a skip line can be matched back to the row it
-/// came from. This is deliberately not the status-count bucketing label, which
-/// collapses every `Unknown(_)` to a bare "Unknown".
+/// The batch path renders an unrecognised Cloud SQL status with its value,
+/// spelled the way the table shows it, so a skip line can be matched back to
+/// the row it came from. This is deliberately not the status-count bucketing
+/// label, which collapses every `Unknown(_)` to a bare "Unknown".
 #[test]
-fn cloud_sql_row_ref_status_label_renders_unknown_with_its_raw_value() {
+fn cloud_sql_row_ref_status_label_renders_unknown_as_the_table_does() {
     let row = sql_instance(
         "orders",
         CloudSqlStatus::Unknown("MAINTENANCE_PENDING".to_string()),
         CloudSqlAvailability::Regional,
     );
     let row_ref = CloudSql::row_ref(&row, &ctx(), CloudSqlInstanceAction::Stop);
-    assert_eq!(row_ref.status_label, "Unknown (MAINTENANCE_PENDING)");
+    assert_eq!(row_ref.status_label, "Maintenance pending");
 }
 
-/// ...and the skip panel inherits that raw value, so `ineligible (...)` names
+/// ...and the skip panel inherits that label, so `ineligible (...)` names
 /// the same status the row displays.
 #[test]
 fn cloud_sql_skip_reason_keeps_the_raw_unknown_status() {
@@ -789,7 +789,7 @@ fn cloud_sql_skip_reason_keeps_the_raw_unknown_status() {
         skipped,
         vec![(
             "reports",
-            &SkipReason::Ineligible("Unknown (MAINTENANCE_PENDING)".to_string())
+            &SkipReason::Ineligible("Maintenance pending".to_string())
         )]
     );
 }

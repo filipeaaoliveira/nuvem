@@ -76,7 +76,11 @@ fn cloud_function_state_api_values_round_trip_and_labels_render() {
     }
     let raw = CloudFunctionState::Unrecognized("ODD_STATE".into());
     assert_eq!(raw.api_value(), "ODD_STATE");
-    assert_eq!(raw.label(), "ODD_STATE");
+    assert_eq!(
+        raw.label(),
+        "Odd state",
+        "an unrecognised state renders as a readable label, not as the constant"
+    );
 }
 
 #[test]
@@ -136,7 +140,7 @@ fn secret_version_state_labels_render() {
     assert_eq!(SecretVersionState::Enabled.label(), "Enabled");
     assert_eq!(SecretVersionState::Disabled.label(), "Disabled");
     assert_eq!(SecretVersionState::Destroyed.label(), "Destroyed");
-    assert_eq!(SecretVersionState::Unknown("RAW".into()).label(), "RAW");
+    assert_eq!(SecretVersionState::Unknown("RAW".into()).label(), "Raw");
 }
 
 #[test]
@@ -363,4 +367,115 @@ fn firewall_direction_labels_render_and_carry_the_unrecognised_verbatim() {
         FirewallDirection::from_api(Some("SIDEWAYS")),
         FirewallDirection::Unrecognized("SIDEWAYS".to_string())
     );
+}
+
+/// A value the API added after this build renders as a readable label in every
+/// status and state column, never as the Rust value that carries it.
+///
+/// Walks every enum whose `label()` paints a status or state cell. Each is
+/// handed a constant no build knows, and each must spell it the way the labels
+/// beside it are spelled. An empty value must not paint a blank cell either: a
+/// blank status reads as "nothing wrong".
+#[test]
+fn every_status_label_spells_an_unrecognised_value_readably() {
+    use nuvem_domain::gcp::resource::{
+        CloudRunServiceStatus, CloudSqlStatus, GkeClusterStatus, ResourceStatus,
+    };
+    let unknown = "MAINTENANCE_WINDOW";
+    let labels: [(&str, String, String); 9] = [
+        (
+            "ResourceStatus",
+            ResourceStatus::Unknown(unknown.into()).label().into_owned(),
+            ResourceStatus::Unknown(String::new()).label().into_owned(),
+        ),
+        (
+            "GkeClusterStatus",
+            GkeClusterStatus::Unknown(unknown.into())
+                .label()
+                .into_owned(),
+            GkeClusterStatus::Unknown(String::new())
+                .label()
+                .into_owned(),
+        ),
+        (
+            "CloudRunServiceStatus",
+            CloudRunServiceStatus::Unknown(unknown.into())
+                .label()
+                .into_owned(),
+            CloudRunServiceStatus::Unknown(String::new())
+                .label()
+                .into_owned(),
+        ),
+        (
+            "CloudSqlStatus",
+            CloudSqlStatus::Unknown(unknown.into()).label().into_owned(),
+            CloudSqlStatus::Unknown(String::new()).label().into_owned(),
+        ),
+        (
+            "CloudFunctionState",
+            CloudFunctionState::Unrecognized(unknown.into())
+                .label()
+                .into_owned(),
+            CloudFunctionState::Unrecognized(String::new())
+                .label()
+                .into_owned(),
+        ),
+        (
+            "CloudFunctionEnvironment",
+            CloudFunctionEnvironment::Unrecognized(unknown.into())
+                .label()
+                .into_owned(),
+            CloudFunctionEnvironment::Unrecognized(String::new())
+                .label()
+                .into_owned(),
+        ),
+        (
+            "DiskStatus",
+            DiskStatus::Unrecognized(unknown.into())
+                .label()
+                .into_owned(),
+            DiskStatus::Unrecognized(String::new()).label().into_owned(),
+        ),
+        (
+            "PubSubSubscriptionState",
+            PubSubSubscriptionState::Unrecognized(unknown.into())
+                .label()
+                .into_owned(),
+            PubSubSubscriptionState::Unrecognized(String::new())
+                .label()
+                .into_owned(),
+        ),
+        (
+            "SecretVersionState",
+            SecretVersionState::Unknown(unknown.into())
+                .label()
+                .into_owned(),
+            SecretVersionState::Unknown(String::new())
+                .label()
+                .into_owned(),
+        ),
+    ];
+    for (name, label, empty) in labels {
+        assert_eq!(label, "Maintenance window", "{name}");
+        assert_eq!(empty, "Unknown", "{name}: an empty value");
+    }
+}
+
+#[test]
+fn readable_api_value_respells_constants_and_keeps_prose() {
+    use nuvem_domain::gcp::resource::readable_api_value;
+    for (raw, expected) in [
+        ("MAINTENANCE_WINDOW", "Maintenance window"),
+        ("PROVISIONING", "Provisioning"),
+        ("GEN_3", "Gen 3"),
+        ("DETACH-FAILED", "Detach failed"),
+        ("  RUNNING  ", "Running"),
+        ("", "Unknown"),
+        ("   ", "Unknown"),
+        // Already prose: the API's own words, kept as they came.
+        ("Unknown", "Unknown"),
+        ("Waiting for quota", "Waiting for quota"),
+    ] {
+        assert_eq!(readable_api_value(raw), expected, "{raw:?}");
+    }
 }

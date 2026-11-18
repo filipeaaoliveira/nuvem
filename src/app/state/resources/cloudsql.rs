@@ -657,9 +657,7 @@ fn compare_cloud_sql_instances(
         CloudSqlInstanceSortField::Availability => {
             format!("{:?}", left.availability).cmp(&format!("{:?}", right.availability))
         }
-        CloudSqlInstanceSortField::Status => {
-            format!("{:?}", left.status).cmp(&format!("{:?}", right.status))
-        }
+        CloudSqlInstanceSortField::Status => left.status.label().cmp(&right.status.label()),
     };
     let ordering = primary
         .then_with(|| left.name.cmp(&right.name))
