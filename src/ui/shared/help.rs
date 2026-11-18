@@ -194,6 +194,11 @@ fn binding_line(key: String, label: &'static str) -> Line<'static> {
 /// position/overflow indicator row, and a control-hint row.
 pub fn render_help_overlay(frame: &mut Frame<'_>, model: &HelpModel, scroll: u16) {
     let area = crate::ui::centered_rect(90, 90, frame.area());
+    render_help_overlay_in(frame, area, model, scroll);
+}
+
+/// [`render_help_overlay`] into a given `area`, which it clears first.
+pub fn render_help_overlay_in(frame: &mut Frame<'_>, area: Rect, model: &HelpModel, scroll: u16) {
     frame.render_widget(Clear, area);
 
     let block = modal_block("help");

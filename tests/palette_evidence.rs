@@ -768,16 +768,10 @@ carrying the same trailing `_` cursor every other filter in the app uses.",
 
 /// The palette's box stays inside the terminal at every height the app draws on.
 ///
-/// The box grew by the query row's height so that row is paid for out of
-/// chrome rather than out of a command. That makes the box's height a function
-/// of two things — `centered_rect`'s percentage and `PALETTE_QUERY_ROWS` — and
-/// this is what keeps their sum honest.
-///
-/// It replaces a `y` clamp that looked like the guarantee and was not one: the
-/// mutation gate deleted it and no test noticed, because `centered_rect` always
-/// leaves at least as much room below the box as above it, so one extra row can
-/// never reach the bottom. The property is worth pinning; the dead clamp was
-/// not worth keeping.
+/// The box takes the full height of the body it clears, between the header
+/// and the status line, so its height is a function of the frame's layout
+/// rather than a percentage of the terminal. This is what keeps that honest at
+/// every height, including the short ones where the body is a row or two.
 #[tokio::test]
 async fn the_palette_box_never_escapes_the_frame() {
     let mut session = RuntimeSession::new_for_test(AppState::new());
