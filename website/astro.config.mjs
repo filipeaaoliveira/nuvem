@@ -1,13 +1,17 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import { REPO_URL, buildSidebar, firstPageUrl, hasDocsIndex } from './src/lib/docs-source.mjs';
+import { REPO_ROOT, REPO_URL, buildSidebar, firstPageUrl, hasDocsIndex } from './src/lib/docs-source.mjs';
 import { satteri } from '@astrojs/markdown-satteri';
 import docsMarkdown from './src/lib/markdown-docs.mjs';
 import { pluginCodePlates } from './src/lib/code-plates.mjs';
 import { docLinksIntegration } from './src/lib/doc-links.mjs';
 import { securityHeadersIntegration } from './src/lib/security-headers.mjs';
+import { demoAssetsIntegration } from './src/lib/demo-assets.mjs';
 import codeTheme from './src/styles/code-theme.json' with { type: 'json' };
+
+// Pages bundled for rendering read the repository root from here; see docs-source.mjs.
+process.env.NUVEM_REPO_ROOT = REPO_ROOT;
 
 const sidebar = buildSidebar();
 
@@ -20,6 +24,7 @@ export default defineConfig({
 	},
 	integrations: [
 		docLinksIntegration(),
+		demoAssetsIntegration(),
 		starlight({
 			title: 'nuvem',
 			description: 'A terminal UI for Google Cloud.',

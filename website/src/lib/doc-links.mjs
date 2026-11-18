@@ -75,6 +75,21 @@ function decodeEntities(text) {
 	return text.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
+/**
+ * Site URL for a link to a docs page written relative to `docs/`, such as
+ * `getting-started/install.md#build-from-source`, for pages outside the docs
+ * (the home page) that link into them. Throws when the page or its anchor
+ * does not exist, so a broken link fails the build.
+ */
+export async function docHref(url) {
+	const link = resolveLink(url, resolve(DOCS_DIR, 'index.md'));
+	if (!link.page || !existsSync(link.page)) throw new Error(`docs link "${url}" does not point at a published docs page`);
+	if (link.anchor && !(await anchorsOf(link.page)).has(link.anchor)) {
+		throw new Error(`docs link "${url}": docs/${docsRelative(link.page)} has no #${link.anchor}`);
+	}
+	return link.href;
+}
+
 /** Link and definition URLs in a Markdown body. */
 async function linksIn(file) {
 	const urls = [];
