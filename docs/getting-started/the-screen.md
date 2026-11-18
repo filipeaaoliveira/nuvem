@@ -13,7 +13,7 @@ Every view draws inside the same frame:
 | Breadcrumb | Where you are: the workspace, then the service, then the open resource. |
 | Body | The workspace itself: a list, a detail pane, a dashboard. |
 | Status line | The last operation, its status marker, and the time of the last refresh. Warnings and errors appear here. |
-| Footer | The keys that do something in the current view. Press `?` for all of them. |
+| Footer | The keys that do something in the current view, most useful first. On a narrow terminal the least useful ones are left out whole; a key is never shown without its label. Press `?` for all of them. |
 
 ## Status markers
 

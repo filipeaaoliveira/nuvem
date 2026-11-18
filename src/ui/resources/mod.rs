@@ -846,16 +846,17 @@ fn render_resource_table(
         inner.width.saturating_sub(reserved),
         projection.wide_columns,
     );
-    let tools = table_tools_line(projection, model, plan.hidden_count, plan.overflow);
     // Fitted, not handed to the widget whole: a bare `Paragraph` is clipped at
-    // the pane edge with nothing to say it was, so the operator cannot tell a
-    // complete line from one that stops mid-hint. The wide layout is
-    // where it bites hardest — the preview pane takes 45% of the content pane,
-    // so this row has less room at 132 columns than at 99.
-    frame.render_widget(
-        Paragraph::new(fit_text(&tools, usize::from(areas[0].width))),
-        areas[0],
+    // the pane edge with nothing to say it was, and runs straight into the
+    // border of the pane beside it. See `fitted_table_tools_line`.
+    let tools = fitted_table_tools_line(
+        projection,
+        model,
+        plan.hidden_count,
+        plan.overflow,
+        usize::from(areas[0].width),
     );
+    frame.render_widget(Paragraph::new(tools), areas[0]);
     if let Some(message) = banner {
         let banner_line = error_state(format!("Next page failed: {message} (press r to retry)"));
         frame.render_widget(Paragraph::new(banner_line), areas[1]);
@@ -864,18 +865,40 @@ fn render_resource_table(
     render_table(frame, inner, model, &plan);
 }
 
-fn table_tools_line(
+/// One part of the tools line, with how much it matters when the line has to
+/// lose something. Lower is kept longer.
+struct ToolsSegment {
+    text: String,
+    /// A key hint (`w wide`) rather than a fact about the table.
+    hint: bool,
+    priority: u8,
+}
+
+fn table_tools_segments(
     projection: &ResourceWorkspaceProjection<'_>,
     model: &TableModel,
     hidden_count: usize,
     overflow: bool,
-) -> String {
+) -> Vec<ToolsSegment> {
+    let fact = |text: String, priority: u8| ToolsSegment {
+        text,
+        hint: false,
+        priority,
+    };
+    let hint = |text: &str, priority: u8| ToolsSegment {
+        text: text.to_string(),
+        hint: true,
+        priority,
+    };
     if projection.filter.active {
-        return format!(
-            "Filter: {}_{}",
-            projection.filter.draft,
-            draft_filter_mode_suffix(projection)
-        );
+        return vec![fact(
+            format!(
+                "Filter: {}_{}",
+                projection.filter.draft,
+                draft_filter_mode_suffix(projection)
+            ),
+            0,
+        )];
     }
     let filter = filter_label(projection);
     let suffix = applied_filter_mode_suffix(projection);
@@ -883,37 +906,123 @@ fn table_tools_line(
         SortDirection::Ascending => '▲',
         SortDirection::Descending => '▼',
     };
+    let rows = fact(
+        format!("Rows: {}/{}", model.counts.filtered, model.counts.total),
+        1,
+    );
     // A table whose sort points at [`NO_COLUMN`] has neither a sorted column
     // nor a column cursor (the BigQuery tables drill-down is the one such
     // resource table today). It gets neither the sort segment nor the
     // ←/→ and `s` hints: the arrow would claim an ascending order over rows
     // that arrive in listing order, and the hints would advertise two controls
     // this table does not offer.
-    let mut line = if model.sort.column == NO_COLUMN {
-        format!(
-            "Filter: {filter}{suffix}   Rows: {}/{}   w wide",
-            model.counts.filtered, model.counts.total
-        )
+    let mut segments = if model.sort.column == NO_COLUMN {
+        vec![
+            fact(format!("Filter: {filter}{suffix}"), 0),
+            rows,
+            hint("w wide", 4),
+        ]
     } else {
-        format!(
-            "Filter: {filter}{suffix}   Sort: {} {arrow}   Rows: {}/{}   ←/→ col · s sort · w wide",
-            projection.sort_label, model.counts.filtered, model.counts.total
-        )
+        vec![
+            fact(format!("Filter: {filter}{suffix}"), 0),
+            fact(format!("Sort: {} {arrow}", projection.sort_label), 3),
+            rows,
+            hint("←/→ col", 6),
+            hint("s sort", 5),
+            hint("w wide", 4),
+        ]
     };
     if projection.wide_columns {
-        line.push_str("   [WIDE]");
+        segments.push(fact("[WIDE]".to_string(), 2));
     }
     if !projection.wide_columns && hidden_count > 0 {
-        line.push_str(&format!("   +{hidden_count} cols (w)"));
+        segments.push(fact(format!("+{hidden_count} cols (w)"), 2));
     }
     if projection.wide_columns && overflow {
-        line.push_str("   ▸ more");
+        segments.push(fact("▸ more".to_string(), 2));
     }
     if let Some(page_hint) = page_indicator(projection) {
-        line.push_str("   ");
-        line.push_str(&page_hint);
+        segments.push(fact(page_hint, 2));
+    }
+    segments
+}
+
+/// Joins segments the way the tools line spells them: facts three spaces
+/// apart, and a run of key hints joined by ` · `.
+fn join_tools_segments<'a>(segments: impl IntoIterator<Item = &'a ToolsSegment>) -> String {
+    let mut line = String::new();
+    let mut previous_was_hint = false;
+    for segment in segments {
+        if !line.is_empty() {
+            line.push_str(if previous_was_hint && segment.hint {
+                " · "
+            } else {
+                "   "
+            });
+        }
+        line.push_str(&segment.text);
+        previous_was_hint = segment.hint;
     }
     line
+}
+
+/// The whole tools line, as it reads with room for all of it.
+#[cfg(test)]
+fn table_tools_line(
+    projection: &ResourceWorkspaceProjection<'_>,
+    model: &TableModel,
+    hidden_count: usize,
+    overflow: bool,
+) -> String {
+    join_tools_segments(&table_tools_segments(
+        projection,
+        model,
+        hidden_count,
+        overflow,
+    ))
+}
+
+/// The tools line fitted to `width` columns.
+///
+/// One column is kept clear at the right, so the line never runs into the
+/// border title of a pane beside it (`w wide┌Preview`). Within that, whole
+/// segments are dropped, least important first — the key hints before the
+/// sort, the sort before the row count and the filter — so a hint is never
+/// cut to `←/→ c...`. Only when the filter and the row count alone are too
+/// wide is the line cut, and then it ends in the overflow marker so a cut line
+/// cannot pass for a complete one.
+fn fitted_table_tools_line(
+    projection: &ResourceWorkspaceProjection<'_>,
+    model: &TableModel,
+    hidden_count: usize,
+    overflow: bool,
+    width: usize,
+) -> String {
+    let budget = width.saturating_sub(1);
+    let segments = table_tools_segments(projection, model, hidden_count, overflow);
+    let mut kept: Vec<bool> = vec![true; segments.len()];
+    loop {
+        let line = join_tools_segments(
+            segments
+                .iter()
+                .zip(&kept)
+                .filter(|(_, keep)| **keep)
+                .map(|(segment, _)| segment),
+        );
+        if usize::from(display_width(&line)) <= budget {
+            return line;
+        }
+        let victim = segments
+            .iter()
+            .enumerate()
+            .filter(|(index, segment)| kept[*index] && segment.priority > 1)
+            .max_by_key(|(index, segment)| (segment.priority, *index))
+            .map(|(index, _)| index);
+        match victim {
+            Some(index) => kept[index] = false,
+            None => return fit_text(&line, budget),
+        }
+    }
 }
 
 /// Renders the applied-filter label for the table tools line, appending a

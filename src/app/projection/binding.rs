@@ -249,9 +249,12 @@ pub const RES_OPEN_REVISION: Binding = Binding {
     label: "Open revision",
     rebindable: None,
 };
+/// `Esc` and `Alt-←` both go back in history wherever this binding is listed,
+/// so they are one entry. Listed as two, the help overlay and the footer read
+/// `Esc Back  Alt-← Back`, which looks like two different things.
 pub const RES_ESC_BACK: Binding = Binding {
-    triggers: &[KeyTrigger::Esc],
-    key: "Esc",
+    triggers: &[KeyTrigger::Esc, KeyTrigger::AltLeft],
+    key: "Esc/Alt-←",
     label: "Back",
     rebindable: None,
 };
@@ -434,9 +437,11 @@ pub const RES_SCROLL_DETAIL_FIELD: Binding = Binding {
     label: "Scroll / release field",
     rebindable: None,
 };
+/// `q`, `Esc` and `Alt-←` all go back from a detail pane, so they are one
+/// entry, for the reason [`RES_ESC_BACK`] gives.
 pub const DETAIL_BACK: Binding = Binding {
-    triggers: &[KeyTrigger::Char('q'), KeyTrigger::Esc],
-    key: "q/Esc",
+    triggers: &[KeyTrigger::Char('q'), KeyTrigger::Esc, KeyTrigger::AltLeft],
+    key: "q/Esc/Alt-←",
     label: "Back",
     // `q` here is the rebindable quit key: in resource detail, quit routes to
     // Back (see `RebindableAction::to_app_action`), so its displayed key must
@@ -1020,7 +1025,6 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
             NAV_TUNNELS,
             NAV_FINOPS,
             RES_ESC_BACK,
-            HIST_BACK,
             HIST_FORWARD,
         ],
         // Derived from the list's rather than copied beside it: a copied list
@@ -1069,11 +1073,13 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
                 .into_iter()
                 .filter(|binding| ![RES_SORT, RES_COLUMN].contains(binding))
                 .filter(|binding| !(leaf && *binding == RES_OPEN))
-                .map(|binding| {
+                // `Esc` leaves the drill-down here, so history keeps only
+                // `Alt-←`.
+                .flat_map(|binding| {
                     if binding == RES_ESC_BACK {
-                        RES_LEAVE_DRILLDOWN
+                        vec![RES_LEAVE_DRILLDOWN, HIST_BACK]
                     } else {
-                        binding
+                        vec![binding]
                     }
                 })
                 .collect()
@@ -1098,7 +1104,6 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
             NAV_TUNNELS,
             NAV_FINOPS,
             RES_ESC_BACK,
-            HIST_BACK,
             HIST_FORWARD,
         ],
         HelpContext::ResourceDetail => vec![
@@ -1128,7 +1133,6 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
             NAV_LOGGING,
             NAV_TUNNELS,
             NAV_FINOPS,
-            HIST_BACK,
             HIST_FORWARD,
         ],
         HelpContext::ResourceFilter => vec![
@@ -1220,7 +1224,6 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
             NAV_TUNNELS,
             NAV_FINOPS,
             RES_ESC_BACK,
-            HIST_BACK,
             HIST_FORWARD,
         ],
         HelpContext::LoggingDetail => vec![
@@ -1274,7 +1277,6 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
             NAV_TUNNELS,
             NAV_FINOPS,
             RES_ESC_BACK,
-            HIST_BACK,
             HIST_FORWARD,
         ],
         // No list keys: v1 is a read-only summary with nothing to select and
@@ -1294,7 +1296,6 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
             NAV_TUNNELS,
             NAV_FINOPS,
             RES_ESC_BACK,
-            HIST_BACK,
             HIST_FORWARD,
         ],
         HelpContext::CommandPalette => vec![
@@ -1490,6 +1491,8 @@ fn trigger_token(trigger: KeyTrigger) -> String {
         KeyTrigger::Tab => "Tab".to_string(),
         KeyTrigger::BackTab => "Shift-Tab".to_string(),
         KeyTrigger::Backspace => "Backspace".to_string(),
+        KeyTrigger::AltLeft => "Alt-←".to_string(),
+        KeyTrigger::AltRight => "Alt-→".to_string(),
         other => format!("{other:?}"),
     }
 }
@@ -1760,8 +1763,9 @@ mod tests {
         assert!(keys.contains(&"←/→")); // Select column
         assert!(keys.contains(&"j/k")); // Move selection
         assert!(keys.contains(&"Enter")); // Open details
-        assert!(keys.contains(&"Esc")); // Back
-        assert!(keys.contains(&"Alt-←")); // History back
+        // Esc and Alt-← do the same thing here, so they are one entry.
+        assert!(keys.contains(&"Esc/Alt-←")); // Back
+        assert!(!keys.contains(&"Alt-←")); // not listed twice
         assert!(keys.contains(&"Alt-→")); // History forward
         assert!(!current.bindings.iter().any(|b| b.key == "?")); // help is global, not current-view
         assert!(!current.bindings.iter().any(|b| b.key == "q")); // quit is global, not current-view
@@ -1996,6 +2000,21 @@ mod tests {
             keys.sort_unstable();
             keys.dedup();
             assert_eq!(keys.len(), before, "duplicate key in {ctx:?}");
+        }
+    }
+
+    /// No view teaches going back under two entries. The help overlay used to
+    /// read `q/Esc Back` and then `Alt-← Back`, which reads as two different
+    /// things for what is one history step; the keys share one entry now.
+    #[test]
+    fn no_view_lists_back_twice() {
+        for ctx in ALL_HELP_CONTEXTS {
+            let backs: Vec<_> = context_bindings(*ctx)
+                .iter()
+                .filter(|binding| binding.label == "Back")
+                .map(|binding| binding.key)
+                .collect();
+            assert!(backs.len() <= 1, "{ctx:?} lists Back as {backs:?}");
         }
     }
 

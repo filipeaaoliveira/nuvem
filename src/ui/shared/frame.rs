@@ -155,15 +155,15 @@ const PINNED_HINT_SHARE: usize = 3;
 /// hints leave over, so a row with room for both keeps both, a row with room
 /// for one keeps help, and no view hint is ever paid for a pin that could have
 /// fitted in the slack. Only where the hints fill the row on their own — where
-/// they are going to be truncated whether the pins are there or not — do the
+/// they are going to be dropped whether the pins are there or not — do the
 /// pins take a bounded share of it (`PINNED_HINT_SHARE`) rather than collapse
-/// to nothing for a truncation that was happening anyway.
+/// to nothing for a drop that was happening anyway.
 ///
-/// Within the allowance they are dropped from the front — palette first, help
-/// last — and the survivor gives up its label before it gives up itself, so a
-/// cramped footer ends in a bare `?` rather than in nothing. Help is last out
-/// because it is the pin that repays the space: it names the overlay that
-/// lists every key the view has, the palette's included.
+/// Within the allowance they are dropped whole from the front — palette first,
+/// help last. Help is last out because it is the pin that repays the space: it
+/// names the overlay that lists every key the view has, the palette's
+/// included. A pin is never shown as a bare key: a key without its label is
+/// an instruction nobody can read.
 fn fitted_pins(
     pinned: &[crate::app::projection::FrameHint],
     hints_width: usize,
@@ -178,13 +178,8 @@ fn fitted_pins(
     let fits = |pins: &[crate::app::projection::FrameHint]| natural_width(pins) <= allowance;
 
     let mut pins = pinned.to_vec();
-    while pins.len() > 1 && !fits(&pins) {
+    while !pins.is_empty() && !fits(&pins) {
         pins.remove(0);
-    }
-    if let [only] = pins.as_mut_slice()
-        && !fits(std::slice::from_ref(only))
-    {
-        only.label = "";
     }
     pins
 }
@@ -194,49 +189,32 @@ fn natural_width(hints: &[crate::app::projection::FrameHint]) -> usize {
     spans_width(&hint_spans(hints, usize::from(u16::MAX)))
 }
 
-/// Lays `hints` out left-to-right into `width` columns, dropping whole hints
-/// (and truncating the last one that partly fits) once the budget runs out.
+/// Lays `hints` out left-to-right into `width` columns, each hint whole or not
+/// at all.
+///
+/// The list is in priority order, so the hints that do not fit are the last
+/// ones, and they go whole: a key is never shown without its label, nor a
+/// label cut short. `w   ` names a key but not what it does, and `Pick f...`
+/// leaves the reader to guess the rest; both used to happen at common widths.
+/// Stopping at the first hint that does not fit, rather than skipping it for a
+/// shorter one after it, keeps the footer a prefix of the list, so a hint is
+/// never shown while a more important one is hidden.
 fn hint_spans(hints: &[crate::app::projection::FrameHint], width: usize) -> Vec<Span<'static>> {
     let mut spans = Vec::new();
     let mut used_width = 0;
     for hint in hints {
         let separator = if used_width == 0 { "" } else { "  " };
         let separator_width = display_width(separator);
-        let available_width = width.saturating_sub(used_width + separator_width);
-        if available_width == 0 {
+        let key_width = display_width(&hint.key);
+        let hint_width = key_width + 1 + display_width(hint.label);
+        if used_width + separator_width + hint_width > width {
             break;
         }
-
-        // Whole or not at all. `fit_text` answers a width of 1, 2 or 3 with
-        // that many literal periods, and a key rendered as `.` names no key the
-        // operator can press — at 23 columns the Resources footer read
-        // `v Toggle sidebar  .   ?`. Breaking rather than skipping
-        // keeps the footer a prefix of the hint list: showing the fifth hint
-        // while hiding the third would reorder the row without saying so.
-        if fit_text(&hint.key, available_width) != hint.key {
-            break;
-        }
-        let key = hint.key.clone();
-        let key_width = display_width(&key);
-        let label_width = available_width.saturating_sub(key_width + 1);
-        // The label may be truncated — `Pick f...` still says something — but
-        // not down to punctuation alone. `r ..` is not a shorter way of writing
-        // `r Refresh`; the key on its own is already a complete instruction, so
-        // the label yields entirely and the columns go to the next hint.
-        let label = fit_text(hint.label, label_width);
-        let label = if label != hint.label && label.chars().all(|character| character == '.') {
-            String::new()
-        } else {
-            label
-        };
         spans.push(Span::raw(separator));
-        spans.push(Span::styled(key, theme::key_hint()));
-        if !label.is_empty() {
-            spans.push(Span::raw(" "));
-            spans.push(Span::raw(label.clone()));
-        }
-        used_width +=
-            separator_width + key_width + usize::from(!label.is_empty()) + display_width(&label);
+        spans.push(Span::styled(hint.key.clone(), theme::key_hint()));
+        spans.push(Span::raw(" "));
+        spans.push(Span::raw(hint.label));
+        used_width += separator_width + hint_width;
     }
     spans
 }
