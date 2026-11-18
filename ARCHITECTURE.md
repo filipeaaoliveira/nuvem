@@ -400,7 +400,7 @@ subcommand and the config file schema (themes, hotkeys, aliases, favorite
 picker scopes, per-service table columns and default sort, related-resource
 jump rules, general settings), and the separate plugin file's schema
 (user-declared row-scoped commands), whose user-facing contract is documented
-in `docs/plugins.md`.
+in `docs/plugins/`.
 
 It also owns the other direction of persistence: `config/state.rs` stores state
 the app learns for itself in a `state.toml` beside the config file in use, so
@@ -755,7 +755,7 @@ cancellation, and no process group. That was survivable while four concurrent
 stopped being so when BigQuery made a fan-out of up to `-n 500` of them the
 routine consequence of pressing `Enter` on a dataset.
 
-`docs/plugins.md`'s promise that nothing in the plugin *schema* can run a shell
+`docs/plugins/`' promise that nothing in the plugin *schema* can run a shell
 command survives this: `args` is an argv, a plugin's program is always
 `gcloud`, and `CommandRunner` never goes through a shell. The plugin prefix key
 (`,`) reaches a plugin without the palette and changes none of that: it
@@ -1492,7 +1492,7 @@ turn it on while `get-credentials` is in flight — and refuses the launch if it
 is on; otherwise it emits `Effect::LaunchInteractiveProcess { command:
 InteractiveCommand::K9s { kube_context } }`, resolved to `k9s --context <name>`
 via `k9s::k9s_spec` and run through the shared seam above. (Read-only mode's
-user-facing contract is documented in `docs/demo-and-read-only.md`.)
+user-facing contract is documented in `docs/guides/read-only-mode.md`.)
 
 ## Events And Polling
 
@@ -1619,7 +1619,7 @@ the `service_kinds!` macro generates from the enum's own variant list so a
 caller that must cover the whole set walks the enum instead of re-listing it.
 The service registry in `src/app/service_registry.rs` carries one descriptor
 per kind — label, category, aliases, availability, target — and
-`docs/features.md` describes what each workspace shows; tests hold both in
+`docs/reference/services/` describes what each service shows; tests hold both in
 parity with `ALL`, so neither drifts out of it silently. This document keeps
 no list of its own, and neither does any renderer.
 
@@ -1741,7 +1741,7 @@ any modifier — both are asserted as positive invariants in that test, with the
 reasoning recorded there.
 App keys that resolve *after* the `[hotkeys]` override table (`Ctrl-S`,
 `Ctrl-T`, `Ctrl-X`) must also be reserved in `config/hotkeys.rs`, or a user
-binding wins and steals them silently; see `docs/configuration.md` for the
+binding wins and steals them silently; see `docs/configuration/hotkeys.md` for the
 user-facing rule.
 
 Later command palette defaults should include:
@@ -2567,12 +2567,12 @@ The documentation in the tree, and what each file owns:
 
 ```text
 README.md                    what nuvem is, how to install it, first run
-docs/keys.md                 every key nuvem binds, in one place
-docs/configuration.md        the config file schema, and the CLI flags that
-                             override it
-docs/plugins.md              the plugin surface
-docs/features.md             what each workspace does, service by service
-docs/demo-and-read-only.md   demo mode and the read-only guarantees
+docs/getting-started/        install, first run, reading the screen
+docs/guides/                 task-shaped pages, one per workspace or workflow
+docs/configuration/          config.toml, one page per table
+docs/plugins/                the plugin surface and plugins.toml
+docs/reference/              every key, flag, palette command and service
+docs/troubleshooting/        error categories and common problems
 ARCHITECTURE.md              this document: contributor-facing structure
 CONTRIBUTING.md              development setup and the gates a change must pass
 SECURITY.md                  how to report a vulnerability

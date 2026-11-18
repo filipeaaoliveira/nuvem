@@ -395,7 +395,7 @@ async fn a_demo_session_never_asks_gcloud_for_credentials() {
          Each extra argv names the read that fell through. Wire that service's \
          `load_*` to the client cache, or -- if it genuinely has no published \
          Rust client -- add its argv here and to the ledger in \
-         `docs/demo-and-read-only.md`, which is what that list is for.\n\
+         `docs/guides/demo-mode.md`, which is what that list is for.\n\
          \n\
          spawned:  {spawned:?}\n\
          expected: {expected:?}"

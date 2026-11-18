@@ -166,7 +166,7 @@ fn docs_document_the_gke_read_only_workflow() {
     let docs = Doc::user_docs();
 
     docs.presence(
-        "## Resources and services",
+        "# GKE clusters",
         &[
             "GKE clusters",
             "container clusters list --format=json",
@@ -186,18 +186,18 @@ fn docs_document_the_global_command_palette() {
     let docs = Doc::user_docs();
 
     docs.presence(
-        "## Command palette",
+        "# Command palette",
         &["global command mode", "`gce`", "`gke`"],
     );
 }
 
 /// The corpus and the README's own table of contents are the same set.
 ///
-/// `USER_DOCS` is a hand-written list, and a hand-written list of files is
-/// exactly the thing that goes stale: a page added to `docs/` and linked from
-/// the README but left out here would be read by nobody, and every pin scoped
-/// to it would pass by never running. Deriving the expected set from the
-/// README's table means the omission fails here instead.
+/// The corpus is every page under `docs/` except the contributor documents,
+/// found by walking the directory (`support::user_docs::paths`). Holding the
+/// README's links to that set means a page added to `docs/` and not linked
+/// from the README fails here, and so does a README link to a page that is
+/// gone.
 #[test]
 fn readme_links_every_page_the_pins_are_read_from() {
     let readme = std::fs::read_to_string("README.md").expect("README.md is readable");
@@ -211,10 +211,9 @@ fn readme_links_every_page_the_pins_are_read_from() {
         })
         .collect();
 
-    let read: BTreeSet<String> = USER_DOCS
-        .iter()
+    let read: BTreeSet<String> = crate::support::user_docs::paths()
+        .into_iter()
         .filter(|path| path.starts_with("docs/"))
-        .map(|path| (*path).to_string())
         .collect();
 
     assert_eq!(
@@ -223,20 +222,6 @@ fn readme_links_every_page_the_pins_are_read_from() {
          the pins read is reachable from the README",
     );
 }
-
-/// The pages `Doc::user_docs` reads, in the order README links them.
-///
-/// `readme_links_every_page_the_pins_are_read_from` holds this list to the
-/// README's own table, so a page added to the documentation without being
-/// added here fails rather than going unpinned.
-const USER_DOCS: &[&str] = &[
-    "README.md",
-    "docs/keys.md",
-    "docs/configuration.md",
-    "docs/plugins.md",
-    "docs/features.md",
-    "docs/demo-and-read-only.md",
-];
 
 struct Doc {
     name: &'static str,
@@ -255,24 +240,19 @@ impl Doc {
     ///
     /// Concatenation is safe for what these assertions do. `section_body`
     /// terminates a span on the next heading at the same or a shallower
-    /// level, and each page opens with its own level-1 title, so a section
-    /// at the end of one page is closed by the next page's title rather
-    /// than bleeding into it.
+    /// level, and every page contributes a level-1 title (a `docs/` page's
+    /// comes from its frontmatter), so a section at the end of one page is
+    /// closed by the next page's title rather than bleeding into it. The
+    /// same title is what lets a check scope itself to one whole page.
     fn user_docs() -> Self {
         let mut text = String::new();
-        for path in USER_DOCS {
-            let page = std::fs::read_to_string(path)
-                .unwrap_or_else(|error| panic!("{path} is readable: {error}"));
+        for path in crate::support::user_docs::paths() {
+            let page = crate::support::user_docs::page(&path);
             assert_eq!(
                 page.lines().filter(|line| is_fence(line)).count() % 2,
                 0,
                 "{path} closes every fence it opens; an odd count would leak \
                  the fenced state into the next page and hide its headings",
-            );
-            assert!(
-                page.starts_with("# "),
-                "{path} opens with a level-1 title, which is what closes the \
-                 preceding page's last section",
             );
             text.push_str(&page);
             text.push('\n');
@@ -591,23 +571,18 @@ fn unwrapped(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-const BATCH_SECTION: &str = "## Batch actions on marked rows";
-/// The key reference, which is a page rather than a section: it is the whole
-/// of docs/keys.md, and its level-1 title is what scopes to it.
-const KEYS_PAGE: &str = "# Key reference";
-/// Everything reached from the Resources workspace, which is where each
-/// service's own prose sits. `## Home overview` used to run to the BigQuery
-/// heading and so doubled as this scope; splitting the two apart is what
-/// gave the pins below a section that is about what they assert.
-const SERVICES_SECTION: &str = "## Resources and services";
-const IAM_SECTION: &str = "### Project IAM policy";
+const BATCH_SECTION: &str = "# Batch actions on marked rows";
+/// The key reference, which is a page rather than a section: its level-1
+/// title, taken from the page's frontmatter, is what scopes to it.
+const KEYS_PAGE: &str = "# Keys";
+/// Each service has a page of its own under `docs/reference/services/`, titled
+/// with the service's registry label, so a pin about one service is scoped to
+/// that service's page and nothing else.
+const IAM_SECTION: &str = "# IAM policy";
+const SECRETS_PAGE: &str = "# Secret Manager";
 
-/// The BigQuery prose, as its own subsection of [`SERVICES_SECTION`].
-///
-/// It is a `###` rather than a `##` because the prose really is one of the
-/// services that section covers, and a `##` here would end that section early
-/// and shrink every check scoped to it.
-const BIGQUERY_SECTION: &str = "### BigQuery";
+/// The BigQuery page.
+const BIGQUERY_SECTION: &str = "# BigQuery datasets";
 
 /// ARCHITECTURE.md's BigQuery section, which restates two of the numbers the
 /// README states — the enrichment width and the listing cap — in the same
@@ -616,31 +591,31 @@ const BIGQUERY_SECTION: &str = "### BigQuery";
 /// pins exist to prevent; so both documents go through the same parse.
 const BIGQUERY_SECTION_ARCHITECTURE: &str = "### BigQuery: two drill-down levels, no detail pane";
 
-/// The VPC networks prose, a `###` inside [`SERVICES_SECTION`] for the reason
-/// [`BIGQUERY_SECTION`] is one.
-const VPC_SECTION: &str = "### VPC networks";
+/// The VPC networks page.
+const VPC_SECTION: &str = "# VPC networks";
 
-/// The firewall rules prose, a `###` beside [`VPC_SECTION`] for the same
-/// reason. Scoped separately from the networks section because the two make
-/// different claims about the same fixture family, and a needle that matched
-/// either would let one of them be deleted.
-const FIREWALL_SECTION: &str = "### Firewall rules";
+/// The firewall rules page. Scoped separately from the networks page because
+/// the two make different claims about the same fixture family, and a needle
+/// that matched either would let one of them be deleted.
+const FIREWALL_SECTION: &str = "# Firewall rules";
 
-/// The section the filter grammar and the Cloud Logging entry points both
-/// live in. The filter grammar is not about logging; it is documented
-/// inside this section today, and this names where the claims are rather than
-/// where they arguably belong. Moving them is a documentation change with its
-/// own re-verification, not part of scoping the assertions that guard them.
-const CLOUD_LOGGING: &str = "## Cloud Logging";
+/// The Cloud Logging page, where the logging entry points are documented.
+const CLOUD_LOGGING: &str = "# Cloud Logging";
+
+/// The filter guide, where the resource-list filter grammar is documented.
+const FILTER_PAGE: &str = "# Filter a list";
+
+/// The config file page, which carries the full example and the key table.
+const CONFIG_FILE_PAGE: &str = "# Config file";
 
 /// The two sections that both talk about jumps: the rule syntax under
 /// Configuration, and the picker the rules feed.
-const JUMP_RULES: &str = "### Jump rules";
-const JUMPS: &str = "## Related-resource jumps";
+const JUMP_RULES: &str = "# Jump rules";
+const JUMPS: &str = "# Related-resource jumps";
 
 /// The two sections describing the Home inventory, one per document. Both
 /// enumerate the registry's services, and both are pinned to it together.
-const HOME_README: &str = "## Home overview";
+const HOME_README: &str = "# Home overview";
 const HOME_ARCHITECTURE: &str = "## Home Overview Dashboard";
 
 /// The four mark keys, each pinned to the bullet that describes *its* action.
@@ -1234,7 +1209,7 @@ fn docs_document_the_four_filter_modes() {
     // PRESENCE-ONLY (this line): the sentence's wording is prose. The two
     // `assert_eq` below are the pin, and they are what actually holds the
     // fallback arm; this line only keeps the sentence from disappearing.
-    readme.presence(CLOUD_LOGGING, &["`regex` is the default"]);
+    readme.presence(FILTER_PAGE, &["`regex` is the default"]);
     let default = documented
         .first()
         .expect("the grammar table has rows")
@@ -1253,7 +1228,7 @@ fn docs_document_the_four_filter_modes() {
     // emptied" as a value. The negative assertions are the load-bearing ones:
     // holding a previously false pairing out is work a substring really can do.
     readme.presence(
-        CLOUD_LOGGING,
+        FILTER_PAGE,
         &[
             "Label mode is server-side only",
             "label filtering is not supported for Cloud Run",
@@ -1793,7 +1768,7 @@ fn docs_document_the_managed_tunnel_workflow() {
     // five lines README-wide, three of them Compute filter and detail
     // documentation, and `dismiss` matches four, one the batch progress panel.
     readme.presence(
-        "## Tunnels",
+        "# Tunnels",
         &[
             // Keys. The `|| readme.contains("`K`")` disjunct that used to be
             // beside `Shift-K` was dead: a bare `` `K` `` appears zero times in
@@ -1808,20 +1783,15 @@ fn docs_document_the_managed_tunnel_workflow() {
         ],
     );
 
-    // The keybinding reference list, which is the only place this wording
-    // appears — the Tunnels section says "Press `t` on a row [...] to start
-    // one" instead. The audit could only scope this to the enclosing
-    // `## Batch actions on marked rows`, because the list trailed that section
-    // without a heading of its own, and recorded that giving it one would
-    // shrink a section other pins here scope to. Splitting the reference out
-    // of the README did exactly that, and gave the list its own page: the
-    // scope this always wanted now exists, and it is the whole of it.
+    // The key reference, which is the only place this wording appears — the
+    // Tunnels page says "Press `t` on a row [...] to start one" instead. The
+    // key reference is a page of its own, so the whole page is the scope.
     readme.presence(KEYS_PAGE, &["start a tunnel"]);
 
     // Binary override, alongside the existing interactive-launch overrides.
     // These are documented where the other CLI flags are, not under Tunnels.
     readme.presence(
-        "## Manual Testing",
+        "# Command line",
         &[
             "--cloud-sql-proxy-binary",
             "--k9s-binary",
@@ -1831,7 +1801,7 @@ fn docs_document_the_managed_tunnel_workflow() {
 
     // Heading-existence, same as the signal-backstop pair above: the section
     // having its own heading is the claim, and no prose inside it repeats one.
-    readme.heading_exists("## Tunnels");
+    readme.heading_exists("# Tunnels");
 }
 
 /// The README has to enumerate every way into Cloud Logging, because they
@@ -2568,7 +2538,7 @@ fn docs_document_configurable_jump_rules() {
     readme.absent(&["status labels contain spaces"]);
 }
 
-/// The `[favorites]` block in the "Schema (v1)" example is fed to the real
+/// The `[favorites]` block in the config file page's full example is fed to the real
 /// `FavoriteScopes::from_file` parser and checked against the exact values it
 /// claims to produce. A wrong key name, a stray bracket, or a value that
 /// `from_file` would reject fails this test instead of shipping a config
@@ -2577,7 +2547,10 @@ fn docs_document_configurable_jump_rules() {
 fn docs_favorites_schema_example_parses_to_the_values_it_shows() {
     let readme = Doc::user_docs();
     // Pinned parsing: the documented example is fed to the real parser.
-    let example = toml_block_before(readme.text_for_pinned_parsing(), "### Favorites");
+    let example = toml_block_before(
+        &readme.section_for_pinned_parsing(CONFIG_FILE_PAGE),
+        "## Keys",
+    );
     let document: toml::Value = toml::from_str(&example).expect("the schema example is valid TOML");
     let favorites_value = document
         .get("favorites")
@@ -2591,7 +2564,7 @@ fn docs_favorites_schema_example_parses_to_the_values_it_shows() {
     );
     assert_eq!(
         favorites.values(FavoriteKind::Project),
-        &["acme-prod".to_string()]
+        &["prod-project".to_string()]
     );
     assert_eq!(
         favorites.values(FavoriteKind::Region),
@@ -2615,7 +2588,7 @@ fn docs_favorites_schema_example_parses_to_the_values_it_shows() {
 #[test]
 fn docs_document_the_favorites_keys() {
     let readme = Doc::user_docs();
-    const FAVORITES: &str = "### Favorites";
+    const FAVORITES: &str = "# Favorites";
 
     // The key names are derived from `favorites::KEYS`, the single vocabulary
     // both the parser and this test read from, and still go through the scoped
@@ -2781,35 +2754,21 @@ fn home_inventory_prose_enumerates_every_service() {
     }
 }
 
-/// The BigQuery prose has to be its own section before anything can be pinned
-/// to it. Scoped to [`SERVICES_SECTION`] — some 400 lines covering every
-/// service the Resources workspace reaches — a `presence` check proves only
-/// that a string appears somewhere in a very long document, which is the
-/// weakness this file's own grammar test calls out.
+/// The BigQuery page carries the three command lines BigQuery really issues,
+/// and none of a neighbouring service's.
 ///
-/// So this pins the boundaries, not just the heading: the section carries the
-/// three command lines BigQuery really issues, and does not carry a
-/// neighbour's.
-///
-/// What marks the boundary downward is the neighbours' **own command
-/// fragments**, not the word `gcloud`. `gcloud` was the obvious needle and it
-/// was the wrong one: it is a property of BigQuery's prose rather than of the
-/// neighbours', and BigQuery prose has ordinary reasons to name the tool it is
-/// being contrasted with. The section already says "`bq` has no
-/// `--configuration` flag"; "unlike `gcloud`, `bq` has no `--configuration`
-/// flag" is one edit away and true, as is a note that
-/// `CLOUDSDK_ACTIVE_CONFIG_NAME` is the variable gcloud reads or that the
-/// credentials come from `gcloud auth`. A pin that a true sentence can falsify
-/// gets "fixed" by deleting the true sentence.
+/// What marks the boundary is the neighbours' **own command fragments**, not
+/// the word `gcloud`: BigQuery prose has ordinary reasons to name the tool it
+/// is being contrasted with ("`bq` has no `--configuration` flag", the
+/// `CLOUDSDK_ACTIVE_CONFIG_NAME` variable gcloud reads), and a pin that a true
+/// sentence can falsify gets "fixed" by deleting the true sentence.
 ///
 /// `secrets versions list` and `projects get-iam-policy` cannot be written
-/// truthfully about BigQuery at all — they are the Secret Manager prose above
-/// and the project IAM policy prose below naming their own subcommands. Each
-/// is asserted present in `## Home overview` first, so a needle that has
-/// stopped matching anything fails as the inert pin it has become instead of
-/// passing on an absence that means nothing. Together the two directions still
-/// hold: a heading placed one paragraph off, or a section that runs past its
-/// prose, swallows a fragment and fails here.
+/// truthfully about BigQuery at all — they are the Secret Manager and IAM
+/// policy pages naming their own subcommands. Each is asserted present on its
+/// own page first, so a needle that has stopped matching anything fails as the
+/// inert pin it has become instead of passing on an absence that means
+/// nothing.
 #[test]
 fn the_bigquery_section_is_scoped_to_bigquery() {
     let readme = Doc::user_docs();
@@ -2826,12 +2785,17 @@ fn the_bigquery_section_is_scoped_to_bigquery() {
         );
     }
 
-    // The neighbours' own subcommands. Present in the enclosing section --
+    // The neighbours' own subcommands. Present on their own pages --
     // otherwise the absence check below pins nothing -- and absent from
     // BigQuery's, which shells to `bq` and issues neither.
-    const NEIGHBOURS: [&str; 2] = ["secrets versions list", "projects get-iam-policy"];
-    readme.presence(SERVICES_SECTION, &NEIGHBOURS);
-    for needle in NEIGHBOURS {
+    const NEIGHBOURS: [(&str, &str); 2] = [
+        (SECRETS_PAGE, "secrets versions list"),
+        (IAM_SECTION, "projects get-iam-policy"),
+    ];
+    for (page, needle) in NEIGHBOURS {
+        readme.presence(page, &[needle]);
+    }
+    for (_, needle) in NEIGHBOURS {
         assert!(
             !section.contains(needle),
             "the BigQuery section has swallowed a neighbour's prose: {needle:?} is a \
@@ -3562,7 +3526,7 @@ fn docs_document_that_a_plugin_runs_from_a_confirmation() {
     let readme = Doc::user_docs();
 
     readme.presence(
-        "### Plugins",
+        "# How plugins work",
         &[
             // The palette hands over to a modal, and that modal's `Enter` is
             // the moment a process starts.
@@ -3632,7 +3596,7 @@ fn docs_document_the_plugin_run_reload() {
     let readme = Doc::user_docs();
 
     readme.presence(
-        "### Plugins",
+        "# How plugins work",
         &[
             // Both halves of the guard, since documenting one gate and not the
             // other is a claim broader than the reducer arm: the workspace has
@@ -3676,7 +3640,7 @@ fn docs_list_every_configurable_column_of_every_service() {
     use nuvem::config::columns::ColumnSettings;
     use std::collections::BTreeMap;
 
-    const COLUMNS_AND_SORT: &str = "### Columns and sort";
+    const COLUMNS_AND_SORT: &str = "# Columns and sort";
 
     // Pinned parsing: every row's keys are compared with `catalog_meta`.
     let readme = Doc::user_docs();

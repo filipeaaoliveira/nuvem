@@ -122,6 +122,10 @@ unicode-general-category = "1.1.0"
 tempfile = "3"
 proptest = "1"
 tokio = { version = "1", features = ["test-util"] }
+# Parses the YAML frontmatter of the documentation pages, which the website
+# build reads with a real YAML parser; a check by line prefix accepts pages
+# that build rejects.
+yaml-rust2 = { version = "0.13", default-features = false }
 
 # Debug info is the dominant disk cost of this workspace, not code: every test
 # binary statically links the whole dependency graph, so full DWARF is embedded

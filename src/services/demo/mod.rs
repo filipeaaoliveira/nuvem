@@ -472,7 +472,7 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
     // client whenever the session holds one, and since the demo backend flip
     // it always does. They are kept rather than dropped for two reasons. The
     // no-op is a documented property of this runner, named by command in
-    // `docs/demo-and-read-only.md` ("start/stop an instance ... succeed as
+    // `docs/guides/demo-mode.md` ("start/stop an instance ... succeed as
     // no-ops"), and two tests in `demo_runner_test` drive the CLI services
     // against this runner directly to hold it. Dropping them would turn that
     // documented no-op into the unrouted-argv error for any caller that still

@@ -97,7 +97,7 @@ Press `?` in the app for context-sensitive help, `Ctrl-C` to quit.
 `nuvem --demo` is the fastest way to see it: it runs the whole UI against
 embedded fixtures, with no Google Cloud project and no credentials, and every
 mutating command is a no-op. See
-[docs/demo-and-read-only.md](docs/demo-and-read-only.md).
+[Demo mode](docs/guides/demo-mode.md).
 
 ## What you get
 
@@ -121,14 +121,82 @@ mutating command is a no-op. See
 
 ## Documentation
 
-| | |
-| --- | --- |
-| [docs/keys.md](docs/keys.md) | Every key, in one place |
-| [docs/configuration.md](docs/configuration.md) | Config file: schema, themes, hotkeys, columns, favorites, jump rules |
-| [docs/plugins.md](docs/plugins.md) | Declaring your own `gcloud` commands |
-| [docs/features.md](docs/features.md) | What each workspace does, service by service |
-| [docs/demo-and-read-only.md](docs/demo-and-read-only.md) | Running without a project, and without write access |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | How the code is put together |
+The documentation lives in `docs/`, one topic per page.
+
+**Getting started**
+
+- [Install](docs/getting-started/install.md): what nuvem needs, and how to install it with Homebrew, from a release archive, or from source.
+- [First run](docs/getting-started/first-run.md): start nuvem against your gcloud configuration, or try it offline with demo mode.
+- [Reading the screen](docs/getting-started/the-screen.md): the header, breadcrumb, status line, footer and status markers every view shares.
+
+**Guides**
+
+- [Home overview](docs/guides/home-overview.md): what the Home workspace shows: context health, inventory, recent operations and degraded causes.
+- [Browse resources](docs/guides/browse-resources.md): open a service, move between the list and the detail pane, sort, and go back through history.
+- [Filter a list](docs/guides/filter-a-list.md): narrow a resource list with the filter grammar: regex, fuzzy, label and inverse modes.
+- [Switch gcloud configurations](docs/guides/switch-configurations.md): activate, create and edit gcloud configurations, and pick a project, region or zone.
+- [Command palette](docs/guides/command-palette.md): run any command by name from any view.
+- [Batch actions on marked rows](docs/guides/batch-actions.md): mark several GCE or Cloud SQL instances and run one lifecycle action on all of them.
+- [Cloud Logging](docs/guides/cloud-logging.md): read, tail, search and save Cloud Logging entries for a project or one resource.
+- [Tunnels](docs/guides/tunnels.md): open IAP, SSH and Cloud SQL Auth Proxy port forwards and manage them from one list.
+- [Related-resource jumps](docs/guides/related-resource-jumps.md): jump from a resource to the resources it is attached to.
+- [FinOps](docs/guides/finops.md): see cost recommendations and budgets for the active project.
+- [Demo mode](docs/guides/demo-mode.md): run the full UI offline against built-in fixtures, with no project and no credentials.
+- [Read-only mode](docs/guides/read-only-mode.md): refuse every command that changes a cloud resource.
+
+**Configuration**
+
+- [Config file](docs/configuration/config-file.md): where config.toml lives, how settings are layered, and every key it accepts.
+- [Themes and frame colors](docs/configuration/themes.md): pick a built-in theme and recolor the frame for a gcloud configuration or project.
+- [Hotkeys](docs/configuration/hotkeys.md): rebind the seven global navigation keys with the [hotkeys] table.
+- [Service aliases](docs/configuration/aliases.md): add your own names for services in the [aliases] table.
+- [Favorites](docs/configuration/favorites.md): list projects, regions and zones first in the context picker.
+- [Columns and sort](docs/configuration/columns-and-sort.md): choose which columns each service shows, in which order, and its default sort.
+- [Jump rules](docs/configuration/jump-rules.md): write [[jumps]] rules that decide what the related-resource picker offers.
+- [Remembered last view](docs/configuration/remembered-view.md): nuvem reopens the service you last used in each gcloud configuration.
+- [Reload configuration](docs/configuration/reload.md): apply config.toml changes without restarting.
+- [Config problems](docs/configuration/config-problems.md): what happens when config.toml or plugins.toml has a mistake, and where the warnings appear.
+
+**Plugins**
+
+- [How plugins work](docs/plugins/overview.md): offer your own gcloud commands against the selected row, behind a confirmation.
+- [Write a plugin](docs/plugins/write-a-plugin.md): add a gcloud command of your own to a service, step by step.
+- [Typed inputs](docs/plugins/typed-inputs.md): ask for values the row cannot supply before a plugin runs.
+- [Plugin output](docs/plugins/plugin-output.md): read what a plugin run printed.
+- [Plugin file reference](docs/plugins/plugin-file-reference.md): every key plugins.toml accepts, every input type, and the template fields each service offers.
+
+**Reference**
+
+- [Keys](docs/reference/keys.md): every key nuvem binds, view by view, with the label the footer shows.
+- [Command line](docs/reference/cli.md): every flag and subcommand, the exit codes, the files nuvem uses and the environment it reads.
+- [Palette commands](docs/reference/commands.md): every command the command palette offers, its search aliases, and when it appears.
+
+**Services**
+
+- [All services](docs/reference/services/overview.md): every service nuvem can browse, the names it answers to, and what you can do in each.
+- [GCE instances](docs/reference/services/gce-instances.md): browse Compute Engine instances, run lifecycle actions, SSH, and copy their fields.
+- [GKE clusters](docs/reference/services/gke-clusters.md): browse GKE clusters, read their detail, and open one in k9s.
+- [Cloud SQL](docs/reference/services/cloud-sql.md): browse Cloud SQL instances and start, stop, restart or fail them over.
+- [Cloud Run](docs/reference/services/cloud-run.md): browse Cloud Run services, their traffic split and their revisions.
+- [Cloud Storage](docs/reference/services/cloud-storage.md): browse buckets and objects, read metadata, and copy gs:// URIs.
+- [Secret Manager](docs/reference/services/secret-manager.md): browse secret metadata and versions. Payloads are never read.
+- [Cloud Functions](docs/reference/services/cloud-functions.md): list 1st and 2nd gen functions across every region.
+- [Persistent disks](docs/reference/services/persistent-disks.md): list zonal and regional persistent disks and find the ones nothing uses.
+- [Pub/Sub topics](docs/reference/services/pubsub-topics.md): list Pub/Sub topics with their subscription count, retention and encryption key.
+- [Pub/Sub subscriptions](docs/reference/services/pubsub-subscriptions.md): list every Pub/Sub subscription in the project with its topic and delivery settings.
+- [BigQuery datasets](docs/reference/services/bigquery-datasets.md): browse datasets, the tables inside them, and each table's column schema.
+- [Service accounts](docs/reference/services/service-accounts.md): list the project's IAM service accounts.
+- [IAM policy](docs/reference/services/iam-policy.md): read the project IAM policy as one row per role and member.
+- [VPC networks](docs/reference/services/vpc-networks.md): list VPC networks with their subnet mode, routing mode and subnet count.
+- [VPC subnets](docs/reference/services/vpc-subnets.md): list every subnet in every region in one table.
+- [Firewall rules](docs/reference/services/firewall-rules.md): list firewall rules with their action, targets and source or destination ranges.
+
+**Troubleshooting**
+
+- [Common problems](docs/troubleshooting/common-problems.md): what nuvem's error messages mean and how to fix the problems people meet most.
+- [Questions](docs/troubleshooting/faq.md): short answers about credentials, platforms, safety and why BigQuery needs bq.
+
+Contributors: [ARCHITECTURE.md](ARCHITECTURE.md) explains how the code is put together.
 
 ## Exit status
 
