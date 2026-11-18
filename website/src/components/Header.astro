@@ -1,0 +1,100 @@
+---
+// Starlight's header, plus a Docs link beside the GitHub link. On pages with
+// a sidebar the two links move into the mobile menu below 50rem, as before.
+// Pages without one (the home page) have no menu, so there the links stay in
+// the header at every width.
+import Search from 'virtual:starlight/components/Search';
+import SiteTitle from 'virtual:starlight/components/SiteTitle';
+import SocialIcons from 'virtual:starlight/components/SocialIcons';
+import { DOCS_ROUTE } from '../lib/docs-source.mjs';
+
+const inDocs = Astro.url.pathname.startsWith(`/${DOCS_ROUTE}/`);
+---
+
+<div class="header">
+	<div class="title-wrapper sl-flex"><SiteTitle /></div>
+	<div class="sl-flex print:hidden"><Search /></div>
+	<nav class="site-links print:hidden" aria-label="Site">
+		<a class="docs-link" href={`/${DOCS_ROUTE}/`} aria-current={inDocs ? 'true' : undefined}>Docs</a>
+		<SocialIcons />
+	</nav>
+</div>
+
+<style>
+	.header {
+		display: flex;
+		gap: var(--sl-nav-gap);
+		justify-content: space-between;
+		align-items: center;
+		height: 100%;
+	}
+
+	.title-wrapper {
+		/* Long titles must not run under the search and menu buttons. */
+		overflow: clip;
+		/* Room for the focus ring around the link. */
+		padding: 0.25rem;
+		margin: -0.25rem;
+		min-width: 0;
+	}
+
+	.site-links {
+		display: flex;
+		gap: var(--nv-space-5);
+		align-items: center;
+	}
+
+	:global([data-has-sidebar]) .site-links {
+		display: none;
+	}
+
+	.docs-link {
+		color: var(--nv-coral);
+		font-size: var(--nv-text-body);
+		text-decoration-line: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.docs-link:hover {
+		text-decoration-thickness: 2px;
+	}
+
+	/* Inside the docs, the link marks where you are, as the sidebar does. */
+	.docs-link[aria-current] {
+		color: var(--nv-naples);
+		font-weight: 650;
+		text-decoration: none;
+	}
+
+	@media (min-width: 50rem) {
+		:global([data-has-sidebar]) .site-links {
+			display: flex;
+		}
+
+		.header {
+			--__sidebar-width: max(0rem, var(--sl-content-inline-start, 0rem) - var(--sl-nav-pad-x));
+			--__main-column-fr: calc(
+				(
+						100% + var(--__sidebar-pad, 0rem) - var(--__toc-width, var(--sl-sidebar-width)) -
+							(2 * var(--__toc-width, var(--sl-nav-pad-x))) - var(--sl-content-inline-start, 0rem) -
+							var(--sl-content-width)
+					) / 2
+			);
+			display: grid;
+			grid-template-columns:
+				minmax(calc(var(--__sidebar-width) + max(0rem, var(--__main-column-fr) - var(--sl-nav-gap))), auto)
+				1fr
+				auto;
+			align-content: center;
+		}
+
+		:global(:root[data-has-sidebar]) {
+			--__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
+		}
+
+		:global(:root:not([data-has-toc])) {
+			--__toc-width: 0rem;
+		}
+	}
+</style>
