@@ -4,10 +4,10 @@ name: CI
   # Branches are covered by `pull_request`, so `push` is scoped to the default
   # branch. Unscoped, every push to a branch with a PR open ran this whole
   # workflow twice against the same commit -- once for the push and once for
-  # the pull request -- which on a two-runner pool is a queue rather than a
-  # duplicate. What is lost is a run for a branch nobody has opened a PR for,
-  # and that is the intended trade: the gates exist to decide whether a change
-  # may merge, and a branch with no PR is not asking.
+  # the pull request -- doubling the runner time for no extra signal. What is
+  # lost is a run for a branch nobody has opened a PR for, and that is the
+  # intended trade: the gates exist to decide whether a change may merge, and
+  # a branch with no PR is not asking.
   #
   # Merges to main still run here, which is what keeps the default branch's
   # own state checked rather than inferred from whatever the PR looked like
@@ -34,14 +34,11 @@ env:
 jobs:
   check:
     name: fmt, clippy, test
-    # The runner group, when this repository defines one, and a hosted runner
-    # otherwise. The label is a repository variable rather than a literal so
-    # that no private runner group is named in a tree that is going to be
-    # public: a fork, a clone and a public copy all read the fallback and run
-    # on GitHub's own runners, while this repository points the variable at its
-    # own group. An unset or empty variable is the fallback, so nothing has to
-    # be configured for the hosted path to work.
-    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    # GitHub-hosted, and a fixed image version rather than `ubuntu-latest`, so
+    # the toolchain under the gates moves only with a commit. Every job in
+    # every workflow here runs on GitHub's own runners: a fork runs exactly
+    # what this repository runs.
+    runs-on: ubuntu-24.04
     # Backstop against a hung test binary, not a performance budget. A parked
     # gate wait on a `spawn_blocking` thread can wedge `Runtime::drop` and hang
     # the harness forever, and GitHub's default would let that burn 360 minutes.
@@ -105,7 +102,7 @@ jobs:
 
   shellcheck:
     name: shellcheck
-    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    runs-on: ubuntu-24.04
     # Its own job rather than a step in `check`: shellcheck needs neither the
     # Rust toolchain nor the cargo cache, and a shell defect should surface in
     # seconds under its own name instead of behind a cold Rust build.
@@ -136,8 +133,8 @@ jobs:
         run: shellcheck --version
 
       # The glob is unquoted and unguarded on purpose. If scripts/ ever stops
-      # holding .sh files the pattern reaches shellcheck literally, shellcheck
-      # fails on the missing file, and the job goes red — the alternative
+      # holding .sh files, the pattern reaches shellcheck literally, shellcheck
+      # fails on the missing file, and the job goes red. The alternative
       # (`|| true`, or a `find`-driven loop over an empty set) would report
       # green for having analysed nothing.
       - name: Lint shell scripts
@@ -145,7 +142,7 @@ jobs:
 
   cargo-deny:
     name: cargo-deny (advisories, licenses, bans, sources)
-    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    runs-on: ubuntu-24.04
     # deny.toml has been in the repo since early on, but nothing enforced it:
     # the config drifted (a duplicate-crate ban fired locally) while every CI
     # run stayed green. This job is what makes deny.toml a contract rather

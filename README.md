@@ -46,28 +46,28 @@ shasum -a 256 -c nuvem-<target>.tar.gz.sha256
 tar xzf nuvem-<target>.tar.gz && install nuvem-<target>/nuvem ~/.local/bin/
 ```
 
-| Target | Built by |
+| Platform | Target |
 | --- | --- |
-| `x86_64-unknown-linux-gnu` | CI, which also runs the suite and smoke-tests the binary |
-| `x86_64-apple-darwin`, `aarch64-apple-darwin` | a Mac, and attached to the release by hand |
+| Linux, x86_64 | `x86_64-unknown-linux-gnu` |
+| Linux, arm64 | `aarch64-unknown-linux-gnu` |
+| macOS, Apple silicon | `aarch64-apple-darwin` |
+| macOS, Intel | `x86_64-apple-darwin` |
 
-The Linux binary is linked against glibc 2.28, so it runs on Pop!_OS 22.04,
+CI builds each one natively on a runner of that platform, runs the test suite
+there and smoke-tests the binary it packages.
+
+The Linux binaries are linked against glibc 2.28, so they run on Pop!_OS 22.04,
 Ubuntu 20.04, Debian 10 and RHEL 8 and newer. Check with `ldd --version` if
 you are unsure; a binary that is too new for its glibc fails at startup with
 `GLIBC_2.xx not found` rather than at install time.
 
-Archives built by CI also carry a signed build-provenance attestation, which
+Every archive also carries a signed build-provenance attestation, which
 records the workflow, commit and run that produced the file — a checksum shows
 only that a download was not corrupted, while this shows where it came from:
 
 ```bash
 gh attestation verify nuvem-x86_64-unknown-linux-gnu.tar.gz --repo filipeaaoliveira/nuvem
 ```
-
-GitHub issues attestations for public repositories only, so an archive built
-before this one was public carries none, and the macOS archives carry none at
-all: the signature is minted from the CI identity, which a local build has no
-access to.
 
 nuvem is not on crates.io yet, so install it from a release or build it from
 source.

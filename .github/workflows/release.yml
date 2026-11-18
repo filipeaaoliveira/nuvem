@@ -2,26 +2,18 @@ name: Release
 
 # Tag-driven: pushing v<semver> builds release binaries for every supported
 # platform, attests their provenance, and publishes a GitHub Release. The tag
-# is the release decision; nothing here bumps versions or edits changelogs.
+# is the release decision; nothing here bumps versions, edits changelogs or
+# publishes to crates.io.
 #
 # A manual dispatch is the rehearsal of that: it builds, tests, smoke-tests and
 # packages every target and then stops, so the parts of this file that only run
 # under a tag can be proven green before a tag exists. Everything a dispatch
 # skips is guarded by `github.event_name == 'push'` below.
 #
-# Linux only, and native. The runner label is the repository's own variable
-# with a hosted fallback, exactly as ci.yml does it: the public tree names no
-# private group, and a fork with the variable unset still names a runner
-# instead of queueing forever against one it cannot reach.
-#
-# The macOS archives are built on a Mac and attached to the release by hand,
-# because this pool is x86_64 Linux and nothing in it can produce a Darwin
-# binary. They therefore carry no build-provenance attestation: that signature
-# is minted from the Actions OIDC identity, which a local build has no access
-# to. If the macOS builds ever move onto a runner of their own, add them back
-# to the matrix here and they regain it.
-#
-# nuvem is Unix-only (POSIX process control), so there is no Windows leg.
+# Every target is built natively on a GitHub-hosted runner of its own
+# architecture, so the smoke test always executes the binary it ships. Each
+# matrix entry names its runner. nuvem is Unix-only (POSIX process control),
+# so there is no Windows leg.
 "on":
   push:
     tags:
@@ -40,7 +32,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  # The oldest glibc the release binary is linked against, and the ceiling the
+  # The oldest glibc the Linux binaries are linked against, and the ceiling the
   # check below enforces. 2.28 covers Pop!_OS 22.04, Debian 10 and RHEL 8; the
   # runner's own glibc would have made it 2.39.
   GLIBC_FLOOR: "2.28"
@@ -49,15 +41,44 @@ jobs:
   build:
     name: build (${{ matrix.target }})
     strategy:
+      # One platform failing must not cancel the others: their logs are what
+      # tells a platform-specific failure from a general one.
+      fail-fast: false
       matrix:
+        # Each Linux entry carries the digests of the toolchain downloads for
+        # its architecture; the macOS entries need no Zig and carry none. The
+        # nextest build for macOS is a universal binary, one digest for both.
         include:
           - target: x86_64-unknown-linux-gnu
-    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
-    # Sized against measurement, not habit. At 30 the job was killed mid-build:
-    # fetching Zig from ziglang.org took 16.9 minutes on this runner (53 MB,
-    # and there is no mirror to fetch it from), the suite 3, and the release
-    # build had only 10 of the ~15 it needs. The build is the part that must
-    # not be cut off, so the ceiling covers a cold run of all three.
+            runs-on: ubuntu-24.04
+            zig-archive: zig-x86_64-linux-0.16.0
+            zig-sha256: 70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+            zigbuild-archive: cargo-zigbuild-x86_64-unknown-linux-musl
+            zigbuild-sha256: 9e3cf73485edbd45905c8aadbc0fdf869c7ddc3848f0c898229f2680db52e44b
+            nextest-archive: cargo-nextest-0.9.144-x86_64-unknown-linux-gnu
+            nextest-sha256: 8a4f726272b0a1c499bd87ca3978bfbb1a8c20bb08ccf075b9996e2081bd1e1e
+          - target: aarch64-unknown-linux-gnu
+            runs-on: ubuntu-24.04-arm
+            zig-archive: zig-aarch64-linux-0.16.0
+            zig-sha256: ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17
+            # cargo-zigbuild publishes no musl build for arm64 Linux.
+            zigbuild-archive: cargo-zigbuild-aarch64-unknown-linux-gnu
+            zigbuild-sha256: 25cf2cdc6cde848b33a761ff2cf46d1efe6ba7e1adfc4b6f3ee2d570cacb5419
+            nextest-archive: cargo-nextest-0.9.144-aarch64-unknown-linux-gnu
+            nextest-sha256: 7fecfd431b810c05c589d800524286b8f80ce2fe9fb1fef05caf16d095cea407
+          - target: aarch64-apple-darwin
+            runs-on: macos-15
+            nextest-archive: cargo-nextest-0.9.144-universal-apple-darwin
+            nextest-sha256: 87472b2c3ee09154cadd34d168a5cdede478806810f095c3dc4dc499943da42e
+          - target: x86_64-apple-darwin
+            runs-on: macos-15-intel
+            nextest-archive: cargo-nextest-0.9.144-universal-apple-darwin
+            nextest-sha256: 87472b2c3ee09154cadd34d168a5cdede478806810f095c3dc4dc499943da42e
+    runs-on: ${{ matrix.runs-on }}
+    # A cold run is three slow parts in a row: the Zig download on Linux, the
+    # test suite, and an LTO release build of the whole dependency graph. The
+    # build is the part that must not be cut off, so the ceiling covers all
+    # three with room to spare.
     timeout-minutes: 60
     permissions:
       contents: read
@@ -90,12 +111,11 @@ jobs:
             *) echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $version"; exit 1 ;;
           esac
 
-      # The first release could not run on Pop!_OS 22.04, Debian 12 or RHEL 9:
-      # a binary linked against this image's glibc requires GLIBC_2.39, and
-      # those ship 2.35, 2.36 and 2.34. Zig's linker targets an explicit older
-      # glibc, and it brings its own C toolchain — which is what makes it
-      # usable here, because aws-lc-sys compiles C and assembly through cmake
-      # and this image has no root to install a cross toolchain with.
+      # A binary linked against the runner's glibc requires GLIBC_2.39 and will
+      # not start on Pop!_OS 22.04, Debian 12 or RHEL 9, which ship 2.35, 2.36
+      # and 2.34. Zig's linker targets an explicit older glibc, and it brings
+      # its own C toolchain, which aws-lc-sys needs to compile its C and
+      # assembly through cmake for that older target.
       #
       # Both downloads are checked against a digest recorded here rather than
       # piped straight into tar. This is the compiler and linker that produce
@@ -104,31 +124,35 @@ jobs:
       # which is the same class of problem the release's own .sha256 exists to
       # answer for.
       - name: Install Zig and cargo-zigbuild
+        if: runner.os == 'Linux'
         env:
           ZIG_VERSION: 0.16.0
-          ZIG_SHA256: 70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+          ZIG_ARCHIVE: ${{ matrix.zig-archive }}
+          ZIG_SHA256: ${{ matrix.zig-sha256 }}
           CARGO_ZIGBUILD_VERSION: 0.23.4
-          CARGO_ZIGBUILD_SHA256: 9e3cf73485edbd45905c8aadbc0fdf869c7ddc3848f0c898229f2680db52e44b
+          CARGO_ZIGBUILD_ARCHIVE: ${{ matrix.zigbuild-archive }}
+          CARGO_ZIGBUILD_SHA256: ${{ matrix.zigbuild-sha256 }}
         run: |
           mkdir -p "$HOME/.local/bin" "$HOME/.local/zig"
           tmp="$(mktemp -d)"
 
           curl -LsSf -o "$tmp/zig.tar.xz" \
-            "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz"
+            "https://ziglang.org/download/${ZIG_VERSION}/${ZIG_ARCHIVE}.tar.xz"
           echo "${ZIG_SHA256}  $tmp/zig.tar.xz" | sha256sum -c -
           tar -xJf "$tmp/zig.tar.xz" -C "$HOME/.local/zig" --strip-components=1
 
           curl -LsSf -o "$tmp/cargo-zigbuild.tar.xz" \
-            "https://github.com/rust-cross/cargo-zigbuild/releases/download/v${CARGO_ZIGBUILD_VERSION}/cargo-zigbuild-x86_64-unknown-linux-musl.tar.xz"
+            "https://github.com/rust-cross/cargo-zigbuild/releases/download/v${CARGO_ZIGBUILD_VERSION}/${CARGO_ZIGBUILD_ARCHIVE}.tar.xz"
           echo "${CARGO_ZIGBUILD_SHA256}  $tmp/cargo-zigbuild.tar.xz" | sha256sum -c -
           tar -xJf "$tmp/cargo-zigbuild.tar.xz" -C "$HOME/.local/bin" --strip-components=1 \
-            "cargo-zigbuild-x86_64-unknown-linux-musl/cargo-zigbuild"
+            "${CARGO_ZIGBUILD_ARCHIVE}/cargo-zigbuild"
 
           rm -rf "$tmp"
           echo "$HOME/.local/zig" >> "$GITHUB_PATH"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Show the build toolchain versions
+        if: runner.os == 'Linux'
         run: |
           zig version
           # `cargo zigbuild --version` hands the flag to the subcommand, which
@@ -137,16 +161,32 @@ jobs:
           cargo-zigbuild --version
 
       # A tag is not a review: the suite runs here so a release cannot ship a
-      # tree that CI never saw green. nextest rather than libtest, for the same
-      # per-process isolation every other gate needs.
+      # tree that CI never saw green, on any of its platforms. nextest rather
+      # than libtest, for the same per-process isolation every other gate
+      # needs. Its download is verified like the build tools above.
       - name: Install cargo-nextest
-        run: curl -LsSf "https://get.nexte.st/0.9.144/${{ runner.os == 'macOS' && 'mac' || 'linux' }}" | tar zxf - -C "${CARGO_HOME:-$HOME/.cargo}/bin"
+        env:
+          NEXTEST_VERSION: 0.9.144
+          NEXTEST_ARCHIVE: ${{ matrix.nextest-archive }}
+          NEXTEST_SHA256: ${{ matrix.nextest-sha256 }}
+        run: |
+          tmp="$(mktemp -d)"
+          curl -LsSf -o "$tmp/nextest.tar.gz" \
+            "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-${NEXTEST_VERSION}/${NEXTEST_ARCHIVE}.tar.gz"
+          echo "${NEXTEST_SHA256}  $tmp/nextest.tar.gz" | shasum -a 256 -c -
+          tar -xzf "$tmp/nextest.tar.gz" -C "${CARGO_HOME:-$HOME/.cargo}/bin"
+          rm -rf "$tmp"
+          cargo nextest --version
       - name: Run the test suite
         run: cargo nextest run --all --locked
 
-
-      - name: Build release binary
+      - name: Build release binary (Linux, against the glibc floor)
+        if: runner.os == 'Linux'
         run: cargo zigbuild --release --locked --target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }}
+
+      - name: Build release binary (macOS)
+        if: runner.os == 'macOS'
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
       # The flag is not the guarantee. A --target suffix that was ignored, or
       # a dependency that pulls in a newer symbol anyway, would ship a 2.39
@@ -155,6 +195,7 @@ jobs:
       # floor is read back off the binary itself. `grep -a` rather than
       # `strings`, which is binutils and not guaranteed on this image.
       - name: Check the glibc floor of the built binary
+        if: runner.os == 'Linux'
         run: |
           BIN=target/${{ matrix.target }}/release/nuvem
           highest="$(grep -ao 'GLIBC_[0-9]\+\.[0-9]\+' "$BIN" | sed 's/GLIBC_//' | sort -uV | tail -1)"
@@ -214,14 +255,13 @@ jobs:
       # Two conditions, and each fails differently without the other. A
       # rehearsal's binaries are thrown away, so signing them would put
       # provenance in the store for artifacts no one can download. And GitHub
-      # issues no attestation at all for a user-owned private repository — it
-      # answers "Feature not available", which is an error, so an unguarded
-      # step fails the build and takes the publish job down with it. The tag
-      # v0.1.0-rc.1 was cut and lost its release exactly that way.
+      # issues no attestation for a private user-owned repository: it answers
+      # "Feature not available", which is an error, so a tag pushed to a
+      # private fork would fail the build here and take the publish job down
+      # with it.
       #
-      # Written as a condition rather than continue-on-error on purpose: when
-      # this repository goes public the step starts working again on its own,
-      # and a genuine signing failure still fails the release.
+      # Written as a condition rather than continue-on-error on purpose: a
+      # genuine signing failure on a public repository still fails the release.
       - name: Attest build provenance
         if: github.event_name == 'push' && github.event.repository.private == false
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -243,7 +283,7 @@ jobs:
     # Without this a dispatch would reach `gh release create` with a branch
     # name in GITHUB_REF_NAME and cut a release called `main`.
     if: github.event_name == 'push'
-    runs-on: ${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -258,24 +298,25 @@ jobs:
           merge-multiple: true
           path: dist
 
-      # A hosted image ships the GitHub CLI; this pool's image does not, and
-      # the first tag run discovered that here, with `gh: command not found`
-      # after a green build — the release job is the only place in this
-      # workflow that needs it. Pinned and fetched for the same reason ci.yml
-      # pins shellcheck: the tool that publishes a release must not change
-      # underneath the repository without a commit saying so.
+      # The image ships a GitHub CLI of its own, whose version moves with the
+      # image. The tool that publishes a release must not change underneath
+      # the repository without a commit saying so, so a pinned build is
+      # fetched and checked against its digest, the same way ci.yml pins
+      # shellcheck.
       - name: Ensure the GitHub CLI is present
         env:
           GH_VERSION: 2.101.0
+          GH_SHA256: 9bca2d1c16825f109907a23307628a2f0698fbf99662b73a5cf0b020293072b8
         run: |
-          if ! gh --version 2>/dev/null | grep -q "gh version ${GH_VERSION} "; then
-            mkdir -p "$HOME/.local/bin"
-            curl -LsSf \
-              "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
-              | tar -xz -C "$HOME/.local/bin" --strip-components=2 \
-                "gh_${GH_VERSION}_linux_amd64/bin/gh"
-            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          fi
+          mkdir -p "$HOME/.local/bin"
+          tmp="$(mktemp -d)"
+          curl -LsSf -o "$tmp/gh.tar.gz" \
+            "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz"
+          echo "${GH_SHA256}  $tmp/gh.tar.gz" | sha256sum -c -
+          tar -xzf "$tmp/gh.tar.gz" -C "$HOME/.local/bin" --strip-components=2 \
+            "gh_${GH_VERSION}_linux_amd64/bin/gh"
+          rm -rf "$tmp"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Show the GitHub CLI version
         run: gh --version
@@ -287,8 +328,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # A hyphen in a semver tag is a pre-release identifier: v0.1.0-rc.1
-          # is a candidate for 0.1.0, not 0.1.0 itself. Unmarked, GitHub makes
+          # A hyphen in a semver tag is a pre-release identifier: v1.2.0-rc.1
+          # is a candidate for 1.2.0, not 1.2.0 itself. Unmarked, GitHub makes
           # whichever release is newest the repository's "Latest release" —
           # the one the releases page offers first and the one an install
           # script that asks for `latest` downloads — so an rc would be handed
