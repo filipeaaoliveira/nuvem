@@ -66,7 +66,8 @@
 	--sl-line-height: var(--nv-leading-body);
 	--sl-line-height-headings: var(--nv-leading-tight);
 
-	--sl-content-width: 38rem; /* about 70 characters of 17px body text */
+	/* The content area is wide enough for tables and code; prose keeps --nv-measure. */
+	--sl-content-width: var(--nv-wide);
 	--sl-sidebar-width: 17rem;
 
 	--sl-shadow-sm: none;
@@ -320,44 +321,140 @@ mobile-starlight-toc nav {
 	font-weight: 650;
 }
 
-/* Inline code */
+/* Prose keeps a reading measure; tables and code plates may use the full width. */
+.sl-markdown-content > :not(.nv-table, .expressive-code, hr) {
+	max-width: var(--nv-measure);
+}
+
+/* Inline code: breaks only between words, never inside a token. */
 .sl-markdown-content :not(pre) > code {
 	padding: 0.1em 0.35em;
 	border-radius: var(--nv-radius);
 	background-color: var(--nv-plate-raised);
 	color: var(--nv-text);
 	font-size: 0.875em;
-	overflow-wrap: anywhere;
 }
 
-/* Short spans (flags, keys, field names) stay on one line; long paths may wrap. */
-.sl-markdown-content code.nv-nowrap {
+.sl-markdown-content code .nv-token {
 	white-space: nowrap;
 }
 
-/* Tables: rules, not stripes. (Schibsted's tabular figures also widen
-   commas, so tnum is left off running text in cells.) */
-.sl-markdown-content table:not(:where(.not-content *)) {
+/* Scroll cues: a Methyl edge shows on the side that has more to see. The
+   plate-coloured covers scroll with the content and hide the cue at the end. */
+.nv-table,
+.expressive-code pre {
+	--nv-cue: color-mix(in srgb, var(--nv-methyl) 70%, transparent);
+	background:
+		linear-gradient(to right, var(--nv-cue-cover), var(--nv-cue-cover)) left / 1.25rem 100% no-repeat local,
+		linear-gradient(to left, var(--nv-cue-cover), var(--nv-cue-cover)) right / 1.25rem 100% no-repeat local,
+		linear-gradient(to right, var(--nv-cue), transparent) left / 0.5rem 100% no-repeat scroll,
+		linear-gradient(to left, var(--nv-cue), transparent) right / 0.5rem 100% no-repeat scroll,
+		var(--nv-cue-cover);
+}
+
+.nv-table {
+	--nv-cue-cover: var(--nv-bg);
+	overflow-x: auto;
+	margin-block: var(--nv-space-5);
+}
+
+.expressive-code pre {
+	--nv-cue-cover: var(--nv-plate);
+}
+
+/* Reference tables: rules, not stripes. The first column (a key, flag or
+   field) never wraps; the rest share the width. (Schibsted's tabular figures
+   also widen commas, so tnum is left off running text in cells.) */
+.sl-markdown-content .nv-table table {
+	display: table;
+	width: 100%;
+	margin: 0;
 	font-size: 0.9375rem;
+	line-height: 1.55;
 	border-collapse: collapse;
 }
 
-.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
-	padding: var(--nv-space-2) var(--nv-space-3);
+.sl-markdown-content .nv-table :is(th, td) {
+	padding: var(--nv-space-2) var(--nv-space-4) var(--nv-space-2) 0;
 	border-bottom: 1px solid var(--nv-rule);
 	background-color: transparent;
 	vertical-align: top;
 }
 
-.sl-markdown-content th:not(:where(.not-content *)) {
+.sl-markdown-content .nv-table :is(th, td):last-child {
+	padding-inline-end: 0;
+}
+
+.sl-markdown-content .nv-table :is(th, td):first-child {
+	white-space: nowrap;
+}
+
+.sl-markdown-content .nv-table th {
 	color: var(--nv-text);
 	font-weight: 650;
 	border-bottom: 1px solid var(--nv-methyl);
 	text-align: start;
 }
 
-.sl-markdown-content tr:nth-child(2n):not(:where(.not-content *)) {
+.sl-markdown-content .nv-table tr:nth-child(2n) {
 	background-color: transparent;
+}
+
+.nv-table:focus-visible {
+	outline-offset: 4px;
+}
+
+/* Narrow screens: each row becomes a labelled block, the first cell its heading. */
+@media (max-width: 40rem) {
+	.sl-markdown-content .nv-table {
+		background: none;
+		overflow: visible;
+	}
+
+	.sl-markdown-content .nv-table :is(table, tbody, tr, td) {
+		display: block;
+		width: auto;
+	}
+
+	.sl-markdown-content .nv-table thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.sl-markdown-content .nv-table tr {
+		padding-block: var(--nv-space-3);
+		border-bottom: 1px solid var(--nv-rule);
+	}
+
+	.sl-markdown-content .nv-table tbody tr:first-child {
+		border-top: 1px solid var(--nv-methyl);
+	}
+
+	.sl-markdown-content .nv-table td {
+		padding: 0;
+		border: 0;
+	}
+
+	.sl-markdown-content .nv-table td:first-child {
+		white-space: normal;
+		font-weight: 650;
+	}
+
+	.sl-markdown-content .nv-table td + td {
+		margin-top: var(--nv-space-2);
+	}
+
+	.sl-markdown-content .nv-table td + td[data-label]::before {
+		content: attr(data-label);
+		display: block;
+		color: var(--nv-text-muted);
+		font-size: var(--nv-text-small);
+		font-weight: 400;
+	}
 }
 
 .sl-markdown-content hr {
@@ -420,7 +517,14 @@ mobile-starlight-toc nav {
 }
 
 .starlight-aside:is(.starlight-aside--caution, .starlight-aside--danger) :not(pre) > code {
-	background-color: color-mix(in srgb, var(--nv-on-accent) 12%, transparent);
+	/* An outline, not a tint: dark text stays on the Eugenia fill (5.17:1). */
+	background-color: transparent;
+	box-shadow: inset 0 0 0 1px var(--nv-on-accent);
+}
+
+/* Naples would be 2.76:1 on Eugenia, so focus inside a filled aside is dark. */
+.starlight-aside:is(.starlight-aside--caution, .starlight-aside--danger) :focus-visible {
+	outline-color: var(--nv-on-accent);
 }
 
 /* Code plates get a little air from the column. */
@@ -493,4 +597,14 @@ mobile-starlight-toc a[aria-current='true']:focus {
 
 .expressive-code .frame.is-terminal .header .title {
 	text-align: start;
+}
+
+/* Skip link: hidden until focused, then a Naples tab with dark text. */
+.sl-skip-link,
+.sl-skip-link:visited {
+	color: var(--nv-on-accent);
+	background-color: var(--nv-naples);
+	border-radius: var(--nv-radius);
+	font-weight: 650;
+	text-decoration: none;
 }

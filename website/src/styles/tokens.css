@@ -26,7 +26,7 @@
 	--nv-text: #f1ece6; /* body text, 9.36:1 */
 	--nv-text-muted: #cbc1b6; /* secondary text, 6.20:1 */
 	--nv-rule: #5e554e; /* hairlines between regions (decorative) */
-	--nv-rule-strong: #7d7269; /* control outlines */
+	--nv-rule-strong: #9a8f84; /* control outlines, 3.47:1 (5.58:1 on the plate) */
 	--nv-on-accent: #1b1816; /* text on Naples, Coral, Methyl or Eugenia fills (5.17:1 or better) */
 
 	/* Type: one grotesk for everything that is read, system mono for code */
@@ -44,7 +44,8 @@
 	--nv-text-h1: clamp(2rem, 1.4rem + 2.4vw, 2.625rem); /* 32px to 42px */
 	--nv-leading-body: 1.65;
 	--nv-leading-tight: 1.2;
-	--nv-measure: 68ch;
+	--nv-measure: 38rem; /* about 70 characters of body text */
+	--nv-wide: 52rem; /* tables and code may use this much */
 
 	/* Spacing, on a 4px step */
 	--nv-space-1: 0.25rem;
