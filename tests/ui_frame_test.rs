@@ -875,8 +875,11 @@ fn footer_hints_are_fitted_to_the_available_width() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(line.contains("Ctrl-Space"));
-    assert!(line.contains("..."));
+    // Twenty columns cannot hold the hint and its label, so it is dropped
+    // whole: a key without its label, or a label cut short, is not shown.
+    assert!(!line.contains("Ctrl-Space"), "got {line:?}");
+    assert!(!line.contains("..."), "got {line:?}");
+    assert_eq!(line.trim(), "", "got {line:?}");
 }
 
 #[test]
@@ -1142,4 +1145,87 @@ fn resource_frame_reports_marked_count_for_cloud_sql() {
         "expected marked count in {:?}",
         projection.view_title
     );
+}
+
+/// Every hint the footer paints is a whole `key label` pair from the list it
+/// was given: never a key on its own, never a label cut short.
+///
+/// Walks every view's bindings from the catalog (`ALL_HELP_CONTEXTS`), with
+/// and without the two pins, at every third width from 10 to 200 columns
+/// (every width costs seconds in a debug build, for no coverage the labels'
+/// own varied lengths do not already give).
+#[test]
+fn the_footer_never_paints_a_key_without_its_whole_label() {
+    use nuvem::app::projection::binding::{ALL_HELP_CONTEXTS, context_bindings};
+
+    let pins = vec![
+        FrameHint {
+            key: ":".to_string(),
+            label: "Command palette",
+        },
+        FrameHint {
+            key: "?".to_string(),
+            label: "Help",
+        },
+    ];
+    for ctx in ALL_HELP_CONTEXTS {
+        let hints: Vec<FrameHint> = context_bindings(*ctx)
+            .into_iter()
+            .map(FrameHint::from)
+            .collect();
+        for pinned in [Vec::new(), pins.clone()] {
+            let whole: Vec<String> = hints
+                .iter()
+                .chain(&pinned)
+                .map(|hint| format!("{} {}", hint.key, hint.label))
+                .collect();
+            for width in (10..=200u16).step_by(3) {
+                let projection = AppFrameProjection {
+                    app_title: "nuvem",
+                    view_title: "View".to_string(),
+                    breadcrumbs: Vec::new(),
+                    context: FrameContextProjection {
+                        configuration: None,
+                        account: None,
+                        project: None,
+                        region: None,
+                        zone: None,
+                    },
+                    service_label: None,
+                    operation: FrameOperationProjection {
+                        phase: OperationPhase::Healthy,
+                        label: "Ready".to_string(),
+                        message: None,
+                        message_label: None,
+                        last_refresh_at: None,
+                    },
+                    footer_hints: hints.clone(),
+                    footer_pinned_hints: pinned.clone(),
+                };
+                let mut terminal =
+                    Terminal::new(TestBackend::new(width, 1)).expect("terminal should initialize");
+                terminal
+                    .draw(|frame| render_footer(frame, Rect::new(0, 0, width, 1), &projection))
+                    .expect("footer should render");
+                let line = terminal
+                    .backend()
+                    .buffer()
+                    .content()
+                    .iter()
+                    .map(|cell| cell.symbol())
+                    .collect::<String>();
+                for painted in line
+                    .split("  ")
+                    .map(str::trim)
+                    .filter(|chunk| !chunk.is_empty())
+                {
+                    assert!(
+                        whole.iter().any(|hint| hint == painted),
+                        "{ctx:?} at {width} columns painted {painted:?}, which is not \
+                         a whole hint: {line:?}"
+                    );
+                }
+            }
+        }
+    }
 }

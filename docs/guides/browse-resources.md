@@ -29,7 +29,8 @@ example, to the previous service or workspace) when there is history to go
 back to. While a resource detail view is open, `q` also returns to the
 resource list. `Alt-Left` and `Alt-Right` move back and forward through
 navigation history from anywhere in the Resources workspace; the footer shows
-these hints only when there is somewhere to go. Navigation history is reset
+these hints only when there is somewhere to go. Where `Esc` and `Alt-Left` do
+the same thing, the footer and help list them as one entry, `Esc/Alt-←`. Navigation history is reset
 whenever the active gcloud context changes.
 From the home screen and list views, `q` quits the app. `Ctrl-C` quits from any
 mode.

@@ -551,16 +551,12 @@ fn the_pins_take_a_bounded_share_of_a_footer_that_has_overflowed() {
         "and drops the palette pin first, got {full:?}"
     );
 
-    // Narrower than any hint: the help pin keeps its key and gives up its
-    // label rather than the row losing the way out.
+    // Narrower than any pin with its label: the pins go whole. A bare `?`
+    // names a key but not what it does.
     let narrow = footer_at(20);
     assert!(
-        narrow.trim_end().ends_with('?'),
-        "the way out survives as a bare key, got {narrow:?}"
-    );
-    assert!(
-        !narrow.contains("? Help"),
-        "the label is what it gives up, got {narrow:?}"
+        !narrow.contains('?'),
+        "a pin is never shown as a bare key, got {narrow:?}"
     );
 }
 

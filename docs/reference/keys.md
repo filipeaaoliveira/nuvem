@@ -159,7 +159,7 @@ A service's list in Resources.
 | `J` | Related-resource jumps | Open the [related-resource jump](../guides/related-resource-jumps.md) picker (`Shift-J`). |
 | `,` | Run plugin | Arm the plugin prefix: the next key runs the [plugin](../plugins/overview.md) bound to it. |
 | `Backspace/-` | Up one level | Go up one level: one prefix in the Cloud Storage object browser, one level in BigQuery. |
-| `Esc` | Back | Go back to the previous view in navigation history. |
+| `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
 ## Service sidebar
 
@@ -174,7 +174,7 @@ The service navigator on the left of Resources, when it has focus.
 | `/` | Filter services | Search the services by name, category or alias. |
 | `j/k` | Move selection | Move through the matching services. |
 | `Enter` | Open service | Open the selected service. |
-| `Esc` | Back | Go back to the previous view in navigation history. |
+| `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
 ## Resource detail
 
@@ -197,7 +197,7 @@ The tabbed detail pane `Enter` opens.
 | `L` | Logs for the selected resource (l: all project logs) | Open Cloud Logging scoped to the selected resource (`Shift-L`). |
 | `J` | Related-resource jumps | Open the [related-resource jump](../guides/related-resource-jumps.md) picker (`Shift-J`). |
 | `,` | Run plugin | Arm the plugin prefix: the next key runs the [plugin](../plugins/overview.md) bound to it. |
-| `q/Esc` | Back | Close the detail pane and return to the list. `q` follows a `quit` rebinding. |
+| `q/Esc/Alt-←` | Back | Close the detail pane and return to the list. `q` follows a `quit` rebinding. |
 
 ## BigQuery drill-down
 
@@ -287,7 +287,7 @@ The list of log entries. See [Cloud Logging](../guides/cloud-logging.md).
 | `y` | Copy entry | Copy the selected entry. |
 | `i` | Copy insert ID | Copy the selected entry's insert ID. |
 | `Ctrl-S` | Save visible logs | Save the visible entries to a file beside nuvem's log. |
-| `Esc` | Back | Go back to the previous view in navigation history. |
+| `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
 ## Log entry
 
@@ -314,7 +314,7 @@ The tunnel list. See [Tunnels](../guides/tunnels.md).
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
 | `K` | Kill tunnel | Stop the selected tunnel (`Shift-K`). |
 | `d` | Dismiss finished | Remove a stopped or failed tunnel from the list. |
-| `Esc` | Back | Go back to the previous view in navigation history. |
+| `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
 ## FinOps
 
@@ -324,7 +324,7 @@ See [FinOps](../guides/finops.md).
 
 | Key | Footer label | What it does |
 | --- | --- | --- |
-| `Esc` | Back | Go back to the previous view in navigation history. |
+| `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
 ## Command palette
 

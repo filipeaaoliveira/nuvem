@@ -883,7 +883,7 @@ fn the_help_view_teaches_the_key_that_leaves_the_drilldown() {
     assert!(
         !labels
             .iter()
-            .any(|(key, label)| key == "Esc" && *label == "Back"),
+            .any(|(key, label)| key == "Esc/Alt-←" && *label == "Back"),
         "and it must not also be taught as history navigation, which is what \
          Esc does everywhere else in the resources workspace and does not do \
          here: {labels:?}"
@@ -922,7 +922,7 @@ fn the_help_view_teaches_the_key_that_leaves_the_drilldown() {
     assert!(
         labels
             .iter()
-            .any(|(key, label)| key == "Esc" && *label == "Back"),
+            .any(|(key, label)| key == "Esc/Alt-←" && *label == "Back"),
         "{labels:?}"
     );
     assert!(

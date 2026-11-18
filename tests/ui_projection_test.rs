@@ -1615,7 +1615,7 @@ async fn resources_view_renders_gce_list_through_public_render() {
 
     let lines = render_lines(&session, 80, 24);
 
-    assert_shared_frame(&lines, "Resources", "v Toggle sidebar");
+    assert_shared_frame(&lines, "Resources", "Enter Open / enter");
     assert!(lines.iter().any(|line| line.contains("Configuration: dev")));
     assert!(
         lines
@@ -1696,7 +1696,7 @@ async fn resources_view_renders_gke_cluster_rows() {
 
     let lines = render_lines(&session, 80, 24);
 
-    assert_shared_frame(&lines, "Resources", "v Toggle sidebar");
+    assert_shared_frame(&lines, "Resources", "Enter Open / enter");
     assert!(lines.iter().any(|line| line.contains("Configuration: dev")));
     assert!(
         lines
@@ -2737,7 +2737,9 @@ async fn resources_view_renders_gce_list_safely_at_minimum_frame_size() {
             .any(|line| line.contains("Project: dev-project"))
     );
     assert!(lines.iter().any(|line| line.contains("[OK]")));
-    assert!(lines.iter().any(|line| line.contains("v Toggle sidebar")));
+    // The footer's first hint, in priority order: at 60 columns the rest are
+    // dropped whole rather than cut.
+    assert!(lines.iter().any(|line| line.contains("Enter Open / enter")));
     // At this minimum frame size the NAME column shrinks to its min width,
     // truncating "api-dev-1" to "api-d…"; check the surviving prefix.
     assert!(lines.iter().any(|line| line.contains("api-d")));
@@ -5657,12 +5659,14 @@ fn resource_detail_footer_includes_back_hint_when_history_present() {
         &Action::Resources(nuvem::app::ResourcesAction::OpenSelected),
     );
     let frame = project_app_frame(&app.root);
-    assert!(
-        frame
-            .footer_hints
-            .iter()
-            .any(|h| h.key == "Alt-←" && h.label == "Back")
-    );
+    // One Back hint, carrying every key that goes back from a detail pane.
+    let backs: Vec<_> = frame
+        .footer_hints
+        .iter()
+        .filter(|h| h.label == "Back")
+        .map(|h| h.key.as_str())
+        .collect();
+    assert_eq!(backs, ["q/Esc/Alt-←"]);
 }
 
 #[test]
@@ -6082,20 +6086,20 @@ fn resource_batch_progress_lines_show_aggregate_and_per_target_status() {
     );
 }
 
-/// The table tools line says when it has been cut off.
+/// A table tools line too wide for its pane drops whole hints, and never runs
+/// into the pane beside it.
 ///
 /// The line used to be rendered as a bare `Paragraph`, so ratatui hard-clipped
-/// it at the pane edge and the operator saw `←/→ col · s sor` with nothing to
-/// say more was there. Every other single-line surface in the app goes through
-/// `fit_text` and ends in `...` when it overflows; this one did not.
+/// it at the pane edge and the operator saw `←/→ col · s sor`; then it was cut
+/// with `...`, which still left `←/→ c...`; and at a width where it just fitted
+/// it ran straight into the preview's border as `w wide┌Preview`. Now the
+/// least important segments go whole, and a column stays clear before the next
+/// pane.
 ///
-/// The width is one the tools line does not fit on, asserted up front so the
-/// test cannot pass by proving nothing. It was 132 while the preview pane took a
-/// flat 45% of the content pane; the preview now gets only what its content
-/// needs, so at 132 this line now fits and the width that still truncates it is
-/// a narrower one.
+/// The width is one the whole line does not fit on, asserted up front so the
+/// test cannot pass by proving nothing.
 #[tokio::test]
-async fn a_clipped_table_tools_line_ends_in_the_overflow_marker() {
+async fn a_table_tools_line_too_wide_for_its_pane_drops_whole_hints() {
     let mut session = RuntimeSession::new_for_test(AppState::new());
     load_dev_instances(&mut session).await;
     session
@@ -6114,17 +6118,36 @@ async fn a_clipped_table_tools_line_ends_in_the_overflow_marker() {
         .skip_while(|c| *c != 'F')
         .take_while(|c| *c != '┌')
         .collect();
+    assert!(
+        segment.ends_with(' '),
+        "the tools line must leave a column clear before the next pane: {tools:?}"
+    );
     let segment = segment.trim_end();
 
     assert_ne!(
         segment, whole,
-        "this width no longer truncates the tools line, so the test proves \
-         nothing; got: {tools:?}"
+        "this width no longer drops anything from the tools line, so the test \
+         proves nothing; got: {tools:?}"
     );
     assert!(
-        segment.ends_with("..."),
-        "the tools line was cut off with no marker: {segment:?}"
+        !segment.contains("..."),
+        "the line lost whole segments, so it is not cut: {segment:?}"
     );
+    assert!(
+        segment.starts_with("Filter: none") && segment.contains("Rows: 2/2"),
+        "the filter and the row count are the last to go: {segment:?}"
+    );
+    for hint in ["←/→ col", "s sort", "w wide"] {
+        let shown = segment.contains(hint);
+        let cut = hint
+            .char_indices()
+            .skip(1)
+            .any(|(at, _)| segment.ends_with(&hint[..at]));
+        assert!(
+            shown || !cut,
+            "{hint:?} is shown whole or not at all: {segment:?}"
+        );
+    }
 }
 
 /// A terminal wide enough for the sidebar and the preview, and still too narrow

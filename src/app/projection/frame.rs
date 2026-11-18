@@ -6,7 +6,7 @@ use crate::app::projection::binding::{
     Binding, CFG_ACTIVATE, CFG_CREATE, CFG_EDIT, CONFIRM_ACCEPT, CONFIRM_ACCEPT_Y, CTX_PICK_VALUE,
     DETAIL_BACK, EDIT_BACKSPACE, FILTER_APPLY, FORM_NEXT_FIELD, FORM_SUBMIT,
     GLOBAL_COPY_DIAGNOSTIC, GLOBAL_QUIT, GLOBAL_REFRESH, HELP_CLOSE, HIST_BACK, HIST_FORWARD,
-    LIST_SELECT, LOG_COPY_ENTRY, LOG_COPY_INSERT_ID, LOG_FILTER, LOG_OPEN, LOG_TAIL,
+    LIST_SELECT, LOG_CLOSE, LOG_COPY_ENTRY, LOG_COPY_INSERT_ID, LOG_FILTER, LOG_OPEN, LOG_TAIL,
     LOG_TIME_RANGE, LOG_WRAP, MODAL_CANCEL, NAV_CONFIGURATIONS, NAV_FILTER, NAV_OPEN,
     NAV_RESOURCES, PALETTE_RUN, PALETTE_SELECT, PICKER_FILTER, PICKER_RETRY, PICKER_SELECT,
     PINNED_BINDINGS, PLUGIN_PREFIX_CANCEL, PREVIEW_COPY, RES_COLUMN, RES_FILTER,
@@ -431,7 +431,7 @@ fn configuration_metadata(
             "Create configuration".to_string(),
             breadcrumbs(&["Home", "Configurations", "Create"]),
             None,
-            from_bindings(&[FORM_SUBMIT, FORM_NEXT_FIELD, MODAL_CANCEL]),
+            from_bindings(&[FORM_SUBMIT, MODAL_CANCEL, FORM_NEXT_FIELD]),
         );
     }
 
@@ -440,7 +440,9 @@ fn configuration_metadata(
             "Edit configuration context".to_string(),
             breadcrumbs(&["Home", "Configurations", "Edit context"]),
             None,
-            from_bindings(&[FORM_SUBMIT, FORM_NEXT_FIELD, CTX_PICK_VALUE, MODAL_CANCEL]),
+            // Priority order: the footer drops hints whole from the end, and
+            // the way out of a form is worth more than its field keys.
+            from_bindings(&[FORM_SUBMIT, MODAL_CANCEL, FORM_NEXT_FIELD, CTX_PICK_VALUE]),
         );
     }
 
@@ -549,7 +551,8 @@ fn resource_metadata(
             ],
             overrides,
         );
-        detail_hints.extend(history_hints(root));
+        // `Back` is already `DETAIL_BACK`, which carries `Alt-←` too.
+        detail_hints.extend(history_forward_hint(root));
         detail_hints = with_copy_diagnostic_hint(detail_hints, root);
         return (
             format!("{service_label} detail"),
@@ -596,16 +599,20 @@ fn resource_metadata(
         bindings.push(RES_LEAVE_DRILLDOWN);
         from_bindings_with(&bindings, overrides)
     } else {
+        // In priority order: the footer drops hints whole from the end when
+        // the row is too narrow for all of them, so what a list is *for* —
+        // opening, filtering, sorting and widening its rows — comes first,
+        // and the sidebar keys, which the sidebar itself shows, come last.
         from_bindings_with(
             &[
-                RES_TOGGLE_SIDEBAR,
-                RES_TOGGLE_FOCUS,
+                RES_OPEN,
                 RES_FILTER,
-                GLOBAL_REFRESH,
-                RES_COLUMN,
                 RES_SORT,
                 RES_WIDE,
-                RES_OPEN,
+                RES_COLUMN,
+                GLOBAL_REFRESH,
+                RES_TOGGLE_SIDEBAR,
+                RES_TOGGLE_FOCUS,
             ],
             overrides,
         )
@@ -670,7 +677,7 @@ fn logging_metadata(
             RES_SCROLL_DETAIL,
             LOG_COPY_ENTRY,
             LOG_COPY_INSERT_ID,
-            DETAIL_BACK,
+            LOG_CLOSE,
         ]);
         detail_hints.extend(history_hints(root));
         return ("Log detail".to_string(), breadcrumbs, None, detail_hints);
@@ -743,6 +750,16 @@ fn history_hints(root: &RootState) -> Vec<FrameHint> {
         extra.extend(from_bindings(&[HIST_FORWARD]));
     }
     extra
+}
+
+/// The forward half of [`history_hints`], for a view whose own back key
+/// already goes back in history.
+fn history_forward_hint(root: &RootState) -> Vec<FrameHint> {
+    if root.navigation.can_go_forward() {
+        from_bindings(&[HIST_FORWARD])
+    } else {
+        Vec::new()
+    }
 }
 
 fn breadcrumbs(segments: &[&str]) -> Vec<String> {
