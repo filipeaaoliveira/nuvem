@@ -17,7 +17,7 @@ you need:
   native code.
 - `cargo-nextest` (`cargo install cargo-nextest --locked`) — CI runs the suite
   under nextest because some tests need per-process isolation.
-- `shellcheck` if you touch anything under `scripts/`.
+- `shellcheck` if you touch a shell script (`scripts/`, `packaging/homebrew/`).
 - `cargo-deny` (`cargo install cargo-deny --locked`) if you touch
   dependencies; CI runs it on every push.
 

@@ -132,13 +132,13 @@ jobs:
       - name: Show shellcheck version
         run: shellcheck --version
 
-      # The glob is unquoted and unguarded on purpose. If scripts/ ever stops
-      # holding .sh files, the pattern reaches shellcheck literally, shellcheck
-      # fails on the missing file, and the job goes red. The alternative
-      # (`|| true`, or a `find`-driven loop over an empty set) would report
-      # green for having analysed nothing.
+      # The globs are unquoted and unguarded on purpose. If either directory
+      # ever stops holding .sh files, its pattern reaches shellcheck literally,
+      # shellcheck fails on the missing file, and the job goes red. The
+      # alternative (`|| true`, or a `find`-driven loop over an empty set)
+      # would report green for having analysed nothing.
       - name: Lint shell scripts
-        run: shellcheck scripts/*.sh
+        run: shellcheck scripts/*.sh packaging/homebrew/*.sh
 
   cargo-deny:
     name: cargo-deny (advisories, licenses, bans, sources)

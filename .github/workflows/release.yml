@@ -1,9 +1,9 @@
 name: Release
 
 # Tag-driven: pushing v<semver> builds release binaries for every supported
-# platform, attests their provenance, and publishes a GitHub Release. The tag
-# is the release decision; nothing here bumps versions, edits changelogs or
-# publishes to crates.io.
+# platform, attests their provenance, publishes a GitHub Release, and points
+# the Homebrew tap at it. The tag is the release decision; nothing here bumps
+# versions, edits changelogs or publishes to crates.io (see RELEASING.md).
 #
 # A manual dispatch is the rehearsal of that: it builds, tests, smoke-tests and
 # packages every target and then stops, so the parts of this file that only run
@@ -23,7 +23,8 @@ name: Release
   workflow_dispatch:
 
 # Least privilege per job, below: the build jobs sign attestations and never
-# write to the repository; only the release job creates the release.
+# write to the repository; only the release job creates the release. The tap
+# job writes to another repository, with a token of its own.
 permissions: {}
 
 concurrency:
@@ -242,7 +243,8 @@ jobs:
 
       # Binary + docs in a tarball named <name>-<target>.tar.gz, with a .sha256
       # sidecar whose relative path makes `shasum -a 256 -c` work from the
-      # download dir.
+      # download dir. The Homebrew formula relies on this layout: one
+      # nuvem-<target>/ directory holding the binary.
       - name: Package archive
         run: |
           ARCHIVE="nuvem-${{ matrix.target }}.tar.gz"
@@ -339,3 +341,91 @@ jobs:
             *-*) flags+=(--prerelease) ;;
           esac
           gh release create "$GITHUB_REF_NAME" "${flags[@]}" dist/*
+
+  homebrew:
+    name: update the Homebrew tap
+    needs: release
+    # A plain v<major>.<minor>.<patch> tag only. A pre-release (`-`) must not
+    # reach the formula that `brew install` and `brew upgrade` hand to
+    # everyone, and a tag with build metadata (`+`) has no formula version the
+    # renderer accepts. A dispatch has no release to point a formula at.
+    if: github.event_name == 'push' && !contains(github.ref_name, '-') && !contains(github.ref_name, '+')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # The formula is pushed with HOMEBREW_TAP_TOKEN, not with this job's token,
+    # which only ever reads this repository's checkout.
+    permissions:
+      contents: read
+    steps:
+      # Secrets cannot appear in a job-level `if`, so this step decides and the
+      # rest follow it. A fork, or a repository without the secret, finishes
+      # green with a notice instead of failing at the push. So does a private
+      # repository: its release downloads need credentials Homebrew does not
+      # have, so a formula pointing at them would install nothing.
+      - name: Check for the tap token
+        id: gate
+        env:
+          HAS_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN != '' }}
+          IS_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::notice::HOMEBREW_TAP_TOKEN is not set; the tap is not updated"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          elif [ "$IS_PRIVATE" = "true" ]; then
+            echo "::notice::the repository is private, so its downloads are not public; the tap is not updated"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The formula points at the release's public download URLs, so those are
+      # what get fetched and hashed here: the bytes Homebrew will download, not
+      # a copy from the build job's artifacts. The release job has finished, so
+      # every file is already there; a missing one is an error.
+      - name: Download the release archives
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+        run: |
+          mkdir -p dist
+          for target in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-apple-darwin aarch64-apple-darwin; do
+            for file in "nuvem-$target.tar.gz" "nuvem-$target.tar.gz.sha256"; do
+              curl -LsSf -o "dist/$file" "$BASE_URL/$file"
+            done
+          done
+
+      - name: Render the formula
+        if: steps.gate.outputs.enabled == 'true'
+        run: packaging/homebrew/render-formula.sh "${GITHUB_REF_NAME#v}" dist > nuvem.rb
+
+      # The token is a fine-grained personal access token scoped to the tap
+      # repository alone, with Contents: read and write. It is handed to git
+      # through an extra header for these commands only, so it is never written
+      # into the clone's config where a later step could read it. The branch
+      # is named on both ends so the push cannot land anywhere else.
+      - name: Push the formula to the tap
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAP_REPOSITORY: filipeaaoliveira/homebrew-tap
+          TAP_BRANCH: main
+        run: |
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$HOMEBREW_TAP_TOKEN" | base64 -w0)"
+          echo "::add-mask::$auth"
+          git -c http.extraheader="$auth" clone --depth 1 --branch "$TAP_BRANCH" \
+            "https://github.com/${TAP_REPOSITORY}.git" tap
+          mkdir -p tap/Formula
+          cp nuvem.rb tap/Formula/nuvem.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/nuvem.rb
+          if git diff --cached --quiet; then
+            echo "the tap already carries this formula"; exit 0
+          fi
+          git commit -m "nuvem ${GITHUB_REF_NAME#v}"
+          git -c http.extraheader="$auth" push origin "HEAD:refs/heads/$TAP_BRANCH"

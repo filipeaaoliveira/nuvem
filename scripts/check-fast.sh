@@ -61,7 +61,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 # "shellcheck" off the start of comments: the linter reads a comment opening
 # with its own name as a directive and errors out.)
 if command -v shellcheck >/dev/null 2>&1; then
-    shellcheck scripts/*.sh
+    shellcheck scripts/*.sh packaging/homebrew/*.sh
 else
     echo "note: shellcheck not installed; shell lint deferred to CI" >&2
 fi
