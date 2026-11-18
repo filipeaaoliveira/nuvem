@@ -1,0 +1,81 @@
+---
+// One screen of nuvem as text, read from demo/frames/ at build time (see
+// src/lib/terminal-frame.mjs). The frame scales to fill the plate; on narrow
+// screens it stops at a readable size and scrolls sideways inside the plate.
+import { readTerminalFrame } from '../../lib/terminal-frame.mjs';
+
+interface Props {
+	/** Absolute path of the frame file. */
+	file: string;
+	/** Short caption shown above the frame. */
+	caption: string;
+	/** What the screen shows, for readers who cannot see it. */
+	description: string;
+	/** Unique on the page. */
+	id: string;
+}
+
+const { file, caption, description, id } = Astro.props;
+const frame = readTerminalFrame(file);
+const style = `--columns: ${frame.columns}; color: ${frame.color}`;
+---
+
+<figure class="frame">
+	<div class="bar"><span id={`${id}-caption`}>{caption}</span></div>
+	<div class="scroll" style={`--frame-bg: ${frame.background}`} tabindex="0" role="region" aria-labelledby={`${id}-caption`}>
+		<pre role="img" aria-label={description} style={style} set:html={frame.html} />
+	</div>
+</figure>
+
+<style>
+	.frame {
+		margin: 0;
+		border: 1px solid var(--nv-rule);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		min-height: 2.75rem;
+		padding: var(--nv-space-1) var(--nv-space-4);
+		border-bottom: 1px solid var(--nv-rule);
+		color: var(--nv-text-muted);
+		font-size: var(--nv-text-small);
+	}
+
+	.scroll {
+		--pad: var(--nv-space-4);
+		container-type: inline-size;
+		overflow-x: auto;
+		/* Methyl edges show which side has more to see, as on code plates. */
+		--nv-cue: color-mix(in srgb, var(--nv-methyl) 70%, transparent);
+		background:
+			linear-gradient(to right, var(--frame-bg), var(--frame-bg)) left / 1.25rem 100% no-repeat local,
+			linear-gradient(to left, var(--frame-bg), var(--frame-bg)) right / 1.25rem 100% no-repeat local,
+			linear-gradient(to right, var(--nv-cue), transparent) left / 0.5rem 100% no-repeat scroll,
+			linear-gradient(to left, var(--nv-cue), transparent) right / 0.5rem 100% no-repeat scroll,
+			var(--frame-bg);
+	}
+
+	.scroll:focus-visible {
+		outline-offset: -2px;
+	}
+
+	pre {
+		width: max-content;
+		margin: 0;
+		padding: var(--pad);
+		border: 0;
+		border-radius: 0;
+		background: none;
+		font-family: var(--nv-font-mono);
+		/* Fit the widest line to the plate (a monospace cell is about 0.61em),
+		   but never below 11px. */
+		font-size: max(0.6875rem, (100cqi - 2 * var(--pad)) / (var(--columns) * 0.61));
+		line-height: 1.2;
+		font-variant-ligatures: none;
+		white-space: pre;
+	}
+</style>
