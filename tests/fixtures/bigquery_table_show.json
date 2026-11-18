@@ -1,0 +1,24 @@
+{
+  "creationTime": "1495683814344",
+  "etag": "abcDEF123456=",
+  "id": "bigquery-public-data:austin_bikeshare.bikeshare_stations",
+  "kind": "bigquery#table",
+  "lastModifiedTime": "1787306613694",
+  "location": "US",
+  "numBytes": "15283",
+  "numLongTermBytes": "15283",
+  "numRows": "101",
+  "schema": {
+    "fields": [
+      { "mode": "NULLABLE", "name": "station_id", "type": "INTEGER" },
+      { "mode": "NULLABLE", "name": "name", "type": "STRING" },
+      { "mode": "NULLABLE", "name": "status", "type": "STRING" }
+    ]
+  },
+  "tableReference": {
+    "datasetId": "austin_bikeshare",
+    "projectId": "bigquery-public-data",
+    "tableId": "bikeshare_stations"
+  },
+  "type": "TABLE"
+}

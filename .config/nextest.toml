@@ -1,0 +1,88 @@
+# A test that runs ten seconds in this suite is not slow, it is hung: the
+# whole 2,300-test suite finishes in about ten seconds and no single test
+# takes more than a few, while the effect tests' awaits are unbounded, so a
+# regression that swallows an effect turns them into infinite waits. A kill
+# at ten seconds is a fast, named failure instead of a wedged run.
+[profile.default]
+slow-timeout = { period = "10s", terminate-after = 1 }
+
+# The one test that needs more, scoped to itself rather than by moving the
+# ceiling above.
+#
+# `every_mode_the_ladder_assigns_implies_its_own_flag` is the suite's slowest
+# test by a wide margin. Measured on 2026-08-26:
+#
+#   alone, warm             0.39s
+#   in the full suite       3.4s   (next slowest: 2.09s)
+#   under heavy load        8.9s   — killed two gate runs on branches that
+#                                    do not touch it
+#
+# Where the cost is: the property generates 1..12 steps over 256 cases and
+# rebuilds the whole keymap `Context` after *every* step — about 1,700
+# `input_context` calls. Measured, not assumed: removing both assertion walks
+# changes the time by nothing (0.398s vs 0.390s), and memoizing the seeded
+# fixture makes it slightly *worse*, because cloning `AppState` costs about
+# what rebuilding it does. The context build is the whole cost.
+#
+# Why not the three cheaper-looking fixes:
+#
+# * **Raising the global ceiling** would defeat what it is for. The block
+#   above is not about slowness, it is about tests that hang: a kill at 10s
+#   is a named failure, and a ceiling wide enough for this test would let a
+#   genuinely wedged test sit for a minute before anyone hears about it.
+# * **Cutting the case count** trades power for headroom. 256 cases is what
+#   explores step *interleavings*, which is the whole point of a property
+#   here. Note the companion coverage test
+#   (`the_generated_steps_reach_every_mode_the_invariant_constrains`) is
+#   deterministic and would not notice the loss, so it cannot be used to
+#   justify a smaller number.
+# * **Asserting less often** would drop the mid-trace states the property
+#   exists to check; a violation that occurs at step 4 and self-corrects by
+#   step 11 is exactly what it is looking for.
+#
+# So the cost is real, understood, and worth paying — and it is quarantined
+# here so that one expensive test does not buy every other test permission to
+# hang. 60s is six times its worst observed run: far above anything load can
+# do to it, far below a hang.
+[[profile.default.overrides]]
+filter = 'test(=keymap_mode_implication_property_test::every_mode_the_ladder_assigns_implies_its_own_flag)'
+slow-timeout = { period = "60s", terminate-after = 1 }
+
+# The chrome-fitting property, for the same reason and by the same measurement.
+#
+# It runs 1.3s alone and about 3.2s inside the full suite — the difference is
+# CPU contention, not the test doing more — and on a loaded machine it crossed
+# the 10s ceiling and failed a run that had nothing to do with it. That failure
+# reads as a broken tree rather than as a slow test.
+#
+# Widening is the right instrument here and reducing the work is not. The
+# ceiling above exists to catch a test that HANGS, and this one is only slow:
+# 34 cases, each a real session build and two full renders, and in a dev-profile
+# build a single render is ~8.6ms of the ~13ms a case costs. There is no
+# product-side inefficiency behind it — an optimized render of the same frame is
+# two orders of magnitude cheaper — and the coverage has already been cut once
+# to buy headroom (96 cases to 32, PR #222) without ending the problem. Cutting
+# it again would spend the property's power on the machine's load average.
+[[profile.default.overrides]]
+filter = 'test(=chrome_line_fitting_property_test::a_chrome_row_that_does_not_fit_says_so)'
+slow-timeout = { period = "60s", terminate-after = 1 }
+
+# The render benchmark, which is `#[ignore]`d and so runs only when asked for
+# by name. It measures rather than asserts, and it deliberately repeats its
+# work to find a minimum, so the ceiling above — which exists to catch a test
+# that hangs — has nothing useful to say about it. Without this the harness
+# kills it mid-measurement and reports the benchmark as a failure.
+[[profile.default.overrides]]
+filter = 'test(=render_bench::render_cost_by_row_count)'
+slow-timeout = { period = "300s", terminate-after = 1 }
+
+# The read-path benchmark, for the same reason and then some: it is a
+# measurement rather than an assertion, and every sample it takes is a live
+# request to Google, so its running time is the network's to decide and not
+# this repository's. It is `#[ignore]`d, so this ceiling applies only when
+# someone asks for it by name; what the ceiling is for is a run that has
+# stopped making progress -- a hung connection with no timeout of its own --
+# rather than a slow one.
+[[profile.default.overrides]]
+filter = 'test(=read_path_bench::read_path_bench)'
+slow-timeout = { period = "1800s", terminate-after = 1 }

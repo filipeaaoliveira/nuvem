@@ -1,0 +1,66 @@
+[
+  {
+    "datasetReference": {
+      "datasetId": "agent_analytic_sample_dataset",
+      "projectId": "bigquery-public-data"
+    },
+    "friendlyName": "",
+    "id": "bigquery-public-data:agent_analytic_sample_dataset",
+    "kind": "bigquery#dataset",
+    "labels": {
+      "dataplex-data-documentation-published-location": "us-central1",
+      "dataplex-data-documentation-published-project": "bigquery-public-data",
+      "dataplex-data-documentation-published-scan": "crs-6979059d-0000-2d5a-b323-f4f5e802fd9c",
+      "dg_data_confidentiality": "public",
+      "dg_data_context": "metadata",
+      "dg_data_source": "public"
+    },
+    "location": "US",
+    "type": "LINKED"
+  },
+  {
+    "datasetReference": {
+      "datasetId": "america_health_rankings",
+      "projectId": "bigquery-public-data"
+    },
+    "id": "bigquery-public-data:america_health_rankings",
+    "kind": "bigquery#dataset",
+    "labels": {
+      "dg_data_confidentiality": "public",
+      "dg_data_context": "metadata",
+      "dg_data_source": "public"
+    },
+    "location": "US",
+    "type": "DEFAULT"
+  },
+  {
+    "datasetReference": {
+      "datasetId": "austin_311",
+      "projectId": "bigquery-public-data"
+    },
+    "id": "bigquery-public-data:austin_311",
+    "kind": "bigquery#dataset",
+    "labels": {
+      "dg_data_confidentiality": "public",
+      "dg_data_context": "metadata",
+      "dg_data_source": "public"
+    },
+    "location": "US",
+    "type": "DEFAULT"
+  },
+  {
+    "datasetReference": {
+      "datasetId": "austin_bikeshare",
+      "projectId": "bigquery-public-data"
+    },
+    "id": "bigquery-public-data:austin_bikeshare",
+    "kind": "bigquery#dataset",
+    "labels": {
+      "dg_data_confidentiality": "public",
+      "dg_data_context": "metadata",
+      "dg_data_source": "public"
+    },
+    "location": "US",
+    "type": "DEFAULT"
+  }
+]

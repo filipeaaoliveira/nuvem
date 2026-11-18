@@ -1,0 +1,73 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "orders-api",
+    "namespace": "482910233714",
+    "labels": {
+      "cloud.googleapis.com/location": "europe-west1",
+      "team": "commerce",
+      "env": "prod"
+    },
+    "annotations": {
+      "run.googleapis.com/ingress": "all",
+      "serving.knative.dev/creator": "deployer@example.com",
+      "run.googleapis.com/operation-id": "b1e2c3d4"
+    }
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "name": "orders-api-00007-tabc",
+        "annotations": {
+          "autoscaling.knative.dev/minScale": "2",
+          "autoscaling.knative.dev/maxScale": "20",
+          "run.googleapis.com/cpu-throttling": "true"
+        }
+      },
+      "spec": {
+        "containerConcurrency": 80,
+        "timeoutSeconds": 300,
+        "serviceAccountName": "orders-api@example.iam.gserviceaccount.com",
+        "containers": [
+          {
+            "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+            "ports": [{ "name": "http1", "containerPort": 8080 }],
+            "resources": {
+              "limits": { "cpu": "1000m", "memory": "512Mi" }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "status": {
+    "url": "https://orders-api-abcde-ew.a.run.app",
+    "observedGeneration": 7,
+    "latestReadyRevisionName": "orders-api-00007-tabc",
+    "latestCreatedRevisionName": "orders-api-00007-tabc",
+    "traffic": [
+      {
+        "revisionName": "orders-api-00007-tabc",
+        "percent": 100,
+        "latestRevision": true
+      },
+      {
+        "revisionName": "orders-api-00006-sxyz",
+        "percent": 0,
+        "tag": "previous",
+        "latestRevision": false,
+        "url": "https://previous---orders-api-abcde-ew.a.run.app"
+      }
+    ],
+    "conditions": [
+      {
+        "type": "Ready",
+        "status": "True",
+        "lastTransitionTime": "2026-07-18T09:12:44Z"
+      },
+      { "type": "ConfigurationsReady", "status": "True" },
+      { "type": "RoutesReady", "status": "True" }
+    ]
+  }
+}

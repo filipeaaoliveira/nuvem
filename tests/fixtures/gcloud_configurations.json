@@ -1,0 +1,26 @@
+[
+  {
+    "name": "dev",
+    "is_active": true,
+    "properties": {
+      "core": {
+        "account": "dev@example.com",
+        "project": "dev-project"
+      },
+      "compute": {
+        "region": "europe-west1",
+        "zone": "europe-west1-b"
+      }
+    }
+  },
+  {
+    "name": "prod",
+    "is_active": false,
+    "properties": {
+      "core": {
+        "account": "ops@example.com",
+        "project": "prod-project"
+      }
+    }
+  }
+]

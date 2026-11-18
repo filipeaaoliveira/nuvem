@@ -1,0 +1,34 @@
+[
+  {
+    "name": "alpha-bucket",
+    "location": "US",
+    "location_type": "multi-region",
+    "default_storage_class": "STANDARD",
+    "versioning_enabled": true,
+    "uniform_bucket_level_access": true,
+    "public_access_prevention": "enforced",
+    "storage_url": "gs://alpha-bucket/",
+    "generation": 1701596787414884564,
+    "metageneration": 3,
+    "creation_time": "2024-01-02T03:04:05Z",
+    "update_time": "2024-02-03T04:05:06Z"
+  },
+  {
+    "name": "beta-bucket",
+    "location": "EUROPE-WEST1",
+    "location_type": "region",
+    "default_storage_class": "NEARLINE",
+    "versioning_enabled": false,
+    "uniform_bucket_level_access": false,
+    "public_access_prevention": "inherited",
+    "storage_url": "gs://beta-bucket/",
+    "metageneration": 1,
+    "creation_time": "2023-11-01T00:00:00Z"
+  },
+  {
+    "name": "gamma-bucket",
+    "location": "ASIA",
+    "default_storage_class": "COLDLINE",
+    "storage_url": "gs://gamma-bucket/"
+  }
+]

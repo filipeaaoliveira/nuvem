@@ -1,0 +1,135 @@
+[workspace]
+members = [".", "crates/nuvem-domain"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "MIT"
+repository = "https://github.com/filipeaaoliveira/nuvem"
+
+[package]
+name = "nuvem"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Terminal UI for Google Cloud resources using native gcloud configurations"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["gcp", "gcloud", "tui", "terminal", "google-cloud"]
+categories = ["command-line-utilities", "development-tools"]
+# One integration-test binary, not one per file: each test target statically
+# links the whole library, so per-file targets meant ~140 links of it per
+# build. tests/suite.rs mounts the files.
+autotests = false
+
+[[test]]
+name = "suite"
+path = "tests/suite.rs"
+
+[dependencies]
+nuvem-domain = { path = "crates/nuvem-domain", version = "0.1.0" }
+
+# Native Google Cloud clients for the read paths. See
+# docs/decisions/0001-native-sdk-for-read-paths.md: listings and detail loads
+# move off the `gcloud` subprocess, while configuration, auth, mutations,
+# tunnels and plugins stay on the CLI.
+google-cloud-auth = "1"
+http = "1"
+base64 = "0.23"
+google-cloud-gax = "1"
+# The poller trait a long-running mutation is driven through; the generated
+# clients return `impl Poller`, so the trait has to be nameable here.
+google-cloud-lro = "1"
+google-cloud-wkt = "1"
+google-cloud-storage = "1"
+# Clients are feature-gated per resource; `instances` and `projects` are on by
+# default and the rest are the ones this application reads.
+google-cloud-compute-v1 = { version = "3", features = [
+    "disks",
+    "firewalls",
+    "networks",
+    "regions",
+    "subnetworks",
+    "zones",
+] }
+google-cloud-container-v1 = "1"
+google-cloud-sql-v1 = "2"
+google-cloud-logging-v2 = "1"
+google-cloud-secretmanager-v1 = "1"
+google-cloud-iam-v1 = "1"
+google-cloud-iam-admin-v1 = "1"
+google-cloud-pubsub = "1"
+google-cloud-run-v2 = "1"
+google-cloud-functions-v2 = "1"
+google-cloud-recommender-v1 = "1"
+google-cloud-resourcemanager-v3 = "1"
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+crossterm = { version = "0.29", features = ["event-stream"] }
+dirs = "7"
+# Used for exactly one thing: StreamExt::next over crossterm's EventStream.
+# Defaults would add the async-await proc-macro machinery nothing here calls.
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+libc = "0.2"
+ratatui = "0.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# No "process" feature: every child is a blocking std::process::Command driven
+# from spawn_blocking — nothing here awaits a tokio child.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "signal"] }
+tokio-util = "0.7"
+tracing = "0.1"
+# Defaults would pull `ansi` (nu-ansi-term), which logging.rs provably turns
+# off with .with_ansi(false) — the log sink is a file. tracing-log stays: it is
+# what carries `log`-crate records from dependencies into the same file.
+tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt", "tracing-log"] }
+toml = "1.1"
+arc-swap = "1"
+unicode-truncate = "2"
+unicode-width = "0.2"
+unicode-general-category = "1.1.0"
+
+[dev-dependencies]
+# Caret, not an exact pin. It was pinned to =3.12.0 to satisfy cargo-deny's
+# multiple-versions ban: the 3.13+ line pulled a second `rustix`/`linux-raw-sys`
+# alongside the one the rest of the graph used. That duplicate is gone as of
+# 3.27, so the pin now only costs a dependabot PR per patch release.
+tempfile = "3"
+proptest = "1"
+tokio = { version = "1", features = ["test-util"] }
+
+# Debug info is the dominant disk cost of this workspace, not code: every test
+# binary statically links the whole dependency graph, so full DWARF is embedded
+# once per binary. On CI that filled the runner disk and the linker died
+# mid-write with SIGBUS ("ld terminated with signal 7"), which reads as a
+# compiler bug but is ENOSPC.
+#
+# Line tables keep what this repo actually reads out of a debug build — file and
+# line in panic backtraces — and drop the type and variable DWARF that is the
+# bulk of the bytes. Raise this to `true` locally if you need a debugger to
+# inspect values; do not commit that.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.release]
+lto = true
+strip = true
+
+# Workspace lint policy; members opt in via [lints] workspace = true, and CI's
+# `-D warnings` promotes every warn here to a failure.
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "warn"
+unreachable_pub = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+# All unsafe in this workspace is libc FFI (process-group control, pipe fd
+# handling). A SAFETY comment per block is what makes that reviewable.
+undocumented_unsafe_blocks = "warn"
+
+[lints]
+workspace = true

@@ -1,0 +1,47 @@
+[
+  {
+    "name": "projects/dev-project/locations/europe-west1/functions/api-gateway",
+    "state": "ACTIVE",
+    "environment": "GEN_2",
+    "updateTime": "2026-07-14T08:31:05Z",
+    "url": "https://europe-west1-dev-project.cloudfunctions.net/api-gateway",
+    "labels": {
+      "team": "platform",
+      "env": "prod"
+    }
+  },
+  {
+    "name": "projects/dev-project/locations/us-central1/functions/legacy-thumbnailer",
+    "state": "ACTIVE",
+    "environment": "GEN_1",
+    "updateTime": "2025-11-02T16:04:44Z",
+    "url": "https://us-central1-dev-project.cloudfunctions.net/legacy-thumbnailer"
+  },
+  {
+    "name": "projects/dev-project/locations/europe-west4/functions/image-resizer",
+    "state": "DEPLOYING",
+    "environment": "GEN_2",
+    "updateTime": "2026-08-01T11:59:12Z"
+  },
+  {
+    "name": "projects/dev-project/locations/asia-northeast1/functions/detached-worker",
+    "state": "DETACH_FAILED",
+    "environment": "ENVIRONMENT_UNSPECIFIED",
+    "updateTime": "2026-06-21T04:12:00Z"
+  },
+  {
+    "name": "projects/dev-project/locations/us-east1/functions/drifting-webhook",
+    "state": "UNKNOWN",
+    "environment": "GEN_2",
+    "updateTime": "2026-05-09T22:47:31Z"
+  },
+  {
+    "name": "projects/dev-project/locations/us-east1/functions/quarantined-job",
+    "state": "SUSPENDED",
+    "environment": "GEN_3",
+    "updateTime": "2026-07-30T13:20:00Z"
+  },
+  {
+    "name": "projects/dev-project/locations/us-west2/functions/bare-function"
+  }
+]

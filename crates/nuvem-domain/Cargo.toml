@@ -1,0 +1,27 @@
+[package]
+name = "nuvem-domain"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pure domain logic for nuvem: parsing, classification, and sanitisation of gcloud output"
+# Same single-binary rule as the root crate: see the root Cargo.toml and
+# tests/suite.rs for why auto-discovered per-file test targets are off.
+autotests = false
+
+[[test]]
+name = "suite"
+path = "tests/suite.rs"
+
+[dependencies]
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+
+[dev-dependencies]
+serde_json = "1"
+proptest = "1"
+
+[lints]
+workspace = true

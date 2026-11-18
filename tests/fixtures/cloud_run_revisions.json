@@ -1,0 +1,74 @@
+[
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Revision",
+    "metadata": {
+      "name": "orders-api-00007-tabc",
+      "namespace": "482910233714",
+      "creationTimestamp": "2026-07-18T09:11:58Z",
+      "labels": {
+        "cloud.googleapis.com/location": "europe-west1",
+        "serving.knative.dev/service": "orders-api",
+        "serving.knative.dev/configuration": "orders-api"
+      },
+      "annotations": {
+        "autoscaling.knative.dev/minScale": "2",
+        "autoscaling.knative.dev/maxScale": "20"
+      }
+    },
+    "spec": {
+      "containerConcurrency": 80,
+      "serviceAccountName": "orders-api@example.iam.gserviceaccount.com",
+      "containers": [
+        {
+          "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+          "resources": { "limits": { "cpu": "1000m", "memory": "512Mi" } }
+        }
+      ]
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "True",
+          "lastTransitionTime": "2026-07-18T09:12:40Z"
+        },
+        { "type": "Active", "status": "True" },
+        { "type": "ContainerHealthy", "status": "True" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Revision",
+    "metadata": {
+      "name": "orders-api-00006-sxyz",
+      "namespace": "482910233714",
+      "creationTimestamp": "2026-07-10T14:05:22Z",
+      "labels": {
+        "cloud.googleapis.com/location": "europe-west1",
+        "serving.knative.dev/service": "orders-api"
+      }
+    },
+    "spec": {
+      "containerConcurrency": 80,
+      "containers": [
+        {
+          "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.1",
+          "resources": { "limits": { "cpu": "1000m", "memory": "512Mi" } }
+        }
+      ]
+    },
+    "status": {
+      "conditions": [
+        {
+          "type": "Ready",
+          "status": "False",
+          "reason": "Retired",
+          "message": "The revision was retired.",
+          "lastTransitionTime": "2026-07-18T09:13:01Z"
+        }
+      ]
+    }
+  }
+]

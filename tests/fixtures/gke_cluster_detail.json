@@ -1,0 +1,56 @@
+{
+  "name": "platform-dev",
+  "location": "europe-west1",
+  "status": "RUNNING",
+  "currentMasterVersion": "1.31.5-gke.1023000",
+  "currentNodeVersion": "1.31.5-gke.1023000",
+  "endpoint": "34.118.10.20",
+  "network": "https://www.googleapis.com/compute/v1/projects/dev-project/global/networks/shared-vpc",
+  "subnetwork": "https://www.googleapis.com/compute/v1/projects/dev-project/regions/europe-west1/subnetworks/gke-subnet",
+  "resourceLabels": {
+    "env": "dev",
+    "team": "platform"
+  },
+  "privateClusterConfig": {
+    "enablePrivateEndpoint": false
+  },
+  "nodePools": [
+    {
+      "name": "default-pool",
+      "status": "RUNNING",
+      "version": "1.31.5-gke.1023000",
+      "initialNodeCount": 3,
+      "config": {
+        "machineType": "e2-standard-4"
+      },
+      "autoscaling": {
+        "enabled": true,
+        "minNodeCount": 1,
+        "maxNodeCount": 6
+      }
+    },
+    {
+      "name": "spot-pool",
+      "status": "RUNNING",
+      "version": "1.31.5-gke.1023000",
+      "initialNodeCount": 2,
+      "config": {
+        "machineType": "e2-standard-2"
+      },
+      "autoscaling": {
+        "enabled": false
+      }
+    }
+  ],
+  "addonsConfig": {
+    "httpLoadBalancing": {
+      "disabled": false
+    },
+    "horizontalPodAutoscaling": {
+      "disabled": false
+    },
+    "gcePersistentDiskCsiDriverConfig": {
+      "enabled": true
+    }
+  }
+}

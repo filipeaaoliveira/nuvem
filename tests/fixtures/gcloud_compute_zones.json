@@ -1,0 +1,12 @@
+[
+  {
+    "name": "europe-west1-b",
+    "region": "https://compute.googleapis.com/compute/v1/projects/dev-project/regions/europe-west1",
+    "status": "UP"
+  },
+  {
+    "name": "us-central1-a",
+    "region": "https://compute.googleapis.com/compute/v1/projects/dev-project/regions/us-central1",
+    "status": "UP"
+  }
+]

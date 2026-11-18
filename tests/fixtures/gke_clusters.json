@@ -1,0 +1,29 @@
+[
+  {
+    "name": "platform-dev",
+    "location": "europe-west1",
+    "status": "RUNNING",
+    "currentMasterVersion": "1.31.5-gke.1023000",
+    "currentNodeCount": 6,
+    "endpoint": "34.118.10.20",
+    "privateClusterConfig": {
+      "enablePrivateEndpoint": false
+    }
+  },
+  {
+    "name": "private-prod",
+    "zone": "europe-west1-b",
+    "status": "RECONCILING",
+    "currentMasterVersion": "1.30.9-gke.1127000",
+    "currentNodeCount": 3,
+    "privateClusterConfig": {
+      "enablePrivateEndpoint": true
+    }
+  },
+  {
+    "name": "legacy-unknown",
+    "location": "us-central1",
+    "status": "MAINTENANCE_WINDOW",
+    "currentMasterVersion": null
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "name": "reports/2024/mañana-测试.txt",
+  "bucket": "projects/_/buckets/alpha-bucket",
+  "size": "1024",
+  "storageClass": "STANDARD",
+  "generation": "1700000000000001",
+  "metageneration": "1",
+  "contentType": "text/plain",
+  "checksums": {
+    "crc32c": 0,
+    "md5Hash": "XUFAKrxLKna5cZ2REBfFkg=="
+  },
+  "createTime": "2024-03-01T10:00:00Z",
+  "updateTime": "2024-03-01T10:00:00Z",
+  "kmsKey": "projects/dev-project/locations/us/keyRings/gcs-ring/cryptoKeys/gcs-key",
+  "temporaryHold": false,
+  "eventBasedHold": false,
+  "retentionExpireTime": "2025-06-01T00:00:00Z"
+}

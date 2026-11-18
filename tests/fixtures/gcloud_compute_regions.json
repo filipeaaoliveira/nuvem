@@ -1,0 +1,10 @@
+[
+  {
+    "name": "europe-west1",
+    "status": "UP"
+  },
+  {
+    "name": "us-central1",
+    "status": "UP"
+  }
+]

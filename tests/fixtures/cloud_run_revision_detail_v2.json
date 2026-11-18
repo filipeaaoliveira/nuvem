@@ -1,0 +1,30 @@
+{
+  "name": "projects/dev-project/locations/europe-west1/services/orders-api/revisions/orders-api-00007-tabc",
+  "service": "projects/dev-project/locations/europe-west1/services/orders-api",
+  "createTime": "2026-07-18T09:11:58Z",
+  "serviceAccount": "orders-api@example.iam.gserviceaccount.com",
+  "maxInstanceRequestConcurrency": 80,
+  "timeout": "300s",
+  "observedGeneration": "1",
+  "scaling": {
+    "minInstanceCount": 2,
+    "maxInstanceCount": 20
+  },
+  "containers": [
+    {
+      "image": "europe-docker.pkg.dev/example/apps/orders-api:1.4.2",
+      "ports": [{ "name": "http1", "containerPort": 8080 }],
+      "resources": { "limits": { "cpu": "1000m", "memory": "512Mi" } }
+    }
+  ],
+  "conditions": [
+    {
+      "type": "Ready",
+      "state": "CONDITION_SUCCEEDED",
+      "lastTransitionTime": "2026-07-18T09:12:40Z"
+    },
+    { "type": "Active", "state": "CONDITION_SUCCEEDED" },
+    { "type": "ContainerHealthy", "state": "CONDITION_SUCCEEDED" },
+    { "type": "ResourcesAvailable", "state": "CONDITION_SUCCEEDED" }
+  ]
+}

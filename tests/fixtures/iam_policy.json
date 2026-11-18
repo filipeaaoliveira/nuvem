@@ -1,0 +1,61 @@
+{
+  "bindings": [
+    {
+      "members": [
+        "serviceAccount:sa-gke@dev-project.iam.gserviceaccount.com",
+        "user:alice@example.com",
+        "group:platform@example.com"
+      ],
+      "role": "roles/artifactregistry.admin"
+    },
+    {
+      "members": [
+        "allUsers"
+      ],
+      "role": "roles/storage.objectViewer"
+    },
+    {
+      "members": [
+        "allAuthenticatedUsers",
+        "domain:example.com"
+      ],
+      "role": "roles/viewer"
+    },
+    {
+      "members": [
+        "deleted:serviceAccount:gone@dev-project.iam.gserviceaccount.com?uid=104405669981102690742",
+        "deleted:user:bob@example.com?uid=9"
+      ],
+      "role": "roles/editor"
+    },
+    {
+      "condition": {
+        "description": "Only until the migration lands",
+        "expression": "request.time < timestamp(\"2027-01-01T00:00:00Z\")",
+        "title": "expires-2027"
+      },
+      "members": [
+        "user:carol@example.com"
+      ],
+      "role": "roles/compute.admin"
+    },
+    {
+      "members": [
+        "principalSet://iam.googleapis.com/projects/1/locations/global/workloadIdentityPools/gh/*",
+        "principal://iam.googleapis.com/locations/global/workforcePools/wf/subject/user:erin@example.com"
+      ],
+      "role": "projects/dev-project/roles/artifactregistry.admin"
+    },
+    {
+      "members": [],
+      "role": "roles/orphanedRoleWithNoMembers"
+    },
+    {
+      "members": [
+        "user:dave@example.com"
+      ]
+    }
+  ],
+  "etag": "BwYh3xQmS9k=",
+  "version": 1
+}
