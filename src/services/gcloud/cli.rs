@@ -1913,7 +1913,8 @@ mod tests {
     /// constant", not as "the ceiling is still written down in both".
     #[test]
     fn the_docs_document_the_real_run_timeout() {
-        const FEATURES: &str = include_str!("../../../docs/features.md");
+        const BIGQUERY: &str =
+            include_str!("../../../docs/reference/services/bigquery-datasets.md");
         const ARCHITECTURE: &str = include_str!("../../../ARCHITECTURE.md");
         /// The number words the prose could plausibly be spelling, indexed by
         /// the value they spell: `MINUTE_WORDS[2]` is `"two"`.
@@ -1939,7 +1940,7 @@ mod tests {
             });
 
         for (name, document) in [
-            ("docs/features.md", FEATURES),
+            ("docs/reference/services/bigquery-datasets.md", BIGQUERY),
             ("ARCHITECTURE.md", ARCHITECTURE),
         ] {
             let mut documented: Vec<String> = Vec::new();

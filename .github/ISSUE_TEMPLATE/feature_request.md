@@ -13,4 +13,4 @@ labels: enhancement
 <!-- If you have a shape in mind. Note: nuvem reads through the Google Cloud
 client libraries and mutates through `gcloud`/`bq`; a feature needing a service
 with no Rust client, or credentials gcloud cannot mint, is out of scope. Many
-workflows can already be added as user plugins — see docs/plugins.md. -->
+workflows can already be added as user plugins — see docs/plugins/overview.md. -->

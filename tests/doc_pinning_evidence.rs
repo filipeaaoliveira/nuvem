@@ -71,15 +71,20 @@ fn evidence_dir() -> Option<PathBuf> {
 // document helpers — transcribed from `tests/documentation_test.rs`
 // ---------------------------------------------------------------------------
 
-const BATCH_SECTION: &str = "## Batch actions on marked rows";
+const BATCH_SECTION: &str = "# Batch actions on marked rows";
 
-/// The section a claim lives in, from its `##` heading to the next one.
+/// The section a claim lives in, from its heading to the next heading at the
+/// same or a shallower level.
 fn document_section(document: &str, heading: &str) -> Result<String, String> {
     let start = document
         .find(heading)
         .ok_or_else(|| format!("the documentation has no {heading:?} section"))?;
     let body = &document[start + heading.len()..];
-    let end = body.find("\n## ").unwrap_or(body.len());
+    let level = heading.chars().take_while(|c| *c == '#').count();
+    let end = (1..=level)
+        .filter_map(|depth| body.find(&format!("\n{} ", "#".repeat(depth))))
+        .min()
+        .unwrap_or(body.len());
     Ok(body[..end].to_string())
 }
 
@@ -599,32 +604,10 @@ fn swap_jumps_cells(readme: &str, first: &str, second: &str) -> String {
 // the six verdicts
 // ---------------------------------------------------------------------------
 
-/// The pages the pins are read from, matching `USER_DOCS` in
-/// tests/documentation_test.rs.
-///
-/// The sections this file mutates — the batch-action lists, the default-jumps
-/// table — were README sections when these pins were written and are now
-/// pages under `docs/`. What the pins assert is unchanged; only the file the
-/// prose sits in moved, so the corpus moves with it.
-const USER_DOCS: &[&str] = &[
-    "README.md",
-    "docs/keys.md",
-    "docs/configuration.md",
-    "docs/plugins.md",
-    "docs/features.md",
-    "docs/demo-and-read-only.md",
-];
-
-/// The user documentation, concatenated in `USER_DOCS` order.
+/// The user documentation, concatenated: the same corpus
+/// `tests/documentation_test.rs` reads, from `support::user_docs`.
 fn user_docs() -> String {
-    USER_DOCS
-        .iter()
-        .map(|path| {
-            let page = fs::read_to_string(path)
-                .unwrap_or_else(|error| panic!("{path} is readable: {error}"));
-            format!("{page}\n")
-        })
-        .collect()
+    crate::support::user_docs::corpus()
 }
 
 #[test]

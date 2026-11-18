@@ -9,3 +9,4 @@ pub(crate) mod keymap_context;
 pub(crate) mod process;
 pub(crate) mod remembered_view;
 pub(crate) mod theme;
+pub(crate) mod user_docs;

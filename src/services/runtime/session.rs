@@ -8403,10 +8403,15 @@ mod tests {
     /// written down".
     #[test]
     fn the_docs_document_the_real_bigquery_enrichment_concurrency() {
-        const FEATURES: &str = include_str!("../../../docs/features.md");
+        const BIGQUERY: &str =
+            include_str!("../../../docs/reference/services/bigquery-datasets.md");
         const ARCHITECTURE: &str = include_str!("../../../ARCHITECTURE.md");
         const SECTIONS: [(&str, &str, &str); 2] = [
-            ("docs/features.md", FEATURES, "### BigQuery"),
+            (
+                "docs/reference/services/bigquery-datasets.md",
+                BIGQUERY,
+                "## Tables",
+            ),
             (
                 "ARCHITECTURE.md",
                 ARCHITECTURE,
@@ -8492,7 +8497,7 @@ mod tests {
     }
 
     /// `bigquery_section` against a literal fixture, so editing
-    /// docs/features.md or ARCHITECTURE.md can never make these pass or fail.
+    /// the BigQuery page or ARCHITECTURE.md can never make these pass or fail.
     ///
     /// The helper is a near-verbatim copy of `Doc::section_body` in
     /// `tests/documentation_test.rs`. Sharing one would need that helper made
@@ -8595,7 +8600,7 @@ Betamax is a longer heading that starts with Beta.
     /// demonstrated: `## list the datasets` added inside the first `bq` fence
     /// left the old scan seeing none of the four width claims, so it would
     /// have gone green on an empty haystack. Neither document carries such a
-    /// line today; docs/features.md has no fenced `#` line at all, and the
+    /// line today; the BigQuery page has no fenced `#` line at all, and the
     /// three ARCHITECTURE.md carries are all single-hash and all far outside
     /// its BigQuery section, so none of them terminated the old scan either. Both cases end the same way: claim sites silently leave
     /// the haystack and the pin quietly stops checking them.
