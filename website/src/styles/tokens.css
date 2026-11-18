@@ -1,0 +1,89 @@
+/*
+ * Design tokens for the nuvem site. Shared by the docs (through Starlight's
+ * customCss) and by custom pages such as the landing page.
+ *
+ * Palette: Wada Sanzo, A Dictionary of Color Combinations, combination 47.
+ * The five named colours are used as given. Every other value below is the
+ * background mixed toward the off-white text or the darker code ground, so
+ * no new hue enters the page. Contrast ratios are against --nv-bg unless
+ * stated.
+ */
+
+@import '@fontsource-variable/schibsted-grotesk/wght.css';
+@import '@fontsource-variable/schibsted-grotesk/wght-italic.css';
+
+:root {
+	/* Combination 47 */
+	--nv-bg: #423b36; /* Dull Purplish Black: the page ground */
+	--nv-naples: #fbe6a0; /* Naples Yellow, 8.86:1: titles, wordmark, prompt, focus */
+	--nv-coral: #f58e84; /* Coral Red, 4.76:1: links and copy controls */
+	--nv-methyl: #54afb4; /* Pale Methyl Blue, 4.28:1: rules, markers, large text only */
+	--nv-eugenia: #e2625e; /* Eugenia Red, 3.22:1: filled alerts with dark text only */
+
+	/* Supporting tones, all tints of the ground */
+	--nv-plate: #1b1816; /* code and terminal ground; off-white on it is 15.04:1 */
+	--nv-plate-raised: #2c2622; /* inline code, table header; off-white 12.70:1 */
+	--nv-text: #f1ece6; /* body text, 9.36:1 */
+	--nv-text-muted: #cbc1b6; /* secondary text, 6.20:1 */
+	--nv-rule: #5e554e; /* hairlines between regions (decorative) */
+	--nv-rule-strong: #7d7269; /* control outlines */
+	--nv-on-accent: #1b1816; /* text on Naples, Coral, Methyl or Eugenia fills (5.17:1 or better) */
+
+	/* Type: one grotesk for everything that is read, system mono for code */
+	--nv-font-sans: 'Schibsted Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		'Helvetica Neue', Arial, sans-serif;
+	--nv-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+	/* Type scale, ratio about 1.25 from a 17px body */
+	--nv-text-small: 0.875rem; /* 14px: captions, sidebar, table of contents */
+	--nv-text-code: 0.875rem; /* 14px: code, set against 17px body */
+	--nv-text-body: 1.0625rem; /* 17px */
+	--nv-text-h4: 1.125rem; /* 18px */
+	--nv-text-h3: 1.3125rem; /* 21px */
+	--nv-text-h2: 1.625rem; /* 26px */
+	--nv-text-h1: clamp(2rem, 1.4rem + 2.4vw, 2.625rem); /* 32px to 42px */
+	--nv-leading-body: 1.65;
+	--nv-leading-tight: 1.2;
+	--nv-measure: 68ch;
+
+	/* Spacing, on a 4px step */
+	--nv-space-1: 0.25rem;
+	--nv-space-2: 0.5rem;
+	--nv-space-3: 0.75rem;
+	--nv-space-4: 1rem;
+	--nv-space-5: 1.5rem;
+	--nv-space-6: 2rem;
+	--nv-space-7: 3rem;
+	--nv-space-8: 4rem;
+
+	--nv-radius: 2px;
+	--nv-focus: 2px solid var(--nv-naples);
+
+	color-scheme: dark;
+}
+
+::selection {
+	background-color: color-mix(in srgb, var(--nv-methyl) 45%, var(--nv-plate));
+	color: var(--nv-text);
+}
+
+html {
+	scrollbar-color: var(--nv-rule-strong) var(--nv-bg);
+	caret-color: var(--nv-naples);
+}
+
+:focus-visible {
+	outline: var(--nv-focus);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

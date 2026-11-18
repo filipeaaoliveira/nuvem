@@ -1,0 +1,481 @@
+/*
+ * Docs pages. Maps the tokens onto Starlight's variables, then sets the
+ * frame: one ground for header, sidebar and column, divided by hairlines;
+ * code and terminal output on darker plates; position marked by a tick.
+ */
+
+:root,
+:root[data-theme='light'],
+::backdrop {
+	--sl-font: var(--nv-font-sans);
+	--sl-font-mono: var(--nv-font-mono);
+
+	--sl-color-white: var(--nv-text);
+	--sl-color-gray-1: var(--nv-text);
+	--sl-color-gray-2: var(--nv-text);
+	--sl-color-gray-3: var(--nv-text-muted);
+	--sl-color-gray-4: var(--nv-rule-strong);
+	--sl-color-gray-5: var(--nv-rule);
+	--sl-color-gray-6: var(--nv-plate-raised);
+	--sl-color-gray-7: var(--nv-plate-raised);
+	--sl-color-black: var(--nv-bg);
+
+	--sl-color-accent-low: var(--nv-plate-raised);
+	--sl-color-accent: var(--nv-coral);
+	--sl-color-accent-high: var(--nv-coral);
+
+	/* Starlight's status hues, folded into the palette */
+	--sl-color-blue-low: var(--nv-plate);
+	--sl-color-blue: var(--nv-methyl);
+	--sl-color-blue-high: var(--nv-methyl);
+	--sl-color-purple-low: var(--nv-plate);
+	--sl-color-purple: var(--nv-naples);
+	--sl-color-purple-high: var(--nv-naples);
+	--sl-color-green-low: var(--nv-plate);
+	--sl-color-green: var(--nv-methyl);
+	--sl-color-green-high: var(--nv-methyl);
+	--sl-color-orange-low: var(--nv-eugenia);
+	--sl-color-orange: var(--nv-eugenia);
+	--sl-color-orange-high: var(--nv-on-accent);
+	--sl-color-red-low: var(--nv-eugenia);
+	--sl-color-red: var(--nv-eugenia);
+	--sl-color-red-high: var(--nv-on-accent);
+
+	--sl-color-text: var(--nv-text);
+	--sl-color-text-accent: var(--nv-coral);
+	--sl-color-text-invert: var(--nv-on-accent);
+	--sl-color-bg: var(--nv-bg);
+	--sl-color-bg-nav: var(--nv-bg);
+	--sl-color-bg-sidebar: var(--nv-bg);
+	--sl-color-bg-inline-code: var(--nv-plate-raised);
+	--sl-color-bg-accent: var(--nv-coral);
+	--sl-color-hairline-light: var(--nv-rule);
+	--sl-color-hairline: var(--nv-rule);
+	--sl-color-hairline-shade: var(--nv-plate);
+	--sl-color-backdrop-overlay: color-mix(in srgb, var(--nv-plate) 80%, transparent);
+
+	--sl-text-body: var(--nv-text-body);
+	--sl-text-body-sm: var(--nv-text-small);
+	--sl-text-code: var(--nv-text-code);
+	--sl-text-code-sm: 0.8125rem;
+	--sl-text-h1: var(--nv-text-h1);
+	--sl-text-h2: var(--nv-text-h2);
+	--sl-text-h3: var(--nv-text-h3);
+	--sl-text-h4: var(--nv-text-h4);
+	--sl-text-h5: var(--nv-text-body);
+	--sl-line-height: var(--nv-leading-body);
+	--sl-line-height-headings: var(--nv-leading-tight);
+
+	--sl-content-width: 38rem; /* about 70 characters of 17px body text */
+	--sl-sidebar-width: 17rem;
+
+	--sl-shadow-sm: none;
+	--sl-shadow-md: 0 2px 8px rgb(0 0 0 / 0.25);
+	--sl-shadow-lg: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+@media (min-width: 50em) {
+	:root {
+		--sl-text-h1: var(--nv-text-h1);
+		--sl-text-h2: var(--nv-text-h2);
+		--sl-text-h3: var(--nv-text-h3);
+		--sl-text-h4: var(--nv-text-h4);
+	}
+}
+
+body {
+	background-color: var(--nv-bg);
+	font-feature-settings: 'kern', 'liga';
+}
+
+/* Header: the wordmark, and the one rule in Methyl Blue that frames every page. */
+header.header {
+	border-bottom: 1px solid var(--nv-methyl);
+}
+
+.site-title {
+	color: var(--nv-naples);
+	font-size: 1.375rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+
+/* Search: a quiet outlined field with the `/` shortcut shown. */
+site-search button[data-open-modal] {
+	border: 1px solid var(--nv-rule-strong);
+	border-radius: var(--nv-radius);
+	background-color: var(--nv-bg);
+	color: var(--nv-text-muted);
+}
+
+site-search button[data-open-modal]:hover {
+	border-color: var(--nv-text-muted);
+	color: var(--nv-text);
+}
+
+site-search button[data-open-modal] > kbd {
+	display: none !important;
+}
+
+@media (min-width: 50rem) {
+	site-search button[data-open-modal]::after {
+		content: '/';
+		margin-inline-start: auto;
+		min-width: 1.4em;
+		padding: 0 0.35em;
+		border: 1px solid var(--nv-rule-strong);
+		border-radius: var(--nv-radius);
+		font-family: var(--nv-font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		text-align: center;
+		color: var(--nv-text-muted);
+	}
+}
+
+site-search dialog {
+	background-color: var(--nv-bg);
+	border: 1px solid var(--nv-rule-strong);
+	border-radius: var(--nv-radius);
+}
+
+/* Pagefind result list */
+#starlight__search {
+	--pagefind-ui-primary: var(--nv-coral);
+	--pagefind-ui-text: var(--nv-text);
+	--pagefind-ui-background: var(--nv-plate);
+	--pagefind-ui-border: var(--nv-rule-strong);
+	--pagefind-ui-tag: var(--nv-plate-raised);
+	--pagefind-ui-font: var(--nv-font-sans);
+}
+
+#starlight__search mark {
+	background-color: var(--nv-naples);
+	color: var(--nv-on-accent);
+}
+
+/* Sidebar: groups by what the reader wants to do; the current page carries a tick. */
+.sidebar-pane {
+	border-inline-end: 1px solid var(--nv-rule);
+}
+
+.sidebar-content {
+	font-size: var(--nv-text-small);
+}
+
+.sidebar-content .large {
+	font-size: 0.9375rem;
+}
+
+.sidebar-content summary .group-label .large {
+	color: var(--nv-text);
+	font-weight: 650;
+}
+
+.sidebar-content a {
+	color: var(--nv-text-muted);
+	border-radius: var(--nv-radius);
+}
+
+.sidebar-content a:hover {
+	color: var(--nv-text);
+}
+
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+	position: relative;
+	background-color: transparent;
+	color: var(--nv-naples);
+	font-weight: 650;
+}
+
+.sidebar-content a[aria-current='page']::before {
+	content: '';
+	position: absolute;
+	inset-inline-start: -0.5rem;
+	top: 50%;
+	width: 0.625rem;
+	border-top: 1px solid var(--nv-naples);
+}
+
+/* Table of contents: same tick for the section in view. */
+starlight-toc a,
+mobile-starlight-toc a {
+	color: var(--nv-text-muted);
+	font-size: var(--nv-text-small);
+}
+
+starlight-toc a:hover {
+	color: var(--nv-text);
+}
+
+starlight-toc a[aria-current='true'],
+starlight-toc a[aria-current='true']:hover,
+starlight-toc a[aria-current='true']:focus {
+	position: relative;
+	color: var(--nv-naples);
+}
+
+starlight-toc a[aria-current='true']::before {
+	content: '';
+	position: absolute;
+	inset-inline-start: -0.75rem;
+	top: 0.85em;
+	width: 0.5rem;
+	border-top: 1px solid var(--nv-naples);
+}
+
+.right-sidebar {
+	border-inline-start: 1px solid var(--nv-rule);
+}
+
+.right-sidebar h2,
+mobile-starlight-toc .toggle {
+	color: var(--nv-text);
+}
+
+mobile-starlight-toc nav {
+	border-bottom: 1px solid var(--nv-rule);
+	background-color: var(--nv-bg);
+}
+
+/* Page title */
+.content-panel h1#_top {
+	color: var(--nv-naples);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	text-wrap: balance;
+}
+
+.content-panel + .content-panel {
+	border-top-color: var(--nv-rule);
+}
+
+/* Reading column */
+.sl-markdown-content {
+	color: var(--nv-text);
+	font-size: var(--nv-text-body);
+}
+
+.sl-markdown-content :is(h2, h3, h4, h5, h6) {
+	color: var(--nv-text);
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	text-wrap: balance;
+	scroll-margin-top: calc(var(--sl-nav-height) + var(--nv-space-5));
+}
+
+.sl-markdown-content :is(h2, h3, h4, h5, h6):not(:where(.not-content *)) {
+	margin-top: 2.25em;
+	margin-bottom: 0.5em;
+}
+
+.sl-markdown-content h2:not(:where(.not-content *)) {
+	padding-top: var(--nv-space-4);
+	border-top: 1px solid var(--nv-rule);
+}
+
+.sl-markdown-content :is(h2, h3, h4, h5, h6) + :not(:where(.not-content *)) {
+	margin-top: 0;
+}
+
+.sl-markdown-content .sl-heading-wrapper + :not(:where(.not-content *)) {
+	margin-top: 0;
+}
+
+.sl-markdown-content .sl-heading-wrapper:has(> h2) {
+	margin-top: 2.25em;
+	padding-top: var(--nv-space-4);
+	border-top: 1px solid var(--nv-rule);
+}
+
+.sl-markdown-content .sl-heading-wrapper > h2 {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: 0;
+}
+
+.sl-markdown-content .sl-anchor-link {
+	color: var(--nv-text-muted);
+}
+
+.sl-markdown-content a:not(:where(.not-content *)),
+.sl-markdown-content a:not(:where(.not-content *)) code {
+	color: var(--nv-coral);
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+	text-decoration-line: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+	text-decoration-thickness: 2px;
+}
+
+.sl-markdown-content strong {
+	color: var(--nv-text);
+	font-weight: 650;
+}
+
+/* Inline code */
+.sl-markdown-content :not(pre) > code {
+	padding: 0.1em 0.35em;
+	border-radius: var(--nv-radius);
+	background-color: var(--nv-plate-raised);
+	color: var(--nv-text);
+	font-size: 0.875em;
+	overflow-wrap: anywhere;
+}
+
+/* Tables: rules, not stripes. (Schibsted's tabular figures also widen
+   commas, so tnum is left off running text in cells.) */
+.sl-markdown-content table:not(:where(.not-content *)) {
+	font-size: 0.9375rem;
+	border-collapse: collapse;
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+	padding: var(--nv-space-2) var(--nv-space-3);
+	border-bottom: 1px solid var(--nv-rule);
+	background-color: transparent;
+	vertical-align: top;
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+	color: var(--nv-text);
+	font-weight: 650;
+	border-bottom: 1px solid var(--nv-methyl);
+	text-align: start;
+}
+
+.sl-markdown-content tr:nth-child(2n):not(:where(.not-content *)) {
+	background-color: transparent;
+}
+
+.sl-markdown-content hr {
+	border-color: var(--nv-rule);
+}
+
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
+	border-inline-start: 1px solid var(--nv-methyl);
+	color: var(--nv-text-muted);
+}
+
+/* Keys: physical-looking caps, for a keyboard-first tool. */
+.sl-markdown-content kbd {
+	display: inline-block;
+	min-width: 1.6em;
+	padding: 0 0.4em;
+	border: 1px solid var(--nv-rule-strong);
+	border-bottom-width: 2px;
+	border-radius: var(--nv-radius);
+	background-color: var(--nv-plate-raised);
+	font-family: var(--nv-font-mono);
+	font-size: 0.8125em;
+	line-height: 1.6;
+	text-align: center;
+	color: var(--nv-text);
+}
+
+/* Asides: a labelled plate. Caution and danger are filled Eugenia Red with dark text. */
+.starlight-aside {
+	border: 1px solid var(--nv-rule);
+	border-radius: var(--nv-radius);
+	background-color: var(--nv-plate);
+	color: var(--nv-text);
+}
+
+.starlight-aside .starlight-aside__title {
+	font-size: var(--nv-text-small);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	color: var(--nv-text);
+}
+
+.starlight-aside--note .starlight-aside__icon {
+	color: var(--nv-methyl);
+}
+
+.starlight-aside--tip .starlight-aside__icon {
+	color: var(--nv-naples);
+}
+
+.starlight-aside--caution,
+.starlight-aside--danger {
+	border-color: var(--nv-eugenia);
+	background-color: var(--nv-eugenia);
+	color: var(--nv-on-accent);
+}
+
+.starlight-aside:is(.starlight-aside--caution, .starlight-aside--danger) :is(.starlight-aside__title, .starlight-aside__icon, a, code, strong) {
+	color: var(--nv-on-accent);
+}
+
+.starlight-aside:is(.starlight-aside--caution, .starlight-aside--danger) :not(pre) > code {
+	background-color: color-mix(in srgb, var(--nv-on-accent) 12%, transparent);
+}
+
+/* Code plates get a little air from the column. */
+.sl-markdown-content .expressive-code {
+	margin-block: var(--nv-space-5);
+}
+
+/* Pager and footer */
+.pagination-links a {
+	border-color: var(--nv-rule);
+	border-radius: var(--nv-radius);
+	box-shadow: none;
+	color: var(--nv-text-muted);
+}
+
+.pagination-links a:hover {
+	border-color: var(--nv-coral);
+}
+
+.pagination-links .link-title {
+	color: var(--nv-coral);
+}
+
+footer .meta,
+footer .meta a {
+	color: var(--nv-text-muted);
+}
+
+/* Small screens: the menu and contents toggles match the search control. */
+.sl-menu-button {
+	border: 1px solid var(--nv-rule-strong) !important;
+	border-radius: var(--nv-radius) !important;
+	background-color: var(--nv-bg) !important;
+	color: var(--nv-text) !important;
+	box-shadow: none !important;
+}
+
+.sl-menu-button:has(~ :popover-open) {
+	border-color: var(--nv-naples) !important;
+	color: var(--nv-naples) !important;
+}
+
+mobile-starlight-toc .toggle {
+	border-color: var(--nv-rule-strong);
+	border-radius: var(--nv-radius);
+	background-color: var(--nv-bg);
+}
+
+mobile-starlight-toc details[open] .toggle {
+	border-color: var(--nv-naples);
+}
+
+mobile-starlight-toc .dropdown {
+	border-color: var(--nv-rule);
+	background-color: var(--nv-bg);
+}
+
+mobile-starlight-toc a[aria-current='true'],
+mobile-starlight-toc a[aria-current='true']:hover,
+mobile-starlight-toc a[aria-current='true']:focus {
+	background-color: transparent;
+	color: var(--nv-naples);
+}
