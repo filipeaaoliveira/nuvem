@@ -6,6 +6,7 @@ import { satteri } from '@astrojs/markdown-satteri';
 import docsMarkdown from './src/lib/markdown-docs.mjs';
 import { pluginCodePlates } from './src/lib/code-plates.mjs';
 import { docLinksIntegration } from './src/lib/doc-links.mjs';
+import { securityHeadersIntegration } from './src/lib/security-headers.mjs';
 import codeTheme from './src/styles/code-theme.json' with { type: 'json' };
 
 const sidebar = buildSidebar();
@@ -24,6 +25,12 @@ export default defineConfig({
 			description: 'A terminal UI for Google Cloud.',
 			social: [{ icon: 'github', label: 'Source on GitHub', href: REPO_URL }],
 			editLink: { baseUrl: `${REPO_URL}/edit/main/website/` },
+			head: [
+				{ tag: 'meta', attrs: { property: 'og:image', content: 'https://nuvem.fyi/og.png' } },
+				{ tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+				{ tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+				{ tag: 'meta', attrs: { property: 'og:image:alt', content: 'nuvem: a terminal UI for Google Cloud.' } },
+			],
 			customCss: ['./src/styles/tokens.css', './src/styles/docs.css'],
 			// Starlight's own Markdown features (asides, heading anchors) also
 			// apply to the repository's docs, which live outside src/.
@@ -78,5 +85,6 @@ export default defineConfig({
 				},
 			},
 		}),
+		securityHeadersIntegration(),
 	],
 });
