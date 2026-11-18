@@ -176,6 +176,8 @@ mod diagnostics_probe_test;
 mod discovery_service_test;
 #[path = "doc_pinning_evidence.rs"]
 mod doc_pinning_evidence;
+#[path = "docs_completeness_test.rs"]
+mod docs_completeness_test;
 #[path = "documentation_test.rs"]
 mod documentation_test;
 #[path = "effect_dispatch_test.rs"]
