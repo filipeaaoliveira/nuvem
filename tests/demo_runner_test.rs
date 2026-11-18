@@ -1679,3 +1679,97 @@ fn finops_recommendations_and_budgets_through_demo_runner() {
         "the second budget is account-wide and tracks the last period"
     );
 }
+
+/// The whole frame a session paints at `width` x `height`, as text.
+fn screen(session: &RuntimeSession, width: u16, height: u16) -> String {
+    let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height))
+        .expect("a test terminal");
+    terminal
+        .draw(|frame| nuvem::ui::render(frame, session))
+        .expect("the frame draws");
+    let buffer = terminal.backend().buffer();
+    (0..buffer.area.height)
+        .map(|y| {
+            (0..buffer.area.width)
+                .map(|x| buffer[(x, y)].symbol())
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Every row a demo user can open settles into its own detail. None of them
+/// may still be loading once the session has nothing left in flight, and none
+/// may fail: the demo corpus answers every row it lists.
+///
+/// Walks every service in `ResourceServiceKind::ALL` and every row each one
+/// lists, then every tab of whatever opened. A row whose detail load answered
+/// with another resource's document used to be dropped as stale and leave
+/// "Loading detail for ..." on screen forever, which is what this catches.
+///
+/// The services are walked side by side, one thread and runtime each, because
+/// walked in turn they take most of the suite's per-test ceiling.
+#[test]
+fn every_row_of_every_demo_service_opens_into_a_settled_view() {
+    std::thread::scope(|scope| {
+        for kind in ResourceServiceKind::ALL {
+            scope.spawn(move || {
+                tokio::runtime::Builder::new_multi_thread()
+                    .worker_threads(2)
+                    .enable_all()
+                    .build()
+                    .expect("a runtime")
+                    .block_on(every_row_opens_into_a_settled_view(kind));
+            });
+        }
+    });
+}
+
+async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
+    let rows = project_resource_list(&demo_session_showing(kind).await.app().root.resources)
+        .table
+        .map(|table| table.rows.len())
+        .unwrap_or(0);
+    assert!(rows > 0, "{kind:?} lists no rows in demo mode");
+    // A fresh session per row: leaving a drill-in walks the navigation
+    // history, which can lead to another service, and a walk that followed it
+    // would check the wrong rows and pass.
+    for row in 0..rows {
+        let mut session = demo_session_showing(kind).await;
+        for _ in 0..row {
+            session
+                .dispatch_action(Action::Resources(ResourcesAction::SelectNext))
+                .await;
+        }
+        let list = project_resource_list(&session.app().root.resources);
+        assert_eq!(list.service, kind, "the session is not showing {kind:?}");
+        assert_eq!(
+            list.table.and_then(|table| table.selected_row),
+            Some(row),
+            "{kind:?}: the walk is not on row {row}"
+        );
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+            .await;
+        drain(&mut session).await;
+        // A pass over the tabs, so a tab that loads lazily (Cloud SQL users,
+        // Cloud Run revisions) is walked too.
+        for tab in 0..6 {
+            let frame = screen(&session, 160, 40);
+            assert!(
+                !frame.contains("load failed"),
+                "{kind:?} row {row}, tab {tab}: a demo row must open into its own \
+                 detail, not a failure:\n{frame}"
+            );
+            assert!(
+                !frame.contains("Loading"),
+                "{kind:?} row {row}, tab {tab}: still loading after the session \
+                 settled:\n{frame}"
+            );
+            session
+                .dispatch_action(Action::Resources(ResourcesAction::SelectNextTab))
+                .await;
+            drain(&mut session).await;
+        }
+    }
+}

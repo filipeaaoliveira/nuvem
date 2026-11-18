@@ -166,6 +166,8 @@ mod detached_fetch_evidence;
 mod detail_field_projection_test;
 #[path = "detail_field_selection_test.rs"]
 mod detail_field_selection_test;
+#[path = "detail_request_test.rs"]
+mod detail_request_test;
 #[path = "diagnostics_classify_test.rs"]
 mod diagnostics_classify_test;
 #[path = "diagnostics_generation_test.rs"]

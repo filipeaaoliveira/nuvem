@@ -84,6 +84,53 @@ pub fn envelope<T: serde::de::DeserializeOwned>(field: &str, bytes: &str) -> Res
     serde_json::from_value(message).map_err(Error::deser)
 }
 
+/// Answers a `get` with the resource it names, as the live API does.
+///
+/// `documents` are searched in order, each either one resource or a listing of
+/// them, and the first resource whose `name` satisfies `wanted` is the answer.
+/// A detail capture comes first, so the resource it describes keeps its full
+/// document; the listing after it answers every other row. That is faithful
+/// rather than a shortcut: each of these listings returns whole resources, the
+/// same message `get` returns, so a row is a complete detail of itself.
+///
+/// A name no document carries is `NotFound`, which is what the live API
+/// answers and what a detail pane shows as a failure. Answering the capture
+/// for every name instead, as these stubs once did, handed the pane a
+/// document about another resource, and the pane waited on its own forever.
+pub fn named<T: serde::de::DeserializeOwned>(
+    documents: &[&str],
+    wanted: impl Fn(&str) -> bool,
+    description: &str,
+) -> Result<T, Error> {
+    for document in documents {
+        let value: serde_json::Value = serde_json::from_str(document).map_err(Error::deser)?;
+        let candidates = match value {
+            serde_json::Value::Array(rows) => rows,
+            single => vec![single],
+        };
+        for candidate in candidates {
+            let matches = candidate
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(&wanted);
+            if matches {
+                return serde_json::from_value(candidate).map_err(Error::deser);
+            }
+        }
+    }
+    Err(Error::service(
+        google_cloud_gax::error::rpc::Status::default()
+            .set_code(google_cloud_gax::error::rpc::Code::NotFound)
+            .set_message(format!("demo fixtures hold no {description}")),
+    ))
+}
+
+/// The last `/`-separated segment of a resource name: the short name a row
+/// paints, whichever of the API's spellings carried it.
+pub fn short_name(name: &str) -> &str {
+    name.rsplit('/').next().unwrap_or(name)
+}
+
 /// Regroups a captured flat listing into the scope map an *aggregated* RPC
 /// answers.
 ///

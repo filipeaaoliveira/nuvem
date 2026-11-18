@@ -2169,7 +2169,18 @@ impl RuntimeSession {
         Some(parent.join("log-dumps"))
     }
 
+    /// Runs `effect`, then holds a detail load to the resource it asked about:
+    /// see [`crate::app::effect::DetailRequest`].
     async fn dispatch_effect(&self, effect: Effect) -> EffectResult {
+        let request = crate::app::effect::DetailRequest::of(&effect);
+        let result = self.dispatch_effect_unchecked(effect).await;
+        match request {
+            Some(request) => request.check(result),
+            None => result,
+        }
+    }
+
+    async fn dispatch_effect_unchecked(&self, effect: Effect) -> EffectResult {
         match effect {
             Effect::LoadCostRecommendations {
                 context,

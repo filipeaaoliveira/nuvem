@@ -12,11 +12,9 @@
 //! builder has neither `by_item` nor a poller, so the whole listing arrives in
 //! this one response, exactly as `SdkGkeService::load_clusters` expects.
 
+use super::{envelope, named, short_name};
 use google_cloud_container_v1::client::ClusterManager;
 use google_cloud_container_v1::model;
-use google_cloud_gax::error::Error;
-
-use super::envelope;
 
 /// The clusters capture: `gcloud container clusters list --format=json`.
 const CLUSTERS: &str = include_str!("../../../../tests/fixtures/gke_clusters.json");
@@ -41,17 +39,20 @@ impl google_cloud_container_v1::stub::ClusterManager for ClusterStub {
         )?))
     }
 
-    /// The capture is one cluster, so there is no field to wrap it in.
-    ///
-    /// The name on the request is ignored: the demo project has one captured
-    /// cluster detail, exactly as `DemoCommandRunner` answers one
-    /// `clusters describe` document whichever cluster the argv named.
+    /// The cluster the request names: the detail capture for the cluster it
+    /// describes, and the listing's own row for every other one. See
+    /// [`named`].
     async fn get_cluster(
         &self,
-        _request: model::GetClusterRequest,
+        request: model::GetClusterRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Cluster>> {
-        let cluster: model::Cluster = serde_json::from_str(CLUSTER_DETAIL).map_err(Error::deser)?;
+        let wanted = short_name(&request.name);
+        let cluster: model::Cluster = named(
+            &[CLUSTER_DETAIL, CLUSTERS],
+            |name| short_name(name) == wanted,
+            &format!("cluster `{wanted}`"),
+        )?;
         Ok(google_cloud_gax::response::Response::from(cluster))
     }
 }

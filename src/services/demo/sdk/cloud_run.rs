@@ -55,11 +55,10 @@
 //! `DeleteService`, so nothing calls on the service's behalf and no
 //! `get_operation` belongs in either list.
 
-use google_cloud_gax::error::Error;
 use google_cloud_run_v2::client::{Revisions, Services};
 use google_cloud_run_v2::model;
 
-use super::{envelope, parent_matches};
+use super::{envelope, named, parent_matches, short_name};
 
 /// The service listing, re-shaped: Cloud Run Admin v2 `Service` rows mirroring
 /// `tests/fixtures/cloud_run_services.json`, which is
@@ -105,17 +104,20 @@ impl google_cloud_run_v2::stub::Services for ServicesStub {
         )?))
     }
 
-    /// The capture is one service, so there is no field to wrap it in.
-    ///
-    /// The name on the request is ignored: the demo project has one captured
-    /// service detail, exactly as `DemoCommandRunner` answers one
-    /// `run services describe` document whichever service the argv named.
+    /// The service the request names: the detail capture for the service it
+    /// describes, and the listing's own row for every other one. See
+    /// [`named`]. Compared on the whole resource name, because two regions can
+    /// each run a service of the same short name.
     async fn get_service(
         &self,
-        _request: model::GetServiceRequest,
+        request: model::GetServiceRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Service>> {
-        let service: model::Service = serde_json::from_str(SERVICE_DETAIL).map_err(Error::deser)?;
+        let service: model::Service = named(
+            &[SERVICE_DETAIL, SERVICES],
+            |name| name == request.name,
+            &format!("service `{}`", request.name),
+        )?;
         Ok(google_cloud_gax::response::Response::from(service))
     }
 }
@@ -140,13 +142,19 @@ impl google_cloud_run_v2::stub::Revisions for RevisionsStub {
         )?))
     }
 
+    /// The revision the request names, found the way [`named`] finds a
+    /// service.
     async fn get_revision(
         &self,
-        _request: model::GetRevisionRequest,
+        request: model::GetRevisionRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Revision>> {
-        let revision: model::Revision =
-            serde_json::from_str(REVISION_DETAIL).map_err(Error::deser)?;
+        let wanted = short_name(&request.name);
+        let revision: model::Revision = named(
+            &[REVISION_DETAIL, REVISIONS],
+            |name| short_name(name) == wanted,
+            &format!("revision `{wanted}`"),
+        )?;
         Ok(google_cloud_gax::response::Response::from(revision))
     }
 }

@@ -1346,3 +1346,173 @@ impl std::fmt::Display for AppError {
         }
     }
 }
+
+/// The resource a detail load asked about, kept beside the load so its answer
+/// can be checked against it.
+///
+/// A detail pane opens on a target and shows "Loading detail for ..." until a
+/// result for *that* target arrives. Results for any other target are dropped,
+/// because they are usually stale: the operator moved on before the previous
+/// load returned. That rule has one blind spot. When a load answers with a
+/// document about a different resource than the one it asked for, the answer
+/// is dropped as stale and no failure ever follows, so the pane waits forever.
+/// [`DetailRequest::check`] turns that answer into the load's own failure,
+/// naming both resources, so the pane always settles.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DetailRequest {
+    ComputeInstance { name: String, zone: String },
+    GkeCluster { name: String, location: String },
+    CloudSqlInstance { name: String, region: String },
+    StorageBucket { name: String },
+    StorageObject { key: String },
+    Secret { name: String },
+    CloudRunService { name: String, region: String },
+    CloudRunRevision { name: String, region: String },
+}
+
+impl DetailRequest {
+    /// The request an effect makes, when it is a detail load.
+    pub fn of(effect: &Effect) -> Option<Self> {
+        Some(match effect {
+            Effect::LoadComputeInstanceDetail { instance, .. } => Self::ComputeInstance {
+                name: instance.name.clone(),
+                zone: instance.zone.clone(),
+            },
+            Effect::LoadGkeClusterDetail { cluster, .. } => Self::GkeCluster {
+                name: cluster.name.clone(),
+                location: cluster.location.clone(),
+            },
+            Effect::LoadCloudSqlInstanceDetail { instance, .. } => Self::CloudSqlInstance {
+                name: instance.name.clone(),
+                region: instance.region.clone(),
+            },
+            Effect::LoadStorageBucketDetail { bucket, .. } => Self::StorageBucket {
+                name: bucket.name.clone(),
+            },
+            Effect::LoadStorageObjectDetail { object_key, .. } => Self::StorageObject {
+                key: object_key.clone(),
+            },
+            Effect::LoadSecretDetail { secret, .. } => Self::Secret {
+                name: secret.name.clone(),
+            },
+            Effect::LoadCloudRunServiceDetail { service, .. } => Self::CloudRunService {
+                name: service.name.clone(),
+                region: service.region.clone(),
+            },
+            Effect::LoadCloudRunRevisionDetail {
+                region, revision, ..
+            } => Self::CloudRunRevision {
+                name: revision.clone(),
+                region: region.clone(),
+            },
+            _ => return None,
+        })
+    }
+
+    /// Passes `result` through unless it is a detail answered for another
+    /// resource, which becomes this request's load failure.
+    ///
+    /// Each comparison uses the fields the reducer gates the same result on,
+    /// so a result this lets through is one the pane accepts, and one it
+    /// rewrites is one the pane would have dropped.
+    pub fn check(self, result: EffectResult) -> EffectResult {
+        fn mismatch(asked: &str, answered: &str) -> AppError {
+            AppError::Parse(format!(
+                "asked for {asked}, but the response describes {answered}"
+            ))
+        }
+        match (self, result) {
+            (
+                Self::ComputeInstance { name, zone },
+                EffectResult::ComputeInstanceDetailLoaded { context, detail },
+            ) if detail.name != name || detail.zone != zone => {
+                EffectResult::ComputeInstanceDetailLoadFailed {
+                    context,
+                    error: mismatch(
+                        &format!("{name} in {zone}"),
+                        &format!("{} in {}", detail.name, detail.zone),
+                    ),
+                    instance_name: name,
+                    instance_zone: zone,
+                }
+            }
+            (
+                Self::GkeCluster { name, location },
+                EffectResult::GkeClusterDetailLoaded { context, detail },
+            ) if detail.name != name || detail.location != location => {
+                EffectResult::GkeClusterDetailLoadFailed {
+                    context,
+                    error: mismatch(
+                        &format!("{name} in {location}"),
+                        &format!("{} in {}", detail.name, detail.location),
+                    ),
+                    cluster_name: name,
+                    cluster_location: location,
+                }
+            }
+            (
+                Self::CloudSqlInstance { name, region },
+                EffectResult::CloudSqlInstanceDetailLoaded { context, detail },
+            ) if detail.name != name || detail.region != region => {
+                EffectResult::CloudSqlInstanceDetailLoadFailed {
+                    context,
+                    error: mismatch(
+                        &format!("{name} in {region}"),
+                        &format!("{} in {}", detail.name, detail.region),
+                    ),
+                    instance_name: name,
+                    instance_region: region,
+                }
+            }
+            (
+                Self::StorageBucket { name },
+                EffectResult::StorageBucketDetailLoaded { context, detail },
+            ) if detail.name != name => EffectResult::StorageBucketDetailLoadFailed {
+                context,
+                error: mismatch(&name, &detail.name),
+                bucket_name: name,
+            },
+            (
+                Self::StorageObject { key },
+                EffectResult::StorageObjectDetailLoaded { context, detail },
+            ) if detail.key != key => EffectResult::StorageObjectDetailLoadFailed {
+                context,
+                error: mismatch(&key, &detail.key),
+                object_key: key,
+            },
+            (Self::Secret { name }, EffectResult::SecretDetailLoaded { context, detail })
+                if detail.name != name =>
+            {
+                EffectResult::SecretDetailLoadFailed {
+                    context,
+                    error: mismatch(&name, &detail.name),
+                    secret_name: name,
+                }
+            }
+            (
+                Self::CloudRunService { name, region },
+                EffectResult::CloudRunServiceDetailLoaded { context, detail },
+            ) if detail.name != name || detail.region != region => {
+                EffectResult::CloudRunServiceDetailLoadFailed {
+                    context,
+                    error: mismatch(
+                        &format!("{name} in {region}"),
+                        &format!("{} in {}", detail.name, detail.region),
+                    ),
+                    service_name: name,
+                    service_region: region,
+                }
+            }
+            (
+                Self::CloudRunRevision { name, region },
+                EffectResult::CloudRunRevisionDetailLoaded { context, detail },
+            ) if detail.name != name => EffectResult::CloudRunRevisionDetailLoadFailed {
+                context,
+                error: mismatch(&name, &detail.name),
+                revision_name: name,
+                region,
+            },
+            (_, result) => result,
+        }
+    }
+}
