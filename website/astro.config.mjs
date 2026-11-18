@@ -4,6 +4,7 @@ import starlight from '@astrojs/starlight';
 import { REPO_URL, buildSidebar, firstPageUrl, hasDocsIndex } from './src/lib/docs-source.mjs';
 import { satteri } from '@astrojs/markdown-satteri';
 import docsMarkdown from './src/lib/markdown-docs.mjs';
+import { pluginCodePlates } from './src/lib/code-plates.mjs';
 import codeTheme from './src/styles/code-theme.json' with { type: 'json' };
 
 const sidebar = buildSidebar();
@@ -33,6 +34,7 @@ export default defineConfig({
 			},
 			expressiveCode: {
 				themes: [codeTheme],
+				plugins: [pluginCodePlates()],
 				useStarlightDarkModeSwitch: false,
 				useStarlightUiThemeColors: false,
 				styleOverrides: {
@@ -58,7 +60,7 @@ export default defineConfig({
 						terminalTitlebarForeground: 'var(--nv-text-muted)',
 						terminalTitlebarBorderBottomColor: 'var(--nv-rule)',
 						terminalTitlebarDotsForeground: 'var(--nv-rule-strong)',
-						terminalTitlebarDotsOpacity: '1',
+						terminalTitlebarDotsOpacity: '0',
 						inlineButtonForeground: 'var(--nv-coral)',
 						inlineButtonBackground: 'var(--nv-plate)',
 						inlineButtonBackgroundIdleOpacity: '1',
