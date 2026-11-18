@@ -26,17 +26,65 @@ fn release_workflow() -> String {
         .expect("the release workflow is readable")
 }
 
+/// Every workflow file, as (path, contents), sorted by path. Discovered rather
+/// than listed, so a workflow added later is held to the same rules without
+/// anyone remembering to add it here.
+fn every_workflow() -> Vec<(String, String)> {
+    let mut paths: Vec<std::path::PathBuf> = std::fs::read_dir(".github/workflows")
+        .expect("the workflows directory is readable")
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            matches!(
+                path.extension().and_then(|ext| ext.to_str()),
+                Some("yml" | "yaml")
+            )
+        })
+        .collect();
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| {
+            let text = std::fs::read_to_string(&path)
+                .unwrap_or_else(|error| panic!("{} is readable: {error}", path.display()));
+            (path.display().to_string(), text)
+        })
+        .collect()
+}
+
+/// The key of the nearest line above `index` that is indented less than it:
+/// the mapping that line belongs to. Comments and blank lines are skipped.
+fn parent_key(lines: &[&str], index: usize) -> Option<String> {
+    let own = indent_of(lines[index]);
+    lines[..index]
+        .iter()
+        .rev()
+        .copied()
+        .filter(|line| !line.trim().is_empty() && !line.trim_start().starts_with('#'))
+        .find(|line| indent_of(line) < own)
+        .map(|line| line.trim().trim_start_matches("- ").to_string())
+}
+
+fn indent_of(line: &str) -> usize {
+    line.len() - line.trim_start().len()
+}
+
 /// The condition that separates a real release from a rehearsal of one. Named
-/// once because three places in `release.yml` carry it and a test that spelled
+/// once because several places in `release.yml` carry it and a test that spelled
 /// it out per assertion would let a typo in one of them pass as a guard.
 const TAG_PUSH_ONLY: &str = "if: github.event_name == 'push'";
 
 /// What the attestation step must carry instead. GitHub issues no attestation
-/// for a user-owned private repository — it answers with an error, not a
-/// no-op — so the tag-push guard alone lets the step fail the build and take
-/// the publish job with it, which is how v0.1.0-rc.1 lost its release.
+/// for a private user-owned repository — it answers with an error, not a
+/// no-op — so with the tag-push guard alone, a tag pushed to a private fork
+/// fails the build at this step and takes the publish job down with it.
 const TAG_PUSH_AND_PUBLIC: &str =
     "if: github.event_name == 'push' && github.event.repository.private == false";
+
+/// The platform guards of the build job. The glibc floor is a Linux promise,
+/// built and checked with Zig; the macOS legs build with plain cargo.
+const LINUX_ONLY: &str = "if: runner.os == 'Linux'";
+const MACOS_ONLY: &str = "if: runner.os == 'macOS'";
 
 /// The steps of a block whose first directive after `- name:` is `guard`.
 /// Position, not a search of the whole block: a search would let one step's
@@ -382,12 +430,16 @@ fn the_release_workflow_publishes_what_it_builds() {
         .collect();
     assert_eq!(
         targets,
-        ["x86_64-unknown-linux-gnu"],
-        "the pool this builds on is x86_64 Linux, so the matrix lists the one \
-         target it can also execute. The macOS archives are built on a Mac and \
-         attached to the release by hand; a target added here without a runner \
-         that can run it would ship an archive the smoke test never touched: \
-         {targets:?}"
+        [
+            "x86_64-unknown-linux-gnu",
+            "aarch64-unknown-linux-gnu",
+            "aarch64-apple-darwin",
+            "x86_64-apple-darwin",
+        ],
+        "every published platform is built in CI, natively, on a runner that can \
+         also execute it: the Homebrew formula and the README name exactly these \
+         four, and a target built anywhere else would ship an archive the smoke \
+         test never touched and the attestation never signed: {targets:?}"
     );
     assert!(
         release.contains("name: archive-${{ matrix.target }}"),
@@ -478,12 +530,11 @@ fn the_release_workflow_publishes_what_it_builds() {
          publishes a release named after whatever branch it ran from"
     );
 
-    // The image this job runs on is not guaranteed to carry the GitHub CLI:
-    // hosted images ship one, this pool's image does not, and the first tag
-    // run failed with `gh: command not found` after a green build — the build
-    // job never needs it, so nothing earlier catches the gap. Pinned to a
-    // version rather than tracking latest, because the tool that publishes a
-    // release must not change underneath the repository without a commit.
+    // The GitHub CLI on a runner image moves with the image, and an image is
+    // not obliged to carry one at all; the build job never needs it, so
+    // nothing earlier would catch the gap. Pinned to a version rather than
+    // tracking the image, because the tool that publishes a release must not
+    // change underneath the repository without a commit.
     let publish_lines: Vec<&str> = directives(publish).collect();
     let install_at = publish_lines
         .iter()
@@ -518,14 +569,14 @@ fn the_release_workflow_publishes_what_it_builds() {
         .expect("a tag carrying a pre-release identifier must be published as one");
     assert!(
         prerelease.trim_start().starts_with("*-*)"),
-        "--prerelease must hang off the hyphen case arm, so it marks v0.1.0-rc.1 \
-         and leaves v0.1.0 alone: {prerelease:?}"
+        "--prerelease must hang off the hyphen case arm, so it marks v1.2.0-rc.1 \
+         and leaves v1.2.0 alone: {prerelease:?}"
     );
     assert!(
         steps_guarded_by(build, TAG_PUSH_ONLY).is_empty(),
         "no step may carry the bare tag-push guard: the attestation is the only \
-         conditional step in this job and it needs the public-repository half \
-         too, or it fails the build on a private repository"
+         step in this job that depends on the event, and it needs the \
+         public-repository half too, or it fails the build on a private repository"
     );
     assert_eq!(
         steps_guarded_by(build, TAG_PUSH_AND_PUBLIC),
@@ -536,48 +587,127 @@ fn the_release_workflow_publishes_what_it_builds() {
          so a rehearsal still proves `cargo metadata` and `jq` exist on this \
          image. Every other step is the part being rehearsed and runs on both"
     );
+
+    // The glibc floor is a property of the Linux archives only, and it is
+    // enforced by these steps together: Zig is installed, the binary is linked
+    // against the floor, and the floor is read back off it. Each of them
+    // skipped on Linux would ship a binary built against the runner's glibc;
+    // any of them run on macOS fails, because Darwin has no glibc.
+    assert_eq!(
+        steps_guarded_by(build, LINUX_ONLY),
+        BTreeSet::from([
+            "Install Zig and cargo-zigbuild",
+            "Show the build toolchain versions",
+            "Build release binary (Linux, against the glibc floor)",
+            "Check the glibc floor of the built binary",
+        ]),
+        "the Zig toolchain, the glibc-floor build and the floor check run on \
+         the Linux legs and only there"
+    );
+    assert_eq!(
+        steps_guarded_by(build, MACOS_ONLY),
+        BTreeSet::from(["Build release binary (macOS)"]),
+        "the macOS legs build with plain cargo, and nothing else is macOS-only: \
+         the suite, the smoke test, packaging and the attestation run on every leg"
+    );
 }
 
-/// No workflow names a private runner group, and every job still has a runner
-/// when nothing is configured.
+/// Every job in every workflow runs on a GitHub-hosted runner, named by a
+/// fixed label.
 ///
-/// This repository runs its jobs on a runner group of its own, and a public
-/// copy must not carry that group's name: a label in a public workflow
-/// advertises private infrastructure, and a fork that inherits it queues jobs
-/// against runners it cannot reach, where they wait rather than fail. So the
-/// label is a repository variable with a hosted fallback, and the fallback is
-/// the part that matters -- an unset variable, which is what a fork, a clone
-/// and a public copy all see, must still name a runner or the workflow is
-/// invalid rather than merely hosted.
+/// A self-hosted runner executes whatever a workflow on this repository asks
+/// of it, and in a public repository that includes a pull request from a
+/// fork. A runner group or a `vars.`-driven label hands that choice to
+/// repository settings that no review sees. So the label is a literal, it is
+/// one of GitHub's own, and a matrix that names its runners is held to the
+/// same list entry by entry.
+///
+/// The list is GitHub's catalogue of standard hosted labels for Linux and
+/// macOS. A label outside it is a larger runner or a self-hosted one, and
+/// adding it here is a decision to be made on purpose.
 #[test]
-fn jobs_take_their_runner_from_a_variable_with_a_hosted_fallback() {
-    const HOSTED_FALLBACK: &str = "${{ vars.NUVEM_RUNNER_LABEL || 'ubuntu-latest' }}";
+fn every_job_runs_on_a_github_hosted_runner() {
+    const HOSTED: [&str; 13] = [
+        "ubuntu-latest",
+        "ubuntu-slim",
+        "ubuntu-22.04",
+        "ubuntu-24.04",
+        "ubuntu-26.04",
+        "ubuntu-22.04-arm",
+        "ubuntu-24.04-arm",
+        "ubuntu-26.04-arm",
+        "macos-latest",
+        "macos-15",
+        "macos-26",
+        "macos-15-intel",
+        "macos-26-intel",
+    ];
+    // A job may take its runner from its own matrix, and the matrix entries'
+    // `runs-on:` lines are then checked against the list like any other.
+    const FROM_MATRIX: &str = "${{ matrix.runs-on }}";
 
-    let text = workflow();
-    let runners: Vec<&str> = text
-        .lines()
-        .filter_map(|line| line.trim().strip_prefix("runs-on:"))
-        .map(str::trim)
-        .collect();
-    assert!(!runners.is_empty(), "ci.yml declares no job runner at all");
-    for runner in &runners {
-        assert_eq!(
-            *runner, HOSTED_FALLBACK,
-            "ci.yml pins a runner directly; the label is a variable so the \
-             public tree names no private group, and the fallback is what a \
-             fork and a public copy run on"
-        );
-    }
+    let workflows = every_workflow();
+    assert!(
+        !workflows.is_empty(),
+        "no *.yml or *.yaml file found under .github/workflows; this test would \
+         check nothing"
+    );
 
-    // The release workflow takes its runner from the same variable, and the
-    // rule it must not break is this one: no private group named anywhere in a
-    // tree that is going to be public.
-    for (name, text) in [("ci.yml", workflow()), ("release.yml", release_workflow())] {
-        for marker in ["self-hosted", "nuvem-runners"] {
+    for (name, text) in &workflows {
+        let lines: Vec<&str> = text.lines().collect();
+        let mut from_matrix = false;
+        let mut literal = 0;
+        let mut runners = 0;
+
+        for (index, line) in lines.iter().enumerate() {
+            let at = format!("{name}:{}", index + 1);
+            let trimmed = line.trim();
+            if trimmed.starts_with('#') {
+                continue;
+            }
+
             assert!(
-                !text.contains(marker),
-                "{name} names {marker:?}, which is private infrastructure in a \
-                 tree that is going to be public"
+                !trimmed.contains("self-hosted"),
+                "{at} names a self-hosted runner: {trimmed:?}"
+            );
+
+            if let Some(runner) = trimmed.strip_prefix("runs-on:").map(str::trim) {
+                runners += 1;
+                if runner == FROM_MATRIX {
+                    from_matrix = true;
+                    continue;
+                }
+                literal += 1;
+                assert!(
+                    HOSTED.contains(&runner),
+                    "{at} runs a job on {runner:?}, which is not a GitHub-hosted \
+                     label. Self-hosted labels, runner groups (an empty value \
+                     here is a `group:`/`labels:` mapping) and `vars.` \
+                     expressions are all refused: the runner must be GitHub's \
+                     and must be read from the workflow itself"
+                );
+            }
+
+            // A `group:` key has one legitimate home in a workflow: the
+            // concurrency block. Under `runs-on:` it selects a runner group,
+            // which is the indirection this test exists to refuse.
+            if trimmed.starts_with("group:") || trimmed.starts_with("- group:") {
+                let parent = parent_key(&lines, index);
+                assert_eq!(
+                    parent.as_deref(),
+                    Some("concurrency:"),
+                    "{at} has a `group:` key outside a `concurrency:` block \
+                     (its parent is {parent:?}); a group anywhere else points \
+                     a job at a runner GitHub does not host"
+                );
+            }
+        }
+
+        assert!(runners > 0, "{name} declares no job runner at all");
+        if from_matrix {
+            assert!(
+                literal > 0,
+                "{name} takes a runner from its matrix, but no matrix entry names one"
             );
         }
     }
@@ -587,9 +717,8 @@ fn jobs_take_their_runner_from_a_variable_with_a_hosted_fallback() {
 ///
 /// Unscoped, a branch with a pull request open runs this whole workflow twice
 /// against the same commit -- once for the push, once for the pull request.
-/// On a two-runner pool that is not a duplicate, it is a queue: the second
-/// copy of every job waits for the first to finish before anything else can
-/// start.
+/// That doubles the runner time spent on every change and adds no signal: both
+/// runs test the same tree.
 ///
 /// The scoping is what makes `pull_request` the branch trigger and `push` the
 /// default branch's own. Removing the branch filter restores the doubling
