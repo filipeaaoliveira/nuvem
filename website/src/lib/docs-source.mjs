@@ -3,12 +3,13 @@
 // The site renders the repository's `docs/` directory in place. Nothing here
 // names a docs page: pages are discovered from the directory, titled from
 // frontmatter or their first `# ` heading, and grouped by subdirectory.
-// The loader, the sidebar and the link rewriter all use this module so a
-// file has exactly one URL.
+// The loader, the sidebar, the link rewriter and the link check all use this
+// module, so a file has exactly one URL.
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -18,13 +19,10 @@ export const REPO_ROOT = resolve(here, '../../..');
 /** Absolute path of the docs directory the site renders. */
 export const DOCS_DIR = join(REPO_ROOT, 'docs');
 
-/** Absolute path of the site (`website/`), and the docs directory relative to it. */
-export const SITE_ROOT = resolve(here, '../..');
-const DOCS_FROM_SITE = relative(SITE_ROOT, DOCS_DIR).split(sep).join('/');
-
 /** Where links to repository files that are not published should point. */
 export const REPO_URL = 'https://github.com/filipeaaoliveira/nuvem';
 export const REPO_BLOB_URL = `${REPO_URL}/blob/main`;
+export const REPO_TREE_URL = `${REPO_URL}/tree/main`;
 
 /** URL prefix of every docs page; the landing page owns `/`. */
 export const DOCS_ROUTE = 'docs';
@@ -39,6 +37,12 @@ export const EXCLUDED = ['decisions', 'performance-read-paths.md'];
 export const DOCS_GLOB = ['**/*.{md,mdx}', ...EXCLUDED.map((p) => (p.includes('.') ? `!${p}` : `!${p}/**`))];
 
 const MARKDOWN = /\.mdx?$/i;
+const INDEX = /^index\.mdx?$/i;
+
+/** POSIX path of `abs` relative to `docs/`. */
+export function docsRelative(abs) {
+	return relative(DOCS_DIR, abs).split(sep).join('/');
+}
 
 /** True when `relPath` (relative to `docs/`, POSIX separators) is published. */
 export function isPublished(relPath) {
@@ -61,15 +65,26 @@ export function idFor(relPath, slug) {
 	return [DOCS_ROUTE, ...parts].join('/');
 }
 
-/** Site URL for a file, with a trailing slash. */
-export function urlFor(relPath, slug) {
-	return `/${idFor(relPath, slug)}/`;
+/** Site URL for a published file (absolute path), with a trailing slash. */
+export function urlForFile(absPath) {
+	return `/${idFor(docsRelative(absPath), frontmatter(absPath).slug)}/`;
 }
 
 /** Splits a Markdown source into its frontmatter block (or '') and body. */
 export function splitFrontmatter(source) {
 	const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(source);
 	return match ? { frontmatter: match[1], body: source.slice(match[0].length) } : { frontmatter: '', body: source };
+}
+
+/** Parsed frontmatter of a file, or `{}`. Invalid YAML fails with the file named. */
+export function frontmatter(absPath) {
+	const { frontmatter: raw } = splitFrontmatter(readFileSync(absPath, 'utf8'));
+	if (!raw.trim()) return {};
+	try {
+		return parseYaml(raw) ?? {};
+	} catch (error) {
+		throw new Error(`Invalid frontmatter in ${relative(REPO_ROOT, absPath)}: ${error.message}`);
+	}
 }
 
 /** Text of the first level-one ATX heading outside code fences, or undefined. */
@@ -96,25 +111,26 @@ function stripInlineMarkdown(text) {
 		.trim();
 }
 
-/** A top-level scalar frontmatter field of a file, or undefined. */
-export function frontmatterField(absPath, key) {
-	const { frontmatter } = splitFrontmatter(readFileSync(absPath, 'utf8'));
-	const m = new RegExp(`^${key}:[ \\t]*(.+)$`, 'm').exec(frontmatter);
-	return m ? m[1].trim().replace(/^(['"])(.*)\1$/, '$2') : undefined;
-}
-
 /** Title for a file: its frontmatter `title` when present, else its first heading, else its name. */
 export function titleFor(absPath) {
-	const title = frontmatterField(absPath, 'title');
-	if (title) return title;
+	const { title } = frontmatter(absPath);
+	if (title) return String(title);
 	const { body } = splitFrontmatter(readFileSync(absPath, 'utf8'));
 	return firstHeading(body) ?? humanize(absPath.split(sep).at(-1).replace(MARKDOWN, ''));
 }
 
-/** `getting-started` -> `Getting started`. */
+/** Words that keep their own capitals in a label made from a file name. */
+const LABEL_WORDS = { cli: 'CLI', faq: 'FAQ', gce: 'GCE', gke: 'GKE', iam: 'IAM', vpc: 'VPC', sql: 'SQL', api: 'API' };
+
+/** `getting-started` -> `Getting started`; `cli` -> `CLI`. */
 export function humanize(name) {
-	const words = name.replace(/^\d+[-_.]\s*/, '').replace(/[-_]+/g, ' ').trim();
-	return words.charAt(0).toUpperCase() + words.slice(1);
+	const words = name
+		.replace(/^\d+[-_.]\s*/, '')
+		.split(/[-_\s]+/)
+		.filter(Boolean)
+		.map((w) => LABEL_WORDS[w.toLowerCase()] ?? w.toLowerCase());
+	const label = words.join(' ');
+	return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /**
@@ -140,46 +156,104 @@ export const INTENT_ORDER = [
 	'changelog',
 ];
 
-function rank(name) {
+function intentRank(name) {
 	const i = INTENT_ORDER.indexOf(name.replace(MARKDOWN, '').toLowerCase());
 	return i === -1 ? INTENT_ORDER.length : i;
 }
 
-/**
- * Starlight sidebar built from the docs directory: top-level files become
- * links, top-level directories become groups whose pages Starlight lists
- * itself (ordered by each page's `sidebar.order` frontmatter, then title).
- */
-export function buildSidebar(dir = DOCS_DIR) {
-	const entries = readdirSync(dir)
-		.filter((name) => !name.startsWith('.'))
-		.map((name) => ({ name, abs: join(dir, name), rel: relative(DOCS_DIR, join(dir, name)).split(sep).join('/') }))
-		.filter(({ abs, rel }) => (statSync(abs).isDirectory() ? !EXCLUDED.includes(rel) : isPublished(rel)))
-		.sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+/** A page's `sidebar.order` frontmatter, or Infinity. */
+function sidebarOrder(absPath) {
+	const order = frontmatter(absPath).sidebar?.order;
+	return Number.isFinite(order) ? order : Infinity;
+}
 
-	return entries.flatMap(({ name, abs, rel }) => {
-		if (statSync(abs).isDirectory()) {
-			const index = ['index.md', 'index.mdx'].map((f) => join(abs, f)).find((f) => exists(f));
-			return [
-				{
-					label: index ? titleFor(index) : humanize(name),
-					// Starlight matches autogenerated groups on each entry's file path,
-					// which for these files is relative to the site root: `../docs/...`.
-					items: [{ autogenerate: { directory: posix.join(DOCS_FROM_SITE, rel) } }],
-				},
-			];
+function isDirectory(path) {
+	return existsSync(path) && statSync(path).isDirectory();
+}
+
+/** Published pages directly in `dir`, and its subdirectories that hold any. */
+function listDir(dir) {
+	const files = [];
+	const dirs = [];
+	for (const name of readdirSync(dir)) {
+		if (name.startsWith('.')) continue;
+		const abs = join(dir, name);
+		const rel = docsRelative(abs);
+		if (isDirectory(abs)) {
+			if (!EXCLUDED.includes(rel) && countPages(abs) > 0) dirs.push({ name, abs });
+		} else if (isPublished(rel)) {
+			files.push({ name, abs });
 		}
-		if (/^index\.mdx?$/i.test(name)) return [];
-		return [{ slug: idFor(rel, frontmatterField(abs, 'slug')) }];
+	}
+	return { files, dirs };
+}
+
+function countPages(dir) {
+	const { files, dirs } = listDir(dir);
+	return files.length + dirs.reduce((n, d) => n + countPages(d.abs), 0);
+}
+
+function onlyPage(dir) {
+	const { files, dirs } = listDir(dir);
+	return files[0]?.abs ?? onlyPage(dirs[0].abs);
+}
+
+function indexOf(dir) {
+	return ['index.md', 'index.mdx'].map((f) => join(dir, f)).find((f) => existsSync(f));
+}
+
+/** Label for a directory's group: its index page's sidebar label or title, else its name. */
+function groupLabel(dir) {
+	const index = indexOf(dir);
+	if (index) {
+		const fm = frontmatter(index);
+		return String(fm.sidebar?.label ?? titleFor(index));
+	}
+	return humanize(dir.split(sep).at(-1));
+}
+
+function link(abs) {
+	return { slug: idFor(docsRelative(abs), frontmatter(abs).slug) };
+}
+
+function items(dir, topLevel) {
+	const { files, dirs } = listDir(dir);
+	const entries = [
+		...files.map(({ name, abs }) => ({
+			name,
+			abs,
+			isDir: false,
+			order: INDEX.test(name) ? -Infinity : sidebarOrder(abs),
+			title: titleFor(abs),
+		})),
+		...dirs.map(({ name, abs }) => {
+			const index = indexOf(abs);
+			return { name, abs, isDir: true, order: index ? sidebarOrder(index) : Infinity, title: groupLabel(abs) };
+		}),
+	];
+	entries.sort((a, b) =>
+		topLevel
+			? intentRank(a.name) - intentRank(b.name) || a.name.localeCompare(b.name)
+			: a.order - b.order || Number(a.isDir) - Number(b.isDir) || a.title.localeCompare(b.title),
+	);
+	return entries.flatMap(({ name, abs, isDir }) => {
+		if (!isDir) return topLevel && INDEX.test(name) ? [] : [link(abs)];
+		// A directory with a single page is a link, not a group of one.
+		if (countPages(abs) === 1) return [link(onlyPage(abs))];
+		// Starlight opens the group that holds the current page.
+		return [{ label: groupLabel(abs), collapsed: true, items: items(abs, false) }];
 	});
 }
 
-function exists(path) {
-	try {
-		return statSync(path).isFile();
-	} catch {
-		return false;
-	}
+/**
+ * Starlight sidebar built from the docs directory. Top-level files are links
+ * and top-level directories are collapsed groups, in reading order by intent.
+ * Inside a group, pages follow their `sidebar.order` frontmatter, then title;
+ * an `index.md` comes first and names the group. Nested directories become
+ * nested groups.
+ */
+export function buildSidebar(dir = DOCS_DIR) {
+	return items(dir, true);
 }
 
 /**
@@ -187,29 +261,19 @@ function exists(path) {
  * until the docs carry an index page of their own.
  */
 export function firstPageUrl(sidebar = buildSidebar()) {
-	for (const item of sidebar) {
-		if ('slug' in item) return `/${item.slug}/`;
-		const auto = item.items?.[0]?.autogenerate;
-		if (auto) {
-			const dir = resolve(SITE_ROOT, auto.directory);
-			const first = readdirSync(dir)
-				.filter((name) => MARKDOWN.test(name))
-				.map((name) => ({ name, order: sidebarOrder(join(dir, name)) }))
-				.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))[0]?.name;
-			if (first) return urlFor(relative(DOCS_DIR, join(dir, first)).split(sep).join('/'));
+	const first = (list) => {
+		for (const item of list) {
+			if ('slug' in item) return item.slug;
+			const nested = first(item.items ?? []);
+			if (nested) return nested;
 		}
-	}
-	return '/';
-}
-
-/** A page's `sidebar.order` frontmatter, or Infinity. */
-function sidebarOrder(absPath) {
-	const { frontmatter } = splitFrontmatter(readFileSync(absPath, 'utf8'));
-	const m = /^sidebar:\s*\n(?:[ \t]+.*\n)*?[ \t]+order:[ \t]*(-?\d+)/m.exec(`${frontmatter}\n`);
-	return m ? Number(m[1]) : Infinity;
+		return undefined;
+	};
+	const slug = first(sidebar);
+	return slug ? `/${slug}/` : '/';
 }
 
 /** True when the docs carry their own top-level index page. */
 export function hasDocsIndex() {
-	return ['index.md', 'index.mdx'].some((f) => exists(join(DOCS_DIR, f)));
+	return ['index.md', 'index.mdx'].some((f) => existsSync(join(DOCS_DIR, f)));
 }

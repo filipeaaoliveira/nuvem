@@ -5,6 +5,7 @@ import { REPO_URL, buildSidebar, firstPageUrl, hasDocsIndex } from './src/lib/do
 import { satteri } from '@astrojs/markdown-satteri';
 import docsMarkdown from './src/lib/markdown-docs.mjs';
 import { pluginCodePlates } from './src/lib/code-plates.mjs';
+import { docLinksIntegration } from './src/lib/doc-links.mjs';
 import codeTheme from './src/styles/code-theme.json' with { type: 'json' };
 
 const sidebar = buildSidebar();
@@ -17,6 +18,7 @@ export default defineConfig({
 		processor: satteri({ mdastPlugins: [docsMarkdown] }),
 	},
 	integrations: [
+		docLinksIntegration(),
 		starlight({
 			title: 'nuvem',
 			description: 'A terminal UI for Google Cloud.',
@@ -27,6 +29,7 @@ export default defineConfig({
 			// apply to the repository's docs, which live outside src/.
 			markdown: { processedDirs: ['../docs'] },
 			sidebar,
+			routeMiddleware: './src/routeData.ts',
 			components: {
 				ThemeProvider: './src/components/ThemeProvider.astro',
 				ThemeSelect: './src/components/ThemeSelect.astro',
