@@ -12,7 +12,7 @@ colors:
   text: "#f1ece6"
   text-muted: "#cbc1b6"
   rule: "#5e554e"
-  rule-strong: "#7d7269"
+  rule-strong: "#9a8f84"
   on-accent: "#1b1816"
 typography:
   display:
@@ -139,12 +139,12 @@ Contrast ratios below are measured against the ground (`--nv-bg`) unless stated.
 - **Eugenia Red** (`--nv-eugenia`, 3.22:1): the fill of caution and danger asides, and nothing else. Text on it is always `--nv-on-accent` (5.17:1).
 
 ### Supporting tones
-- **Plate** (`--nv-plate`): the ground of code and terminal plates, notes and the search results list. Off-white text on it is 15.04:1.
-- **Raised plate** (`--nv-plate-raised`): inline code, keys and the table header area. Off-white on it is 12.70:1.
+- **Plate** (`--nv-plate`): the ground of code and terminal plates, notes and the search input. Off-white text on it is 15.04:1.
+- **Raised plate** (`--nv-plate-raised`): inline code and keys. Off-white on it is 12.70:1.
 - **Text** (`--nv-text`, 9.36:1): body text and headings below the page title.
 - **Muted text** (`--nv-text-muted`, 6.20:1): sidebar and contents links, captions, the search placeholder, footer metadata.
 - **Rule** (`--nv-rule`): hairlines between regions, under table rows, around plates. Decorative.
-- **Strong rule** (`--nv-rule-strong`): outlines on controls such as the search field, keys and the menu toggle. Every outlined control also carries a text label or icon.
+- **Strong rule** (`--nv-rule-strong`, 3.47:1; 5.58:1 on the plate): outlines on controls such as the search field, the copy button, keys and the menu toggle, so every control boundary meets the 3:1 non-text minimum.
 - **On accent** (`--nv-on-accent`): text on any Naples, Coral, Methyl or Eugenia fill. It is the plate colour, and it reads at 5.17:1 or better on all four.
 
 On the plate, the code colours measure: off-white 15.04:1, Coral 7.64:1, Methyl 6.87:1, comments (`#a39a90`, italic) 6.38:1, line numbers (`#958b81`) 5.29:1. Strings are Naples Yellow and punctuation is muted text.
@@ -181,11 +181,14 @@ Headings use `--nv-leading-tight` (1.2). The scale ratio is about 1.25.
 
 Spacing runs on a 4px step: `--nv-space-1` (4px) through `--nv-space-8` (64px), with steps at 4, 8, 12, 16, 24, 32, 48 and 64px.
 
-- **Docs frame:** header, a 17rem left sidebar, a 38rem reading column and a right-hand "On this page" list. All share the ground. Hairlines (`--nv-rule`) separate them.
+- **Docs frame:** header, a 17rem left sidebar, a content area up to `--nv-wide` (52rem) and a right-hand "On this page" list. All share the ground. Hairlines (`--nv-rule`) separate them.
+- **Measure:** prose (paragraphs, lists, headings, asides) stops at `--nv-measure` (38rem, about 70 characters). Tables and code plates may use the whole content area.
+- **Contents list:** shown only when a page has at least one section heading; a page that is one block of text has none.
 - **Header:** the `nuvem` wordmark left in Naples Yellow (1.375rem, 700), search in the middle, the source link right. A 1px Methyl rule runs under it on every page.
 - **One left edge:** headings, plates, tables and asides all hang from the column's left edge.
 - **Sections:** an `h2` opens with 2.25em of space above, a hairline and 1rem of padding.
 - **Plates:** 1.5rem (`--nv-space-5`) above and below.
+- **Sidebar:** each directory in `docs/` is a group, collapsed unless it holds the current page. Nested directories nest. A directory with a single page shows as a plain link.
 - **Small screens:** the site holds at 360px. The menu and contents toggles become outlined controls that match the search field. An open toggle takes a Naples outline.
 
 **The Hairline Rule.** Regions are divided by 1px lines, never by background fills or shadows.
@@ -211,6 +214,7 @@ The signature component. Every code block is a framed plate.
 - **Prompt:** shell blocks (bash, sh, shell, zsh) draw a Naples `$ ` before each command. The prompt is CSS, not text, so copying gives the command alone. A line continuing after a trailing backslash gets no prompt.
 - **Terminal output:** `console` blocks are captioned Terminal and have no prompt. The window dots are hidden.
 - **Copy control:** a Coral icon on the plate ground with a strong-rule outline. The success tooltip is Naples with dark text.
+- **Scroll cue:** a line too long for the plate scrolls sideways, and a soft Methyl edge shows on each side that has more to see. It disappears at the end of the scroll.
 - **Tabs:** the active tab is underlined in Methyl.
 
 ### Links
@@ -220,7 +224,13 @@ Coral, underlined at 1px with a 0.2em offset. On hover the underline thickens to
 The current page in the sidebar and the section in view in the contents list are Naples Yellow, and a short horizontal hairline tick sits just left of the label (10px in the sidebar, 8px in the contents list). Current sidebar entries are also weight 650. There is no background highlight. Other entries are muted and turn off-white on hover.
 
 ### Tables
-Rules, not stripes. Rows are divided by `--nv-rule`. The header row is off-white, 650 weight, start-aligned, with a Methyl rule beneath. Cells are 15px with 8px by 12px padding and align to the top.
+Reference tables (keys, flags, config fields, commands) are the hardest content on the site.
+- **Rules, not stripes.** Rows are divided by `--nv-rule`. The header row has no fill: off-white text, 650 weight, start-aligned, with a Methyl rule beneath.
+- **Cells:** 15px text, 8px above and below, 16px between columns, aligned to the top. The table fills the content area.
+- **First column:** a key, flag or field name. It never wraps.
+- **Tokens never break:** inline code breaks only at its spaces, so `--configuration <NAME>` can wrap between the flag and its argument but never inside `--configuration`. A token longer than 24 characters may break after a `/`.
+- **Too wide:** the table scrolls inside its own frame, with the same Methyl scroll cue as code. The frame takes keyboard focus so it can be scrolled without a mouse.
+- **Below 40rem:** each row becomes a block. The first cell is its bold heading; every other cell is labelled with its column name in muted 14px text.
 
 ### Keys (kbd)
 Physical-looking caps: raised-plate ground, strong-rule outline with a 2px bottom edge, 2px corners, monospace at 0.8125em, centred, at least 1.6em wide.
@@ -228,19 +238,20 @@ Physical-looking caps: raised-plate ground, strong-rule outline with a 2px botto
 ### Asides
 A labelled plate. Every aside names its kind in a 14px bold title, so colour is never the only signal.
 - **Note and tip:** plate ground, hairline border, off-white text. The note icon is Methyl, the tip icon is Naples.
-- **Caution and danger:** filled Eugenia Red with an Eugenia border. Title, icon, text, links and code all switch to `--nv-on-accent`. Inline code inside takes a 12% dark tint.
+- **Caution and danger:** filled Eugenia Red with an Eugenia border. Title, icon, text, links and code all switch to `--nv-on-accent`. Inline code inside is outlined in dark, not tinted, so its text stays at 5.17:1. The focus ring inside these asides is dark too (Naples would be 2.76:1 on Eugenia).
 
 ### Blockquotes
 A 1px Methyl edge on the start side, muted text.
 
 ### Search
-An outlined field on the ground, strong-rule border, muted label. On hover, the border and label lift to muted and off-white. On wide screens a `/` key hint shows at the end of the field. Pressing `/` opens search anywhere except inside a text field; Ctrl+K and Cmd+K also work. Results sit on the plate with Coral as the primary colour and Naples-filled matches.
+An outlined field on the ground, strong-rule border, muted label. On hover, the border and label lift to muted and off-white. On wide screens a `/` key hint shows at the end of the field. Pressing `/` opens search anywhere except inside a text field; Ctrl+K and Cmd+K also work. The results dialog sits on the ground with a strong-rule border. The search input is a plate with a Naples focus ring; matches are Naples-filled with dark text.
 
 ### Pager
 Previous and next links in a hairline box. The title is Coral, the direction is muted. On hover the border turns Coral.
 
 ### Focus and selection
-- **Focus:** a 2px solid Naples outline (`--nv-focus`) with a 2px offset, on every focusable element.
+- **Focus:** a 2px solid Naples outline (`--nv-focus`) with a 2px offset, on every focusable element (dark inside filled asides).
+- **Skip link:** hidden until focused, then a Naples tab with dark text at the top left.
 - **Selection:** Methyl mixed 45% into the plate, with off-white text.
 - **Caret:** Naples. **Scrollbar:** strong rule on the ground.
 - **Reduced motion:** animations and transitions are cut to near zero when the reader asks for it.
@@ -259,7 +270,7 @@ Previous and next links in a hairline box. The title is Coral, the direction is 
 - **Do** check new text against the ratios in Colors. Body text needs 4.5:1 on its own ground.
 
 ### Don't:
-- **Don't** introduce another hue, a gradient, or a light theme.
+- **Don't** introduce another hue, a decorative gradient, or a light theme. (The scroll cue is the one gradient, and it carries information.)
 - **Don't** set small text in Pale Methyl Blue or Eugenia Red on the ground.
 - **Don't** use Eugenia Red for anything but a filled caution or danger plate with dark text.
 - **Don't** mix two accents in one element.
