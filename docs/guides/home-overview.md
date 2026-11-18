@@ -21,7 +21,11 @@ it never triggers a resource load on its own. It shows:
   fetched yet), healthy-empty (fetched, zero rows), loaded (fetched, has rows),
   and stale (fetched but out of date for the active context). A short
   terminal that cannot show every line ends the block with `+N more` rather than
-  leaving the services it skipped unmentioned.
+  leaving the services it skipped unmentioned. On a terminal at least 96
+  columns wide, a **Count trend** column at the right edge draws each
+  service's row count over its recent refreshes as a small bar chart, scaled
+  to that service's own peak. A service appears there once it has been counted
+  at least twice.
 - **Recent operations**: the most recent in-app operations (currently GCE and
   Cloud SQL mutations, and plugin runs) with their outcome (pending, succeeded,
   failed, cancelled, unknown) and detail. `cancelled` means the command was

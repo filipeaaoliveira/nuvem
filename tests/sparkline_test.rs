@@ -15,7 +15,7 @@ use nuvem::app::projection::{SPARKLINE_MIN_SAMPLES, project_home_overview};
 use nuvem::app::state::health::ServiceObservation;
 use nuvem::app::state::root::RootState;
 use nuvem::services::runtime::session::RuntimeSession;
-use nuvem::ui::home::SPARKLINE_WIDTH;
+use nuvem::ui::home::{SPARKLINE_CAPTION, SPARKLINE_WIDTH};
 use nuvem_domain::gcp::configuration::{
     GcloudConfiguration, GcloudConfigurationName, GcloudContext,
 };
@@ -362,4 +362,38 @@ fn the_last_registered_service_gets_its_own_spark() {
     );
 
     assert_eq!(row_bars(&session, last.label()), vec![2, 4, 6, 8]);
+}
+
+/// The spark column is captioned, so its bars say what they measure.
+///
+/// Without a caption the column was a run of coloured blocks at the right edge
+/// of the band with nothing to read them by. The caption sits in the
+/// Inventory border, right-aligned so it ends over the column, and only while
+/// some row draws a spark: over an empty column it would caption nothing.
+#[test]
+fn the_spark_column_is_captioned_exactly_while_it_holds_a_spark() {
+    let border = |session: &RuntimeSession| {
+        painted(session)
+            .into_iter()
+            .find(|row| row.contains("Inventory"))
+            .expect("the Inventory border is on screen")
+    };
+
+    let mut session = session_on_dev();
+    assert!(
+        !border(&session).contains(SPARKLINE_CAPTION),
+        "no service has history yet, so there is no column to caption"
+    );
+
+    seed(
+        &mut session.app_mut().root,
+        ResourceServiceKind::ComputeInstances,
+        &dev_context(),
+        &[3, 5, 4],
+    );
+    let row = border(&session);
+    assert!(
+        row.trim_end().ends_with(&format!("{SPARKLINE_CAPTION}┐")),
+        "the caption ends over the spark column: {row:?}"
+    );
 }

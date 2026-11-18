@@ -559,7 +559,7 @@ impl ResourcesState {
 fn cloud_run_status_label(status: &CloudRunServiceStatus) -> String {
     match status {
         CloudRunServiceStatus::Ready => "Ready".to_string(),
-        CloudRunServiceStatus::NotReady => "Not Ready".to_string(),
+        CloudRunServiceStatus::NotReady => "Not ready".to_string(),
         CloudRunServiceStatus::Reconciling => "Reconciling".to_string(),
         CloudRunServiceStatus::Failed => "Failed".to_string(),
         CloudRunServiceStatus::Unknown(_) => "Unknown".to_string(),
