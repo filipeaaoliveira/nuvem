@@ -5,7 +5,14 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 description = "Pure domain logic for nuvem: parsing, classification, and sanitisation of gcloud output"
+readme = "README.md"
+keywords = ["gcp", "gcloud", "nuvem"]
+categories = ["parser-implementations"]
+# The tests are pure and read no files, so they ship and `cargo test` works
+# from the package. LICENSE is a link to the workspace root's copy.
+include = ["/src/**/*.rs", "/tests/**/*.rs", "/README.md", "/LICENSE"]
 # Same single-binary rule as the root crate: see the root Cargo.toml and
 # tests/suite.rs for why auto-discovered per-file test targets are off.
 autotests = false
