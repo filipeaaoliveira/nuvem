@@ -82,6 +82,11 @@ Decisions that shape the architecture, and the evidence behind them, live in
 arranged today; a decision record says why an alternative was taken or refused,
 so a question that was already settled is not re-litigated from a worse premise.
 
+## Releasing
+
+Maintainers cut releases by tag. [RELEASING.md](RELEASING.md) lists the steps,
+the secrets the release workflow expects, and what to check afterwards.
+
 ## Reporting bugs
 
 Open a GitHub issue. For anything that looks like a security problem, see
