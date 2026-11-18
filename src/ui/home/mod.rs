@@ -61,6 +61,10 @@ pub const SPARKLINE_WIDTH: u16 = 12;
 /// without it, which is exactly why it may vanish without the band having to
 /// say so — unlike a dropped service, which `render_inventory_row` counts.
 const SPARKLINE_MIN_AREA_WIDTH: u16 = 96;
+/// The caption over the spark column, in the Inventory border.
+///
+/// Public so a rendered-buffer test names the same text the renderer draws.
+pub const SPARKLINE_CAPTION: &str = "Count trend";
 /// What a line carries beside a count that has just gone up.
 ///
 /// Public so a rendered-buffer test names the same glyph the renderer draws
@@ -287,10 +291,20 @@ fn render_inventory_row(frame: &mut Frame<'_>, area: Rect, overview: &HomeOvervi
         )));
     }
 
-    frame.render_widget(
-        Paragraph::new(lines).block(bordered_block("Inventory")),
-        area,
-    );
+    // The spark column is captioned in the border above it whenever it holds a
+    // spark, or its bars are coloured blocks with nothing to say what they
+    // measure.
+    let mut block = bordered_block("Inventory");
+    let any_spark = spark_width > 0
+        && overview
+            .inventory
+            .iter()
+            .take(painted)
+            .any(|card| !card.history.is_empty());
+    if any_spark {
+        block = block.title(Line::from(SPARKLINE_CAPTION).right_aligned());
+    }
+    frame.render_widget(Paragraph::new(lines).block(block), area);
 
     render_inventory_sparklines(frame, area, overview, painted, spark_width);
 }
