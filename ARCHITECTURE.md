@@ -1174,6 +1174,15 @@ Services perform the operational work:
 - `services/resources/` handles service-specific resource loading
 - `services/runtime/` dispatches effects but should not implement service details
 
+A detail load is held to the resource it asked about. The reducer drops any
+detail result whose resource is not the pane's current target, because such a
+result is usually stale: the operator moved on before it returned. A load that
+answers with a document about some *other* resource would be dropped the same
+way, and with no failure to follow, its pane would wait forever.
+`app::effect::DetailRequest` records what each detail effect asked for, and the
+runtime passes every result through `DetailRequest::check`, which turns such an
+answer into the load's own failure, naming both resources.
+
 ### Native clients and the CLI backend
 
 Lists and detail loads run on the official Google Cloud client libraries, with

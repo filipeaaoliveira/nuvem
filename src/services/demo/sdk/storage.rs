@@ -57,7 +57,7 @@ use google_cloud_gax::error::Error;
 use google_cloud_storage::client::StorageControl;
 use google_cloud_storage::model;
 
-use super::{envelope, parent_matches};
+use super::{envelope, named, parent_matches, short_name};
 
 /// The bucket listing, re-shaped: Storage v2 `Bucket` rows mirroring
 /// `tests/fixtures/gcs_buckets.json` (`gcloud storage buckets list
@@ -135,14 +135,20 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
         )?))
     }
 
-    /// The capture is one bucket, so there is no field to wrap it in. The name
-    /// on the request is ignored, as `DemoCommandRunner` ignores the argv's.
+    /// The bucket the request names: the detail capture for the bucket it
+    /// describes, and the listing's own row for every other one. See
+    /// [`named`].
     async fn get_bucket(
         &self,
-        _request: model::GetBucketRequest,
+        request: model::GetBucketRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Bucket>> {
-        let bucket: model::Bucket = serde_json::from_str(BUCKET_DETAIL).map_err(Error::deser)?;
+        let wanted = short_name(&request.name);
+        let bucket: model::Bucket = named(
+            &[BUCKET_DETAIL, BUCKETS],
+            |name| short_name(name) == wanted,
+            &format!("bucket `{wanted}`"),
+        )?;
         Ok(google_cloud_gax::response::Response::from(bucket))
     }
 
@@ -165,12 +171,18 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
         )?))
     }
 
+    /// The object the request names, by its whole key: a key is a path, so
+    /// its last segment alone would confuse `a/x` with `b/x`.
     async fn get_object(
         &self,
-        _request: model::GetObjectRequest,
+        request: model::GetObjectRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Object>> {
-        let object: model::Object = serde_json::from_str(OBJECT_DETAIL).map_err(Error::deser)?;
+        let object: model::Object = named(
+            &[OBJECT_DETAIL, OBJECTS],
+            |name| name == request.object,
+            &format!("object `{}`", request.object),
+        )?;
         Ok(google_cloud_gax::response::Response::from(object))
     }
 }

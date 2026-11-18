@@ -58,7 +58,7 @@ use google_cloud_gax::error::Error;
 
 use crate::services::resources::compute::tail_segment;
 
-use super::{aggregated_project, by_scope, fans_out_over_every_scope, scope};
+use super::{aggregated_project, by_scope, fans_out_over_every_scope, named, scope};
 
 /// The instances capture: `gcloud compute instances list --format=json`.
 const INSTANCES: &str = include_str!("../../../../tests/fixtures/gce_instances.json");
@@ -141,18 +141,19 @@ impl google_cloud_compute_v1::stub::Instances for InstancesStub {
         Ok(google_cloud_gax::response::Response::from(aggregated()?))
     }
 
-    /// The capture is one instance, so there is no field to wrap it in.
-    ///
-    /// The zone and instance on the request are ignored: the demo project has
-    /// one captured instance detail, exactly as `DemoCommandRunner` answers
-    /// one `instances describe` document whichever instance the argv named.
+    /// The instance the request names: the detail capture for the instance it
+    /// describes, and the listing's own row for every other one. See
+    /// [`named`].
     async fn get(
         &self,
-        _request: model::instances::GetRequest,
+        request: model::instances::GetRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Instance>> {
-        let instance: model::Instance =
-            serde_json::from_str(INSTANCE_DETAIL).map_err(Error::deser)?;
+        let instance: model::Instance = named(
+            &[INSTANCE_DETAIL, INSTANCES],
+            |name| name == request.instance,
+            &format!("instance `{}`", request.instance),
+        )?;
         Ok(google_cloud_gax::response::Response::from(instance))
     }
 

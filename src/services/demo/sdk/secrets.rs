@@ -10,11 +10,10 @@
 //! `Secret` document, because `secrets.get` answers the resource itself, so it
 //! is deserialized directly. All three are the captures the CLI parser reads.
 
-use google_cloud_gax::error::Error;
 use google_cloud_secretmanager_v1::client::SecretManagerService;
 use google_cloud_secretmanager_v1::model;
 
-use super::envelope;
+use super::{envelope, named, short_name};
 
 /// The secrets capture: `gcloud secrets list --format=json`.
 const SECRETS: &str = include_str!("../../../../tests/fixtures/secrets.json");
@@ -58,15 +57,20 @@ impl google_cloud_secretmanager_v1::stub::SecretManagerService for SecretsStub {
         )?))
     }
 
-    /// One secret, so there is no field to wrap it in. The requested name is
-    /// ignored for the same reason `DemoCommandRunner` answers one
-    /// `secrets describe` document whichever secret the argv named.
+    /// The secret the request names: the detail capture for the secret it
+    /// describes, and the listing's own row for every other one. See
+    /// [`named`].
     async fn get_secret(
         &self,
-        _request: model::GetSecretRequest,
+        request: model::GetSecretRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Secret>> {
-        let secret: model::Secret = serde_json::from_str(SECRET_DETAIL).map_err(Error::deser)?;
+        let wanted = short_name(&request.name);
+        let secret: model::Secret = named(
+            &[SECRET_DETAIL, SECRETS],
+            |name| short_name(name) == wanted,
+            &format!("secret `{wanted}`"),
+        )?;
         Ok(google_cloud_gax::response::Response::from(secret))
     }
 }

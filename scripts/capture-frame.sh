@@ -41,8 +41,8 @@ keys_for() {
     home) echo "g : r u n Enter : s q l Enter h" ;;
     # Cloud SQL with the service navigator open beside the list.
     resources) echo "g Tab j j Enter Tab" ;;
-    # The one Cloud Run service whose detail the demo fixtures carry, with the
-    # navigator hidden to give the detail pane room.
+    # A Cloud Run service's detail, with the navigator hidden to give the
+    # detail pane room.
     detail) echo "g : r u n Enter v / o r d e r s Enter Enter" ;;
     palette) echo "g :" ;;
     help) echo "g ?" ;;

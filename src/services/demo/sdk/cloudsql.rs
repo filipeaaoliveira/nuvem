@@ -47,11 +47,10 @@
 //! the confirmation, the operations-log entry and its settlement all run for
 //! real.
 
-use google_cloud_gax::error::Error;
 use google_cloud_sql_v1::client::{SqlInstancesService, SqlOperationsService, SqlUsersService};
 use google_cloud_sql_v1::model;
 
-use super::envelope;
+use super::{envelope, named};
 
 /// The instances capture: `gcloud sql instances list --format=json`.
 const INSTANCES: &str = include_str!("../../../../tests/fixtures/cloudsql_instances.json");
@@ -92,19 +91,20 @@ impl google_cloud_sql_v1::stub::SqlInstancesService for InstancesStub {
         )?))
     }
 
-    /// The capture is one instance, so there is no field to wrap it in.
-    ///
-    /// The instance on the request is ignored: the demo project has one
-    /// captured detail document, exactly as `DemoCommandRunner` answers one
-    /// `sql instances describe` document whichever instance the argv named.
+    /// The instance the request names: the detail capture for the instance it
+    /// describes, and the listing's own row for every other one. See
+    /// [`named`].
     async fn get(
         &self,
-        _request: model::SqlInstancesGetRequest,
+        request: model::SqlInstancesGetRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::DatabaseInstance>>
     {
-        let instance: model::DatabaseInstance =
-            serde_json::from_str(INSTANCE_DETAIL).map_err(Error::deser)?;
+        let instance: model::DatabaseInstance = named(
+            &[INSTANCE_DETAIL, INSTANCES],
+            |name| name == request.instance,
+            &format!("Cloud SQL instance `{}`", request.instance),
+        )?;
         Ok(google_cloud_gax::response::Response::from(instance))
     }
 
