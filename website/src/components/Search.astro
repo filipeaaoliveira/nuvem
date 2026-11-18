@@ -1,0 +1,24 @@
+---
+// Starlight's search, plus `/` to open it, the shortcut most docs readers
+// already reach for. Ctrl+K and Cmd+K keep working.
+import type { Props } from '@astrojs/starlight/props';
+import Default from '@astrojs/starlight/components/Search.astro';
+---
+
+<Default {...Astro.props} />
+
+<script>
+	const openButton = document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]');
+	openButton?.setAttribute('aria-keyshortcuts', '/ Control+K Meta+K');
+
+	const isTyping = (target: EventTarget | null) =>
+		target instanceof HTMLElement &&
+		(target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
+	window.addEventListener('keydown', (event) => {
+		if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+		if (isTyping(event.target) || document.querySelector('site-search dialog[open]')) return;
+		event.preventDefault();
+		openButton?.click();
+	});
+</script>

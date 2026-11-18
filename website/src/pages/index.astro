@@ -1,0 +1,94 @@
+---
+// Placeholder home page. It states what nuvem is and points to the docs and
+// the source; nothing more until the real landing page exists.
+import '../styles/tokens.css';
+import { REPO_URL } from '../lib/docs-source.mjs';
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const description = 'nuvem is a terminal UI for Google Cloud.';
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark" />
+		<meta name="theme-color" content="#423b36" />
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="nuvem" />
+		<meta property="og:title" content="nuvem" />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta name="twitter:card" content="summary" />
+		<title>nuvem</title>
+	</head>
+	<body>
+		<main>
+			<h1>nuvem</h1>
+			<p>A terminal UI for Google Cloud.</p>
+			<nav aria-label="Site">
+				<a href="/docs/">Documentation</a>
+				<a href={REPO_URL}>Source on GitHub</a>
+			</nav>
+		</main>
+	</body>
+</html>
+
+<style>
+	body {
+		margin: 0;
+		min-height: 100vh;
+		min-height: 100dvh;
+		display: grid;
+		background-color: var(--nv-bg);
+		color: var(--nv-text);
+		font-family: var(--nv-font-sans);
+		font-size: var(--nv-text-body);
+		line-height: var(--nv-leading-body);
+	}
+
+	main {
+		align-self: center;
+		width: min(100% - 2 * var(--nv-space-4), 40rem);
+		margin-inline: auto;
+		padding-block: var(--nv-space-8);
+		border-top: 1px solid var(--nv-methyl);
+	}
+
+	h1 {
+		margin: var(--nv-space-5) 0 var(--nv-space-2);
+		color: var(--nv-naples);
+		font-size: clamp(2.5rem, 1.5rem + 5vw, 4rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.03em;
+	}
+
+	p {
+		margin: 0 0 var(--nv-space-6);
+		color: var(--nv-text);
+		font-size: 1.25rem;
+	}
+
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--nv-space-3) var(--nv-space-6);
+	}
+
+	a {
+		color: var(--nv-coral);
+		text-decoration-line: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	a:hover {
+		text-decoration-thickness: 2px;
+	}
+</style>
