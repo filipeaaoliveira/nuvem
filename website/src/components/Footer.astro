@@ -1,0 +1,43 @@
+---
+// Starlight's footer (edit link and pager on docs pages), then the site's
+// colophon: licence, source and the trademark notice, on every page.
+import Default from '@astrojs/starlight/components/Footer.astro';
+import { REPO_BLOB_URL, REPO_URL } from '../lib/docs-source.mjs';
+---
+
+<Default />
+<div class="colophon">
+	<p>nuvem is released under the <a href={`${REPO_BLOB_URL}/LICENSE`}>MIT License</a>. The source is on <a href={REPO_URL}>GitHub</a>.</p>
+	<p>nuvem is an independent project, not affiliated with or endorsed by Google. Google Cloud is a trademark of Google LLC.</p>
+</div>
+
+<style>
+	.colophon {
+		margin-top: var(--nv-space-7);
+		padding-top: var(--nv-space-4);
+		border-top: 1px solid var(--nv-rule);
+		color: var(--nv-text-muted);
+		font-size: var(--nv-text-small);
+		line-height: var(--nv-leading-body);
+	}
+
+	.colophon p {
+		max-width: var(--nv-measure);
+		margin: 0;
+	}
+
+	.colophon p + p {
+		margin-top: var(--nv-space-2);
+	}
+
+	.colophon a {
+		color: var(--nv-coral);
+		text-decoration-line: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.colophon a:hover {
+		text-decoration-thickness: 2px;
+	}
+</style>

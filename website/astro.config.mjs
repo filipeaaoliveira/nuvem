@@ -46,6 +46,8 @@ export default defineConfig({
 				ThemeProvider: './src/components/ThemeProvider.astro',
 				ThemeSelect: './src/components/ThemeSelect.astro',
 				Search: './src/components/Search.astro',
+				Header: './src/components/Header.astro',
+				Footer: './src/components/Footer.astro',
 			},
 			expressiveCode: {
 				themes: [codeTheme],
