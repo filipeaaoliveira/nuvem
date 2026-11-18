@@ -2,27 +2,30 @@
 //
 // The same Markdown has to read well on GitHub and on the site, so:
 // - The leading `# Title` is dropped: Starlight prints the page title itself.
-// - Relative links to other published docs become site URLs.
-// - Relative links to anything else in the repository (contributor docs,
-//   source files) point at the file on GitHub.
+// - Relative links become site URLs or GitHub URLs (see doc-links.mjs, which
+//   also fails the build on a broken one).
+// - Inline code breaks only at spaces, never inside a token such as
+//   `--configuration`; a long path may still break after a `/`.
+// - Table cells carry their column's header as `data-label`, so a narrow
+//   screen can show each row as a labelled block.
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, relative, resolve, sep } from 'node:path';
-import { DOCS_DIR, REPO_BLOB_URL, REPO_ROOT, REPO_URL, firstHeading, frontmatterField, isPublished, splitFrontmatter, urlFor } from './docs-source.mjs';
-
-const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+import { resolveLink, inside } from './doc-links.mjs';
+import { DOCS_DIR, firstHeading, splitFrontmatter } from './docs-source.mjs';
 
 /** Plugin factory: Sätteri calls it once per file and skips files it returns nothing for. */
 export default function docsMarkdown({ fileURL }) {
 	if (!fileURL) return undefined;
 	const path = fileURLToPath(fileURL);
 	if (!inside(path, DOCS_DIR)) return undefined;
-	const fromDir = dirname(path);
 	let titleSeen = false;
 
 	const relink = (node, ctx) => {
-		const url = rewrite(node.url, fromDir);
+		const { href, page, anchor } = resolveLink(node.url, path);
+		let url = href;
+		// The target's own `# Title` is not rendered, so an anchor to it means the page top.
+		if (page && page !== path && anchor && anchor === titleAnchor(page)) url = href.replace(/#.*$/, '');
 		if (url !== node.url) ctx.setProperty(node, 'url', url);
 	};
 
@@ -36,36 +39,37 @@ export default function docsMarkdown({ fileURL }) {
 		},
 		link: relink,
 		definition: relink,
-		// Short code spans such as `--config` must not break at a hyphen.
 		inlineCode(node, ctx) {
-			if (node.value.length <= 32 && !/\s/.test(node.value)) {
-				ctx.setProperty(node, 'data', { hProperties: { className: ['nv-nowrap'] } });
+			// Headings keep plain code so their ids match the link check's.
+			if (ctx.parent(node)?.type === 'heading') return;
+			ctx.replaceNode(node, { type: 'html', value: codeHtml(node.value) });
+		},
+		table(node, ctx) {
+			const [head, ...rows] = node.children ?? [];
+			if (!head) return;
+			// A scroll container for wide tables, focusable so keyboards can scroll it.
+			ctx.wrapNode(node, {
+				type: 'paragraph',
+				data: { hName: 'div', hProperties: { className: ['nv-table'], tabIndex: 0, role: 'region', ariaLabel: 'Table' } },
+				children: [],
+			});
+			const labels = head.children.map((cell) => ctx.textContent(cell).trim());
+			for (const row of rows) {
+				row.children.forEach((cell, i) => {
+					if (labels[i]) ctx.setProperty(cell, 'data', { hProperties: { dataLabel: labels[i] } });
+				});
 			}
 		},
 	};
 }
 
-function rewrite(url, fromDir) {
-	if (!url || url.startsWith('#') || url.startsWith('/') || SCHEME.test(url)) return url;
-	const [target, ...rest] = url.split('#');
-	const hash = rest.length ? `#${rest.join('#')}` : '';
-	const abs = resolve(fromDir, decodeURI(target));
-
-	if (inside(abs, DOCS_DIR)) {
-		const rel = relative(DOCS_DIR, abs).split(sep).join('/');
-		if (isPublished(rel) && existsSync(abs)) {
-			// The page's own `# Title` is not rendered, so an anchor to it means the page top.
-			const title = firstHeading(splitFrontmatter(readFileSync(abs, 'utf8')).body);
-			const toTitle = title && hash === `#${headingSlug(title)}`;
-			return urlFor(rel, frontmatterField(abs, 'slug')) + (toTitle ? '' : hash);
-		}
+const titleAnchors = new Map();
+function titleAnchor(file) {
+	if (!titleAnchors.has(file)) {
+		const title = firstHeading(splitFrontmatter(readFileSync(file, 'utf8')).body);
+		titleAnchors.set(file, title ? headingSlug(title) : undefined);
 	}
-	if (inside(abs, REPO_ROOT) || abs === REPO_ROOT) {
-		const rel = relative(REPO_ROOT, abs).split(sep).join('/');
-		const isDir = existsSync(abs) && statSync(abs).isDirectory();
-		return `${isDir ? `${REPO_URL}/tree/main` : REPO_BLOB_URL}/${rel}${hash}`;
-	}
-	return url;
+	return titleAnchors.get(file);
 }
 
 /** GitHub-style heading anchor. */
@@ -76,8 +80,20 @@ function headingSlug(text) {
 		.replace(/\s/g, '-');
 }
 
-function inside(path, dir) {
-	const rel = relative(dir, path);
-	return rel !== '' && !rel.startsWith('..') && !rel.startsWith(sep) && !/^[a-z]:/i.test(rel);
+function escapeHtml(text) {
+	return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/**
+ * `<code>` whose words never break inside: each run of non-space characters
+ * is an unbreakable token, and a long path offers a break after each `/`.
+ */
+function codeHtml(value) {
+	const parts = value.split(/(\s+)/).map((part, i) => {
+		if (i % 2 === 1) return escapeHtml(part);
+		if (!part) return '';
+		const token = part.length > 24 ? escapeHtml(part).replace(/\//g, '/<wbr>') : escapeHtml(part);
+		return `<span class="nv-token">${token}</span>`;
+	});
+	return `<code>${parts.join('')}</code>`;
+}
