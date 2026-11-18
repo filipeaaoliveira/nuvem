@@ -101,12 +101,12 @@ pub fn render_at(frame: &mut Frame<'_>, session: &RuntimeSession, at: std::time:
 
     shared::frame::render_status(frame, areas.status, &projection);
     shared::frame::render_footer(frame, areas.footer, &projection);
-    render_active_overlay(frame, session);
+    render_active_overlay(frame, session, area, areas.body);
 }
 
-fn render_active_overlay(frame: &mut Frame<'_>, session: &RuntimeSession) {
+fn render_active_overlay(frame: &mut Frame<'_>, session: &RuntimeSession, area: Rect, body: Rect) {
     if session.app().root.system.show_help {
-        render_help(frame, session);
+        render_help(frame, session, below_header(area, body));
         return;
     }
 
@@ -209,7 +209,7 @@ fn render_active_overlay(frame: &mut Frame<'_>, session: &RuntimeSession) {
     }
 
     if session.app().root.command.is_open() {
-        render_command_palette(frame, session);
+        render_command_palette(frame, session, body);
         return;
     }
 
@@ -221,11 +221,30 @@ fn render_active_overlay(frame: &mut Frame<'_>, session: &RuntimeSession) {
     }
 }
 
-fn render_help(frame: &mut Frame<'_>, session: &RuntimeSession) {
+/// Everything below the two header rows: the breadcrumb, the body, the status
+/// line and the footer.
+fn below_header(area: Rect, body: Rect) -> Rect {
+    let top = body.y.saturating_sub(1).max(area.y);
+    Rect {
+        x: area.x,
+        y: top,
+        width: area.width,
+        height: area.bottom().saturating_sub(top),
+    }
+}
+
+/// Help takes everything below the header, footer included.
+///
+/// Drawn as a box in the middle of the screen, it left slivers of the panes
+/// underneath around its edges (`onal)`, `[OK] C`) and a second `Esc/? Close`
+/// in the footer beneath its own key row. Covering every row it touches, end
+/// to end, leaves nothing half-shown, and its key row becomes the footer. The
+/// header stays, so the context the keys apply to is still on screen.
+fn render_help(frame: &mut Frame<'_>, session: &RuntimeSession, area: Rect) {
     let overrides = session_hotkeys(session);
     let model = crate::app::projection::help_model_with(&session.app().root, &overrides);
     let scroll = session.app().root.system.help_scroll;
-    shared::help::render_help_overlay(frame, &model, scroll);
+    shared::help::render_help_overlay_in(frame, area, &model, scroll);
 }
 
 /// The session's effective hotkey overrides, or defaults when no config is
@@ -323,12 +342,18 @@ fn render_plugin_output(frame: &mut Frame<'_>, session: &RuntimeSession) {
     frame.render_widget(Paragraph::new(fit_text(&footer, inner_width)), footer_area);
 }
 
-fn render_command_palette(frame: &mut Frame<'_>, session: &RuntimeSession) {
+/// The palette clears the whole body and sits in the middle of it.
+///
+/// Drawn over the panes, it left the words its edges cut through on either
+/// side (`l IP: 34.10.10.10`). The header, the status line and the footer stay:
+/// they are whole rows, and the footer carries the palette's own keys.
+fn render_command_palette(frame: &mut Frame<'_>, session: &RuntimeSession, body: Rect) {
     let root = &session.app().root;
     let overrides = session_hotkeys(session);
     let commands = root.command.visible_commands(root);
     let selected = root.command.selected_visible_command(root);
-    let area = palette_area(frame.area());
+    frame.render_widget(Clear, body);
+    let area = palette_area_in_body(body);
     let inner_width = usize::from(area.width.saturating_sub(2));
     let command_lines: Vec<Line<'_>> = if commands.is_empty() {
         vec![
@@ -445,33 +470,15 @@ fn render_command_palette(frame: &mut Frame<'_>, session: &RuntimeSession) {
     frame.render_widget(Paragraph::new(lines).block(modal_block(title)), area);
 }
 
-/// Rows the query line takes at the top of the palette.
-const PALETTE_QUERY_ROWS: u16 = 1;
-
-/// The palette's box: the shared percentage modal plus the query row's own
-/// height.
-///
-/// Grown rather than shared, so the query row is paid for out of chrome instead
-/// of out of a command. Without this the box kept its old height and the last
-/// command in it fell off the bottom — silently, since the palette has no
-/// overflow marker of its own.
-fn palette_area(frame: Rect) -> Rect {
-    let base = centered_rect(70, 45, frame);
-    let height = base
-        .height
-        .saturating_add(PALETTE_QUERY_ROWS)
-        .min(frame.height);
-    // `y` is left where `centered_rect` put it. A clamp here would read as the
-    // safety net that keeps the taller box inside the frame, and it is not one:
-    // `centered_rect` leaves `(frame.height - base.height)` split above and
-    // below, so there is always at least as much room below the box as above
-    // it, and one more row cannot reach the bottom. The mutation gate is what
-    // said so — `delete field y` survived, because nothing could make the
-    // clamp fire. `the_palette_box_never_escapes_the_frame` pins the property
-    // the clamp was reaching for, at every height the app draws on, so a change
-    // to `centered_rect` or to `PALETTE_QUERY_ROWS` fails a test rather than
-    // painting outside the frame.
-    Rect { height, ..base }
+/// The palette's box inside a body it has cleared: the body's full height,
+/// since nothing beneath is left to show, and 70% of its width.
+fn palette_area_in_body(body: Rect) -> Rect {
+    let base = centered_rect(70, 100, body);
+    Rect {
+        y: body.y,
+        height: body.height,
+        ..base
+    }
 }
 
 /// Names the palette's query row. "Search" rather than "Filter" because that is
@@ -1689,7 +1696,7 @@ mod tests {
         let session = RuntimeSession::new_for_test(app);
         let mut terminal = Terminal::new(TestBackend::new(100, 30)).expect("a test terminal");
         terminal
-            .draw(|frame| render_command_palette(frame, &session))
+            .draw(|frame| render_command_palette(frame, &session, frame.area()))
             .expect("the palette draws");
 
         let buffer = terminal.backend().buffer();
@@ -1733,7 +1740,7 @@ mod tests {
             let session = palette_over_instance_named(hostile);
             let mut terminal = Terminal::new(TestBackend::new(100, 30)).expect("a test terminal");
             terminal
-                .draw(|frame| render_command_palette(frame, &session))
+                .draw(|frame| render_command_palette(frame, &session, frame.area()))
                 .expect("the palette draws");
 
             let buffer = terminal.backend().buffer();

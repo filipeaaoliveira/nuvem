@@ -58,7 +58,8 @@ not captured, your terminal's own text selection and copy still work.
 
 ## Help
 
-`?` opens the help overlay for the view you are in. It lists the keys in
+`?` opens the help overlay for the view you are in. It covers everything below
+the header, so the configuration and project stay in view. It lists the keys in
 groups, with your rebound keys shown as rebound. Scroll it with `j`/`k` or the
 arrows, page with `PgUp`/`PgDn`, jump to the top or bottom with `g`/`G`, and
 close it with `Esc` or `?`. When your config file has problems, help lists

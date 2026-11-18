@@ -6234,3 +6234,64 @@ async fn the_preview_still_shows_its_own_longest_line_whole() {
         );
     }
 }
+
+/// An overlay leaves nothing of the panes beneath it half-shown.
+///
+/// Help and the command palette used to be boxes drawn over the panes, so
+/// every row they crossed kept the words their edges cut through on either
+/// side (`onal)`, `[OK] C`, `l IP: 34.10.10.10`). Now each clears every row
+/// it crosses from edge to edge, so on those rows nothing but the overlay is
+/// painted. Checked at the four widths the docs and recordings use.
+#[tokio::test]
+async fn help_and_the_palette_leave_no_fragment_of_the_panes_beneath() {
+    for overlay in ["help", "commands"] {
+        for (width, height) in [(80, 24), (100, 30), (121, 34), (160, 40)] {
+            let mut session = RuntimeSession::new_for_test(AppState::new());
+            load_dev_instances(&mut session).await;
+            session
+                .dispatch_action(Action::Workspace(WorkspaceAction::Resources))
+                .await;
+            let open = match overlay {
+                "help" => Action::System(SystemAction::ToggleHelp),
+                _ => Action::Command(CommandAction::Open),
+            };
+            session.dispatch_action(open).await;
+
+            let lines = render_lines(&session, width, height);
+            let top = lines
+                .iter()
+                .position(|line| line.contains(&format!("┌{overlay}")))
+                .unwrap_or_else(|| panic!("no {overlay} box at {width}x{height}:\n{lines:#?}"));
+            let left = lines[top]
+                .chars()
+                .position(|c| c == '┌')
+                .expect("the box has a corner");
+            let right = lines[top]
+                .chars()
+                .enumerate()
+                .filter(|(_, c)| *c == '┐')
+                .map(|(column, _)| column)
+                .last()
+                .expect("and another");
+            let bottom = top
+                + lines[top..]
+                    .iter()
+                    .position(|line| line.chars().nth(left) == Some('└'))
+                    .expect("the box closes");
+            for (row, line) in lines.iter().enumerate().take(bottom + 1).skip(top) {
+                let outside: String = line
+                    .chars()
+                    .enumerate()
+                    .filter(|(column, _)| *column < left || *column > right)
+                    .map(|(_, c)| c)
+                    .collect();
+                assert!(
+                    outside.trim().is_empty(),
+                    "{overlay} at {width}x{height}: row {row} shows {outside:?} beside the \
+                     box:\n{}",
+                    lines.join("\n")
+                );
+            }
+        }
+    }
+}
