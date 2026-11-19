@@ -232,7 +232,7 @@ starlight-toc a[aria-current='true']::before {
 }
 
 /* A page without "On this page" keeps its column where a page with one has
-   it, so the text does not jump sideways between pages. Starlight centres
+   it, so the text does not jump sideways between pages. Starlight centers
    it instead; this is its own width rule for pages with contents. */
 @media (min-width: 72rem) {
 	:root[data-has-sidebar]:not([data-has-toc]) .main-pane {
@@ -351,13 +351,13 @@ mobile-starlight-toc nav {
 	white-space: nowrap;
 }
 
-/* Code inside a link takes the link colour, so a linked key name reads as a link. */
+/* Code inside a link takes the link color, so a linked key name reads as a link. */
 .sl-markdown-content a:not(:where(.not-content *)) > code {
 	color: var(--nv-coral);
 }
 
 /* Scroll cues: a Methyl edge shows on the side that has more to see. The
-   plate-coloured covers scroll with the content and hide the cue at the end. */
+   plate-colored covers scroll with the content and hide the cue at the end. */
 .nv-table,
 .expressive-code pre {
 	--nv-cue: color-mix(in srgb, var(--nv-methyl) 70%, transparent);
@@ -421,7 +421,7 @@ mobile-starlight-toc nav {
 	outline-offset: 4px;
 }
 
-/* Narrow screens: each row becomes a labelled block, the first cell its heading. */
+/* Narrow screens: each row becomes a labeled block, the first cell its heading. */
 @media (max-width: 40rem) {
 	.sl-markdown-content .nv-table {
 		background: none;
@@ -506,7 +506,7 @@ mobile-starlight-toc nav {
 	color: var(--nv-text-muted);
 }
 
-/* Asides: a labelled plate. Caution and danger are filled Eugenia Red with dark text. */
+/* Asides: a labeled plate. Caution and danger are filled Eugenia Red with dark text. */
 .starlight-aside {
 	border: 1px solid var(--nv-rule);
 	border-radius: var(--nv-radius);
