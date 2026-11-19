@@ -10,9 +10,13 @@ updates:
     # Lockfile-only bumps stay quiet; manifest-range bumps are rare because
     # the manifests use major-version ranges.
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(deps)"
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(deps)"

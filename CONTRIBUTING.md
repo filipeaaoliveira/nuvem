@@ -74,9 +74,13 @@ The gates enforce some of these conventions, and the docs rely on the rest:
 - `ARCHITECTURE.md` is checked by a test. `tests/architecture_layout_test.rs`
   compares its module tree with the source tree in both directions. If you move
   or add a module, update the document in the same change.
-- A commit message has a short subject written as a plain sentence, for
-  example `Keep the row count when a filter matches nothing`, as in the
-  existing history.
+- Commit subjects follow [Conventional Commits](https://www.conventionalcommits.org/):
+  a type, an optional scope, then a short description in lower case, for
+  example `fix: keep the row count when a filter matches nothing`. The types
+  in use are `feat`, `fix`, `docs`, `test`, `perf`, `refactor`, `build`, `ci`
+  and `chore`. The scopes are `site` for the website, `demo` for the demo data
+  and recordings, `deps` for dependency updates and `release`. Leave the scope
+  out for a change to nuvem itself.
 
 ## Design decisions
 
