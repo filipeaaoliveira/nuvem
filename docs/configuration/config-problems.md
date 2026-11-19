@@ -5,84 +5,90 @@ sidebar:
   order: 10
 ---
 
-A bad config file never crashes nuvem — problems degrade to a warning and a
-default value:
+A bad config file never crashes nuvem. Each problem becomes a warning, and
+the setting it touches falls back to a default:
 
-- unparseable file, or an unreadable path → all fields fall back to defaults,
-  with the failure reported as a warning;
-- unknown/unsupported `version` → all fields fall back to defaults, with a
-  warning;
-- an invalid enum value (`general.theme`, `general.default_service`) → that
-  field falls back to its default, with a warning; other fields still load
-  normally;
-- an invalid `[hotkeys]` set (unknown action, bad key spec, a reserved key, a
-  collision, or an override that makes `quit`/`help` unreachable) → the
-  *entire* hotkey set falls back to the built-in defaults, with a warning;
-- an invalid single `[aliases]` entry → only that alias is dropped, with a
-  warning; the rest of the table is kept;
-- an invalid single `[favorites]` entry → only that entry is dropped, with a
-  warning; its valid siblings survive, the same as `[aliases]`. A `projects`,
-  `regions`, or `zones` key whose value is not an array drops that whole key
-  instead, with a warning, leaving the other keys untouched; a `[favorites]`
-  section that is not a table at all is dropped in its entirety, with one
-  warning;
-- any problem inside one `[columns.<service>]` block → that service's *entire*
-  block is dropped and the service falls back to its built-in columns and sort,
-  with a warning; every other service's block is still applied. A block naming
-  a service that does not exist is skipped without affecting any service;
-- two or more `[columns.*]` keys naming the same service (`[columns.gce]` and
-  `[columns.compute]` are both Compute Engine) → the alphabetically last key
-  decides on its own, and the service reports one warning naming every key it
-  displaced as well as the winner; a displaced key that is itself invalid has
-  its own problem named in that same warning, so deleting the winning block is
-  not how you first find out about the typo under it. If the deciding key's
-  block is invalid, every block naming that service is discarded and the
-  service falls back to its built-in columns and sort, with that one warning
-  naming the problem and the blocks discarded with it. Blocks are read in key
-  order, not file order, so the one you wrote second does not necessarily win —
-  which is why the loser is reported instead of silently changing nothing;
-- an invalid single `[theme.overrides]` entry → only that entry is dropped,
-  with a warning; its valid siblings survive. A `[theme]` that is not a table,
-  an unknown key inside it (the base theme is `[general].theme`), or an
-  `overrides` value that is not a table drops that much and nothing more — see
-  [Frame overrides](themes.md#frame-overrides);
-- any problem inside one `[[jumps]]` entry → only that rule is dropped, with a
-  warning naming its index; the other rules still apply. A `[jumps]` written
-  with single brackets is not an array of rules, so the whole section is
-  dropped with one warning and no jump is configured — the rest of the file
-  still loads.
+- If the file cannot be parsed, or the path cannot be read, every field falls
+  back to its default. nuvem reports the failure as a warning.
+- If the `version` is unknown or unsupported, every field falls back to its
+  default, with a warning.
+- If an enum value is invalid (`general.theme`, `general.default_service`),
+  that field falls back to its default, with a warning. Other fields still
+  load normally.
+- If the `[hotkeys]` set is invalid (unknown action, bad key spec, a reserved
+  key, a collision, or an override that makes `quit`/`help` unreachable), the
+  *entire* hotkey set falls back to the built-in defaults, with a warning.
+- If a single `[aliases]` entry is invalid, only that alias is dropped, with a
+  warning. The rest of the table is kept.
+- If a single `[favorites]` entry is invalid, only that entry is dropped, with
+  a warning. Its valid siblings survive, the same as `[aliases]`. A
+  `projects`, `regions`, or `zones` key whose value is not an array drops that
+  whole key instead, with a warning, and leaves the other keys untouched. A
+  `[favorites]` section that is not a table at all is dropped in its entirety,
+  with one warning.
+- If there is any problem inside one `[columns.<service>]` block, that
+  service's *entire* block is dropped, with a warning. The service falls back
+  to its built-in columns and sort. Every other service's block still applies.
+  A block that names a service that does not exist is skipped without
+  affecting any service.
+- If two or more `[columns.*]` keys name the same service (`[columns.gce]` and
+  `[columns.compute]` are both Compute Engine), the alphabetically last key
+  decides on its own. The service reports one warning that names the winner
+  and every key it displaced. If a displaced key is itself invalid, that same
+  warning names its problem, so you learn about the typo before you delete the
+  winning block. If the deciding key's block is invalid, every block that
+  names that service is discarded. The service falls back to its built-in
+  columns and sort, and the one warning names the problem and the blocks
+  discarded with it. Blocks are read in key order, not file order, so the one
+  you wrote second does not necessarily win. This is why nuvem reports the
+  loser instead of silently changing nothing.
+- If a single `[theme.overrides]` entry is invalid, only that entry is
+  dropped, with a warning. Its valid siblings survive. A `[theme]` that is not
+  a table, an unknown key inside it (the base theme is `[general].theme`), or
+  an `overrides` value that is not a table drops that much and nothing more.
+  See [Frame overrides](themes.md#frame-overrides).
+- If there is any problem inside one `[[jumps]]` entry, only that rule is
+  dropped, with a warning that names its index. The other rules still apply.
+  A `[jumps]` written with single brackets is not an array of rules. The whole
+  section is dropped with one warning and no jump is configured. The rest of
+  the file still loads.
 
-The separate plugin file degrades the same way, and independently — it is a
-separate load, so nothing below costs you your `config.toml`:
+The separate plugin file fails the same way, on its own. It is a separate
+load, so no problem in the following list costs you your `config.toml`:
 
-- the plugin file is absent → no plugins, no warning; this is the normal case;
-- the plugin file is unreadable or unparseable → no plugins, with one warning
-  naming the path and line; your `config.toml` is unaffected, because the two
-  are separate loads;
-- an unknown plugin-file `version` → no plugins, with a warning; entries are
-  rejected whole rather than read under rules that may not be theirs;
-- a `[plugins]` written with single brackets is not an array of plugins, so the
-  whole section is dropped with one warning;
-- any problem inside one `[[plugins]]` entry → only that plugin is dropped,
-  with a warning naming its index; the other plugins still load. Two plugins in
-  the same scope sharing an `id` or a `key` is such a problem: the later one is
-  dropped and the warning names the plugin it clashed with. The same key in two
-  *different* scopes is fine — the two are never offered at once. A problem
-  inside one of a plugin's `[[plugins.inputs]]` tables is such a problem too:
-  an unknown `type`, a `dropdown` with no `choices`, a `default` that
-  contradicts its own `type` or sits outside its own `choices`, a `name` that is
-  already a field of the plugin's scope, or an unknown key inside the input
-  table. The warning names the input by index and by name, that one plugin is
-  dropped, and the rest still load.
+- If the plugin file is absent, there are no plugins and no warning. This is
+  the normal case.
+- If the plugin file is unreadable or cannot be parsed, there are no plugins,
+  and one warning names the path and line. Your `config.toml` is unaffected,
+  because the two are separate loads.
+- If the plugin-file `version` is unknown, there are no plugins, with a
+  warning. nuvem rejects every entry whole instead of reading it under rules
+  that may not be its own.
+- A `[plugins]` written with single brackets is not an array of plugins, so
+  the whole section is dropped with one warning.
+- If there is any problem inside one `[[plugins]]` entry, only that plugin is
+  dropped, with a warning that names its index. The other plugins still load.
+  Two plugins in the same scope that share an `id` or a `key` are such a
+  problem. The later one is dropped, and the warning names the plugin it
+  clashed with. The same key in two *different* scopes is fine, because the
+  two are never offered at once. A problem inside one of a plugin's
+  `[[plugins.inputs]]` tables is such a problem too: an unknown `type`, a
+  `dropdown` with no `choices`, a `default` that contradicts its own `type` or
+  sits outside its own `choices`, a `name` that is already a field of the
+  plugin's scope, or an unknown key inside the input table. The warning names
+  the input by index and by name, that one plugin is dropped, and the rest
+  still load.
 
-Startup warnings are shown on stderr (and via `nuvem info`) — except the
-deferred `[theme.overrides]` check, which can only run once the configuration
-list has loaded and so joins the list in the running app rather than on
-stderr. Every one of them is listed in the help overlay (`?`) under
-`Config problems`, so a
-misconfigured file is always visible in full and not just by its first
-complaint. The status line summarizes: a lone problem is quoted whole
-(`config warning: …`), and several are counted with the key that opens the list
-(`config: 3 problems (press ? for details)` — it names your `help` key, rebound
-or not). A reload says the same thing in its own wording and rewrites the list,
-so fixing the file empties the section rather than leaving stale advice in it.
+Startup warnings appear on stderr and in `nuvem info`. The one exception is
+the deferred `[theme.overrides]` check. It can only run once the configuration
+list has loaded, so its warnings join the list in the running app, not
+stderr.
+
+The help overlay (`?`) lists every warning under `Config problems`, so you see
+all of a misconfigured file's problems, not only the first. The status line
+summarizes them. It quotes a lone problem whole (`config warning: …`). It
+counts several and names the key that opens the list
+(`config: 3 problems (press ? for details)`). That key is your `help` key,
+rebound or not. A reload says the same thing in its own wording and rewrites
+the list, so fixing the file empties the section and leaves no stale advice
+in it.

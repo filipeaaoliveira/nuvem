@@ -26,55 +26,55 @@ applies a new theme without a restart.
 ## Frame overrides
 
 `[theme.overrides]` and `[theme.project_overrides]` recolor the pane borders
-while a dangerous context is active, so it is unmistakable at a glance —
-`prod = "red"` in the [config file example](config-file.md#full-example) is the whole feature.
+while a dangerous context is active, so you can see it at a glance. The whole
+feature is one line, such as `prod = "red"` in the
+[config file example](config-file.md#full-example).
 
-The two tables differ in what they match, and the difference matters:
+The two tables match different things:
 
-- **`[theme.overrides]`** keys on the **gcloud configuration name**, matched
-  verbatim against what `gcloud` reports. It is only as reliable as your
-  naming convention: if the configuration that reaches production is called
+- `[theme.overrides]` keys on the gcloud configuration name, matched verbatim
+  against what `gcloud` reports. It is only as reliable as your naming
+  convention. If the configuration that reaches production is called
   `default`, `work`, or `client`, an override written for `prod` never fires.
-- **`[theme.project_overrides]`** keys on the **project id**, the same
-  vocabulary `[favorites].projects` uses. Every configuration pointing at that
-  project gets the frame regardless of what it is called, and a project id is
-  the same string for everyone who can reach it, where a configuration name is
-  a local, renameable, per-machine alias.
+- `[theme.project_overrides]` keys on the project id, the same vocabulary
+  `[favorites].projects` uses. Every configuration that points at that project
+  gets the frame, whatever it is called. A project id is the same string for
+  everyone who can reach it. A configuration name is a local, renameable alias
+  on one machine.
 
-Prefer the project table for the guardrail itself, and the configuration table
-for colouring one particular way in. When both match the active context, the
-**configuration name wins**: several configurations can point at one project,
-so naming one of them is the more specific statement, and the project override
-is the catch-all for every configuration you never named.
+We recommend the project table for the guardrail itself, and the configuration
+table to color one particular way in. If both match the active context, the
+configuration name wins. Several configurations can point at one project, so
+naming one of them is the more specific statement. The project override
+catches every configuration you never named.
 
 Each value is a color: a name (`red`, `light-red`), a hex triplet
 (`#ff0000`), or a 256-color index (`9`).
 
-Project overrides live in their own table rather than nested inside
-`[theme.overrides]`: a gcloud configuration may legitimately be *named*
-`projects`, and reserving that key inside a table of configuration names would
-leave that configuration uncolourable. Writing `[theme.overrides.projects]`
-anyway is reported, with the table that works.
+Project overrides have their own table, outside `[theme.overrides]`, because
+a gcloud configuration can be named `projects`. A reserved `projects` key in a
+table of configuration names would leave that configuration impossible to
+color. If you write `[theme.overrides.projects]` anyway, nuvem reports it and
+names the table that works.
 
-Patterns are deliberately not supported. `*-prod` would reintroduce this
-feature's worst failure one level up: a pattern matching nothing is a silent
-no-op, and unlike an exact id it cannot be checked against the projects your
-configurations actually reach.
+nuvem does not support patterns such as `*-prod`. A pattern that matches
+nothing is a silent no-op. Unlike an exact id, it cannot be checked against
+the projects your configurations reach.
 
-The override replaces the *hue* of both border roles — focused and unfocused
-alike, so the frame does not fall back to the base accent as you move between
-panes. Everything else (titles, tabs, selection, status colors) stays on the
-base theme picked by `[general].theme`, and bold/underline emphasis survives,
-so an override on top of `no-color` or `high-contrast` does not undo that
-theme's non-color cues.
+The override replaces the *hue* of both border roles, focused and unfocused,
+so the frame does not fall back to the base accent as you move between panes.
+Everything else (titles, tabs, selection, status colors) stays on the base
+theme picked by `[general].theme`. Bold and underline emphasis survive, so an
+override on top of `no-color` or `high-contrast` keeps that theme's cues that
+do not depend on color.
 
-Problems are reported as config warnings rather than being fatal, and each bad
-entry is dropped on its own:
+nuvem reports problems as config warnings, not fatal errors, and drops each
+bad entry on its own:
 
-- a color nuvem cannot parse, a non-string value, or a blank configuration
-  name or project id drops that entry and keeps its siblings.
-- an override naming a configuration that does not exist, or a project id no
-  configuration targets, is reported once the configuration list loads. Neither
-  can be checked when the file is read, because the list comes from `gcloud`
-  later in startup — and a silent no-op is the worst failure this feature has,
-  since the frame then looks ordinary while you believe it is guarded.
+- A color nuvem cannot parse, a value that is not a string, or a blank
+  configuration name or project id drops that entry and keeps its siblings.
+- An override that names a configuration that does not exist, or a project id
+  that no configuration targets, is reported once the configuration list
+  loads. nuvem cannot check either when it reads the file, because the list
+  comes from `gcloud` later in startup. A silent no-op is the worst failure of
+  this feature: the frame looks ordinary while you believe it is guarded.

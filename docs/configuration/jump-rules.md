@@ -6,8 +6,9 @@ sidebar:
 ---
 
 `J` opens the related-resource jump picker (see
-[Related-resource jumps](../guides/related-resource-jumps.md)). Which jumps it offers is a
-list of `[[jumps]]` rules — one array entry per row the picker can show:
+[Related-resource jumps](../guides/related-resource-jumps.md)). A list of
+`[[jumps]]` rules decides which jumps it offers. Each array entry is one row
+the picker can show:
 
 ```toml
 [[jumps]]
@@ -29,11 +30,11 @@ label = "Network of {name}"
 
 `from` takes the same service vocabulary as `[columns]` and `[aliases]`
 (`compute`/`gce`, `gke`, `cloudsql`, `run`/`cloudrun`, `storage`, …). A `to`
-with a `:` in it is a service and one of that service's detail tabs, and its
-service half takes that same vocabulary — `to = "gce:disks"` and
-`to = "compute:disks"` name the same tab. The tab half is exact: lowercased with
-spaces hyphenated, the tab names the `[`/`]` tab bar shows. The table below
-spells each service the canonical way:
+with a `:` in it is a service and one of that service's detail tabs. Its
+service half takes that same vocabulary: `to = "gce:disks"` and
+`to = "compute:disks"` name the same tab. The tab half is exact. It is the tab
+name the `[`/`]` tab bar shows, lowercased, with spaces hyphenated. The
+following table spells each service the canonical way:
 
 | service    | destination tabs |
 |------------|------------------|
@@ -42,11 +43,11 @@ spells each service the canonical way:
 | `cloudsql` | `cloudsql:summary`, `cloudsql:connectivity`, `cloudsql:maintenance`, `cloudsql:backups`, `cloudsql:replicas`, `cloudsql:users`, `cloudsql:json` |
 | `cloudrun` | `cloudrun:summary`, `cloudrun:traffic`, `cloudrun:revisions`, `cloudrun:configuration`, `cloudrun:conditions`, `cloudrun:json` |
 
-A `to` with no `:` in it names a **service list** rather than a detail tab: the
-jump switches to that service's table and puts the cursor on the row `name`
+A `to` with no `:` in it names a service list, not a detail tab. The jump
+switches to that service's table and puts the cursor on the row that `name`
 resolves to. Fifteen of the sixteen services are legal list destinations,
-including the twelve that have no detail tabs at all, so `to = "vpc-networks"`
-and `to = "secrets"` are rules you can write:
+including the twelve that have no detail tabs at all. You can write
+`to = "vpc-networks"` and `to = "secrets"`, for example:
 
 ```toml
 [[jumps]]
@@ -55,28 +56,28 @@ to = "vpc-networks"
 name = "{network}"
 ```
 
-Cloud Storage has no detail tabs — its `Enter` opens an object browser, not a
-tabbed pane — so `to = "storage:objects"` names nothing and a rule that writes
-it says so rather than reporting an unknown tab; `to = "storage"` is a legal
-list destination. Secret Manager, Cloud Functions and Pub/Sub topics are the
-same shape: no `DetailTab` spelling, so no `"<service>:<tab>"` destination, but
-a list destination like every other service. Cloud Functions has no detail pane
-at all — by design, for the reason recorded with the function list under
+Cloud Storage has no detail tabs. Its `Enter` opens an object browser, not a
+tabbed pane. `to = "storage:objects"` thus names nothing, and a rule that
+writes it is reported as such, not as an unknown tab. `to = "storage"` is a
+legal list destination. Secret Manager, Cloud Functions and Pub/Sub topics are
+the same shape. They have no `DetailTab` spelling, so no `"<service>:<tab>"`
+destination, but they are list destinations like every other service. Cloud
+Functions has no detail pane at all, by design. The reason is recorded with
+the function list under
 [Cloud Functions](../reference/services/cloud-functions.md).
 
-The IAM policy table is the one service that is neither: a binding is
-identified by its member *and* its role, since two bindings can share a member,
-and no `name`/`location` pair renders a role. `to = "iam-policy"` is refused at
-load with that reason rather than offered as a rule that lands nowhere. It stays
-a legal `from`.
+The IAM policy table is the one service that is neither a tab destination nor
+a list destination. A binding is identified by its member *and* its role,
+because two bindings can share a member, and no `name`/`location` pair renders
+a role. `to = "iam-policy"` is refused at load with that reason, so it never
+becomes a rule that lands nowhere. It is still a legal `from`.
 
 A list jump lands on a row, not on a filtered table. `to = "firewall-rules"`
-with a `{network}` name does **not** show the rules on that network; it puts
-the cursor on the rule *called* that.
+with a `{network}` name does not show the rules on that network. It puts the
+cursor on the rule *called* that.
 
-`select` is how a rule asks for the other thing: a list that arrives **narrowed**
-to a computed set. There is one computation, and it is the built-in
-instance-to-firewall jump:
+To get a list narrowed to a computed set instead, a rule sets `select`. There
+is one computation, the built-in instance-to-firewall jump:
 
 ```toml
 [[jumps]]
@@ -85,37 +86,37 @@ to = "firewall-rules"
 select = "targets-this-instance"
 ```
 
-It shows the firewall rules that target the instance — the ones on its network
-whose target tags or target service accounts it carries, **plus every rule on
-that network that names no target at all**, since those apply to every instance
-in it. A narrowing rule ignores `name` and `location`: the set is computed from
-the instance rather than named by a template, so there is no single row for one
-to point at, and an empty result is an answer (no rule governs this instance)
-rather than a row that has gone.
+It shows the firewall rules that target the instance. These are the rules on
+its network whose target tags or target service accounts the instance carries,
+plus every rule on that network that names no target at all, because those
+apply to every instance in it. A narrowing rule ignores `name` and `location`.
+nuvem computes the set from the instance, and no template names it, so there
+is no single row for either key to point at. An empty result is an answer (no
+rule governs this instance), not a row that has gone.
 
 The narrowed table intersects with `/`, so you can still filter inside it, and
-the header says which instance it is narrowed to. What it does **not** narrow by
-is whether a rule is in force: a DENY rule and a disabled rule both still target
-the instance and both stay in the list. Hiding them would defeat the point of
-opening it. `select` is only defined from `compute` to `firewall-rules`; any
-other pairing is rejected at load.
+the header says which instance it is narrowed to. It does not narrow by
+whether a rule is in force. A DENY rule and a disabled rule both still target
+the instance, so both stay in the list. `select` is
+only defined from `compute` to `firewall-rules`. nuvem rejects any other
+pairing at load.
 
-A rule to a list whose rows are identified by name alone — a VPC network, a
-secret, a topic — must not carry a `location`, and one that does is rejected at
-load with that reason: the row identity has no location half for it to match.
+A rule to a list whose rows are identified by name alone, such as a VPC
+network, a secret or a topic, must not carry a `location`. If it does, nuvem
+rejects it at load with that reason: the row identity has no location half for
+it to match.
 
 `secrets`, `pubsub-topics`, `pubsub-subscriptions`, `service-accounts`,
 `iam-policy`, `vpc-networks` and `firewall-rules` are the services with no
 location field at all.
 A secret, a topic, a subscription, a service account, the project policy, a
-VPC network and a firewall rule are all global, so
-`{location}` would have nothing to render, and
-a `location` template on one of those rules is rejected with that reason rather
-than silently producing an empty string.
+VPC network and a firewall rule are all global. `{location}` has nothing to
+render for them. A `location` template on one of those rules is rejected with
+that reason, and never silently renders an empty string.
 
 `name`, `location` and `label` are templates: literal text with `{field}`
-placeholders filled from the row you press `J` on. Which fields exist depends on
-the **source** service, so a template is checked against `from`:
+placeholders filled from the row you press `J` on. The fields that exist
+depend on the *source* service, so a template is checked against `from`:
 
 | `from`     | fields |
 |------------|--------|
@@ -137,37 +138,39 @@ the **source** service, so a template is checked against `from`:
 | `firewall-rules` | `{name}`, `{network}` |
 
 `{network}`, `{subnetwork}` and `{subnetwork_region}` on `compute` are the only
-fields that do not come from the row. A GCE instance's list row carries no network at all; both
-values live on the detail pane, so a rule naming either resolves once that pane
-is open and fetched, and offers nothing from the list. That is not a failure and
-it is not the instance's fault, so `J` says which it is: **needs network, which
-is on this GCE instance's detail — open it and try again**, as against the
-ordinary **has no value for** an instance whose fetched pane really has no
-network interface. An instance with several interfaces reports its first, the
-same one `{internal_ip}` and `{external_ip}` already come from.
+fields that do not come from the row. A GCE instance's list row carries no
+network at all. The
+values live on the detail pane, so a rule that names any of them resolves once
+that pane is open and fetched, and offers nothing from the list. `J` tells
+this case apart from a missing value. It says **needs network, which
+is on this GCE instance's detail — open it and try again**. For an instance
+whose fetched pane has no network interface, it says the ordinary
+**has no value for**. An instance with several interfaces reports its first,
+the same one `{internal_ip}` and `{external_ip}` come from.
 
 `{subnetwork_region}` exists because `{subnetwork}` does not identify a subnet
-on its own: an auto-mode network calls every one of its subnets `default`, one
-per region, so a rule keyed on the name alone would name as many rows as the
+on its own. An auto-mode network calls every one of its subnets `default`, one
+per region, so a rule keyed on the name alone names as many rows as the
 project has regions. The region is read out of the subnetwork's self-link, from
-the segment following `regions` — **not** by stripping the last part off the
-instance's `{zone}`. That guess produces the right answer on most topologies,
-which is exactly what makes it dangerous; nothing in the API guarantees an
-instance's subnet is in the region its zone belongs to. A link that names no
-region leaves the field absent, so a jump keyed on it offers nothing rather
-than landing on the wrong subnet.
+the segment following `regions`, **not** by stripping the last part off the
+instance's `{zone}`. Stripping the zone gives the right answer on most
+topologies, but nothing in the API guarantees that an instance's subnet is in
+the region its zone belongs to. A link that names no region leaves the field
+absent, so a jump keyed on it offers nothing instead of landing on the wrong
+subnet.
 
 There is no `{network_region}` beside it. A network's self-link is
 `.../global/networks/<name>`: a network is global within its project, so the
 name is the whole identity and nothing is discarded when it is shortened.
 
-Substitution is a single pass: a value that itself contains `{` or `}` is
+Substitution is a single pass. A value that itself contains `{` or `}` is
 written out as it stands and never expanded again. There is no escape for a
 literal brace.
 
-A worked example — the built-in Network row is kept, the Disks row is reworded,
-and every GCE instance also offers a row for the GKE cluster named after it
-(which lands only under the conditions at the end of this section):
+In the following example, the built-in Network row stays, the Disks row is
+reworded, and every GCE instance also offers a row for the GKE cluster named
+after it. That last row lands only under the conditions at the end of this
+page:
 
 ```toml
 [[jumps]]
@@ -187,61 +190,62 @@ location = "{zone}"
 label = "Node pools of the {name} cluster"
 ```
 
-A `[[jumps]]` array **replaces the built-in set** rather than merging with it,
-which is why the example repeats the Network rule: merging would leave no way to
-remove a built-in jump. Without any `[[jumps]]` entry you get the built-in rules
-(the table under [Related-resource jumps](../guides/related-resource-jumps.md)); with
-`jumps = []` no jump is configured at all, and `J` then only reports that none
-are configured for the service you are in.
+A `[[jumps]]` array **replaces the built-in set**. It does not merge with it,
+so that you can remove a built-in jump. This is why the example repeats the
+Network rule. Without any `[[jumps]]` entry, you get the built-in rules (the
+table under [Related-resource jumps](../guides/related-resource-jumps.md)).
+With `jumps = []`, no jump is configured at all, and `J` only reports that
+none are configured for the service you are in.
 
-Each rule is validated on its own. A rule with an unknown `from` or `to`, an
-unknown key, a value of the wrong type, an empty or unbalanced template, or a
-`{field}` its `from` service does not have is dropped with a warning naming its
-index, and the rules beside it keep working:
+nuvem validates each rule on its own. It drops a rule with any of these, with a
+warning that names the rule's index: an unknown `from` or `to`, an unknown
+key, a value of the wrong type, an empty or unbalanced template, or a
+`{field}` its `from` service does not have. Only that rule goes, and the rules
+beside it keep working:
 
 ```
 jumps[2]: unknown destination tab "compute:netwrok"; ignoring this rule
 ```
 
-Jump warnings surface like any other config warning: the first one in the
+Jump warnings appear like any other config warning: the first one in the
 startup status line, all of them on stderr and under `nuvem info`. Reload (`:` →
-**Reload configuration**) re-reads the whole array live.
+**Reload configuration**) reads the whole array again while nuvem runs.
 
-A rule that is valid can still have nothing to offer for a particular row — no
-config check can know that *this* instance has no external IP. When its `name`
+A valid rule can still have nothing to offer for a particular row. No config
+check can know that *this* instance has no external IP. If the rule's `name`
 or `location` renders empty for the selected row, that rule is
-**not offered for that row**; the other rules still are, and when nothing at all
-resolves the picker stays closed and the status line names the rule and the
+**not offered for that row**. The other rules still are. If nothing at all
+resolves, the picker stays closed, and the status line names the rule and the
 field:
 
 ```
 Jump "compute:network" needs external_ip, which this GCE instance has no value for
 ```
 
-A `label` is wording rather than identity, so it is treated differently: one
-that will not render for the selected row
-**falls back to the built-in wording** (`"<tab> of <name>"`) and the jump is
-still offered. A caption is not worth losing a jump that would land correctly.
+A `label` is wording, not identity, so it is treated differently. If a label
+does not render for the selected row, it
+**falls back to the built-in wording** (`"<tab> of <name>"`), and the jump is
+still offered.
 
 The rendered `name` and `location` must also look like GCP resource names
 (non-empty, at most 253 characters, `A-Z a-z 0-9 . _ -`), because they end up as
 `gcloud describe` arguments. A rule whose rendered name fails that check is not
-offered either, and says so:
+offered either, and the status line says so:
 
 ```
 Jump "compute:disks" renders an invalid name for this GCE instance
 ```
 
-Keep `{status}` to a `label`. A status is not a resource name, so a rule that
-selects on one names nothing that exists; and the statuses that are worded with
-a space (Cloud SQL's `Pending create`, or a new status such as `Maintenance
-window`) fail the check outright,
-so such a rule is offered for some rows and refused for others.
+Use `{status}` only in a `label`. A status is not a resource name, so a rule
+that selects on one names nothing that exists. Statuses worded with a space
+(Cloud SQL's `Pending create`, or a new status such as `Maintenance window`)
+fail the check outright, so such a rule is offered for some rows and refused
+for others.
 
-Finally, a jump that *is* offered lands only on a resource
+A jump that *is* offered lands only on a resource
 **already in the destination service's loaded list**, matched on both its
-name and its zone/region — the picker never fetches a resource into existence.
-When there is no such row the status line says which case it is:
+name and its zone/region. The picker never fetches a resource that is not in
+the list. If there is no such row, the status line says which case it is:
 
 ```
 Loading GKE clusters, so web-01-cluster cannot be opened yet — try again once they arrive
@@ -249,16 +253,18 @@ No GKE cluster loaded yet, so web-01-cluster cannot be opened
 web-01-cluster is no longer available
 ```
 
-The first is a destination service this session has never loaded, so the jump
-starts its list load on the way past; repeat the jump once the rows are in and
-it lands. The second is a list that is not loaded and is not being fetched —
-a load that failed *in this configuration*, waiting on the retry backoff. A
-failure inherited from a configuration you have since left does not count: that
-backend has not been called here, so the jump fetches. The third is a list that
-has been loaded and does not have that row in it. So the cross-service
-rule above lands only once the GKE list has been fetched and holds a cluster
-called `web-01-cluster` whose location is exactly the instance's zone — a zonal
-cluster in `europe-west1-b`, not a regional one in `europe-west1`, since
-`location = "{zone}"` hands over the zone verbatim. Cross-service rules are
-worth writing where your names and locations line up across services; where they
-do not, the picker row still appears and the jump reports instead of landing.
+- The first is a destination service this session has never loaded. The jump
+  starts its list load. Repeat the jump once the rows are in, and it lands.
+- The second is a list that is not loaded and is not being fetched: a load
+  that failed *in this configuration*, waiting on the retry backoff.
+  A failure inherited from a configuration you have since left does not count.
+  That backend was not called here, so the jump fetches.
+- The third is a list that is loaded and does not have that row in it.
+
+The cross-service rule in the example thus lands only once the GKE list is
+fetched and holds a cluster called `web-01-cluster` whose location is exactly
+the instance's zone. That means a zonal cluster in `europe-west1-b`, not a
+regional one in `europe-west1`, because `location = "{zone}"` hands over the
+zone verbatim. Cross-service rules work where your names and locations line
+up across services. Where they do not, the picker row still appears, and the
+jump reports why instead of landing.

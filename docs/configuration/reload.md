@@ -13,8 +13,8 @@ sidebar:
 3. Read the status line. It says `configuration reloaded`, or quotes the one
    warning, or counts the problems and names the key that opens the list.
 
-Reload re-reads the config file. It never touches cloud state and never
-refetches a list.
+Reload reads the config file again. It never changes cloud state and never
+fetches a list again.
 
 ## What reload applies
 
@@ -43,7 +43,7 @@ flags again.
 
 ## When the file is broken
 
-A file that cannot be read or parsed, or that declares an unknown `version`,
+If the file cannot be read or parsed, or declares an unknown `version`, reload
 leaves the running configuration untouched and shows the error in the status
-line. A problem inside one table drops only what that table's rules drop; see
+line. A problem inside one table drops only what that table's rules drop. See
 [Config problems](config-problems.md).
