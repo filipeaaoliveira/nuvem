@@ -6,9 +6,9 @@ sidebar:
 ---
 
 Every service appears in the Resources sidebar and the command palette. The
-**Id** is the name the config file uses for it, in `[columns.<id>]`, in
-`[[jumps]]` and in a plugin's `scope`. Any of the **Aliases** also works there,
-in the sidebar search and in the command palette. Ids and aliases are
+Id is the name the config file uses for the service, in `[columns.<id>]`, in
+`[[jumps]]` and in a plugin's `scope`. Any of the Aliases also works there, in
+the sidebar search and in the command palette. Ids and aliases are
 case-insensitive.
 
 | Service | Id | Aliases | Category |
@@ -60,20 +60,21 @@ own names with [`[aliases]`](../../configuration/aliases.md).
 
 Status and state columns show each value as a short label, such as `Running`
 or `Not ready`. When the API reports a value this version of nuvem does not
-know yet, it is shown the same way: `MAINTENANCE_WINDOW` appears as
+know yet, nuvem shows it the same way: `MAINTENANCE_WINDOW` appears as
 `Maintenance window`, painted in the neutral colour.
 
 ## How nuvem reads
 
 Reads are native. Every list and detail load below is a Google Cloud
 client-library call, authenticated by `gcloud config config-helper` for the
-active configuration; the `gcloud` command shown with each service is the
-equivalent invocation, and is what demo mode, the fallback path and a
-label-mode (`-l`) read actually run. BigQuery is the exception: it always
-shells out to `bq`. For changes, see [Before a change runs](#before-a-change-runs).
+active configuration. The `gcloud` command shown with each service is the
+equivalent command. The fallback path and a label-mode (`-l`) read run that
+command. BigQuery is the exception: it always runs `bq`. For
+changes, see [Before a change runs](#before-a-change-runs).
 
-List reads are capped at 500 rows; the command shown on each page says where. Columns for each service are listed in
-[Columns and sort](../../configuration/columns-and-sort.md).
+List reads are capped at 500 rows. The command shown on each page says where.
+[Columns and sort](../../configuration/columns-and-sort.md) lists the columns
+for each service.
 
 ## Before a change runs
 
@@ -105,12 +106,12 @@ command-line tool, and its confirmation shows the command line:
 
 - Activating a configuration shows `gcloud config configurations activate`
   with the configuration's name.
-- SSH shows the `gcloud compute ssh` command, and a tunnel the command that
-  holds it open; see [Tunnels](../../guides/tunnels.md).
+- SSH shows the `gcloud compute ssh` command. A tunnel shows the command that
+  holds it open. See [Tunnels](../../guides/tunnels.md).
 - Opening a GKE cluster in k9s shows the `gcloud container clusters
   get-credentials` command, when one is needed, and the `k9s` command.
-- A plugin shows its whole command line; see
+- A plugin shows its whole command line. See
   [Plugins](../../plugins/overview.md).
 
 Creating a configuration and editing the active context run `gcloud config`
-commands when you submit the form; the form itself shows the values they set.
+commands when you submit the form. The form itself shows the values they set.
