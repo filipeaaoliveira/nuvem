@@ -276,7 +276,9 @@ Reference tables (keys, flags, config fields, commands) are the hardest content 
 - **Below 40rem:** each row becomes a block. The first cell is its bold heading; every other cell is labelled with its column name in muted 14px text.
 
 ### Keys (kbd)
-Physical-looking caps: raised-plate ground, strong-rule outline with a 2px bottom edge, 2px corners, monospace at 0.8125em, centred, at least 1.6em wide.
+Physical-looking caps: raised-plate ground, strong-rule outline with a 2px bottom edge, 2px corners, monospace at 0.8125em with a 1.4 line height and 0.1em by 0.4em of padding. A cap is an inline box that does not wrap, so a line never breaks between a cap and the punctuation around it, and a cap never makes its line or table row taller than plain text.
+
+The Markdown writes keys as inline code, so it reads well on GitHub. The site draws a code span as caps when it names keys (`Enter`, `Ctrl-x`, `Alt-←`, a single character, or alternatives such as `Esc/q`) in two places: the key column of a table (headed Key, Keys or Press), and the prose of the Keys page and the service pages. In that prose a single character becomes a cap only when it is a letter or one of `/ : ? , [ ]`, so values such as `0` and `-` stay code. Commands, flags, config keys and values always stay code. Alternatives are divided by a muted `/`.
 
 ### Asides
 A labelled plate. Every aside names its kind in a 14px bold title, so colour is never the only signal.
