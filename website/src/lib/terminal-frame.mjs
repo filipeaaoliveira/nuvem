@@ -15,7 +15,7 @@ import { relative } from 'node:path';
 import { REPO_ROOT } from './docs-source.mjs';
 
 /** Terminal color (as the recordings draw it) -> color on the site. */
-export const SITE_COLOURS = {
+export const SITE_COLORS = {
 	'#423b36': '#2c2622', // blue: the selected row (--nv-plate-raised)
 };
 
@@ -42,7 +42,7 @@ function parseStyle(style, where) {
 		if ((prop === 'color' || prop === 'background') && !/^#[0-9a-f]{6}$/i.test(value)) {
 			throw new Error(`${where}: color "${value}" is not #rrggbb`);
 		}
-		out[prop] = prop === 'color' || prop === 'background' ? (SITE_COLOURS[value.toLowerCase()] ?? value.toLowerCase()) : value;
+		out[prop] = prop === 'color' || prop === 'background' ? (SITE_COLORS[value.toLowerCase()] ?? value.toLowerCase()) : value;
 	}
 	return out;
 }

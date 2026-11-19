@@ -245,6 +245,15 @@ const narrowRows = Math.min(NARROW_MAX_ROWS, Math.max(...panels.map((p) => p.nar
 		margin-bottom: var(--nv-space-5);
 	}
 
+	/* Between a phone and 64rem the seven caps sit in two even rows, four
+	   and three, instead of leaving one alone on a row. */
+	@media (min-width: 36rem) and (max-width: 63.9375rem) {
+		.keys {
+			display: grid;
+			grid-template-columns: repeat(4, max-content);
+		}
+	}
+
 	@media (min-width: 64rem) {
 		.keys {
 			flex-wrap: nowrap;
