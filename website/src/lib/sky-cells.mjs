@@ -104,9 +104,10 @@ function svg(w, h, c, paths) {
 /**
  * Cloud tops rising from a filled bottom: the edge of the ground below.
  * `w` and `h` in cells; `r` the range of a lobe's radius; `towers` adds a
- * few taller heads at given columns.
+ * few taller heads at given columns; no flat stretch of the top is longer
+ * than `maxFlat` cells.
  */
-export function skyline({ w, h, seed, r: [rmin, rmax], solid = 2, towers = [] }) {
+export function skyline({ w, h, seed, r: [rmin, rmax], solid = 2, towers = [], maxFlat = 3 }) {
 	const rnd = random(seed);
 	const base = h - solid;
 	const shapes = [{ rect: [0, base, w, h] }];
@@ -125,12 +126,88 @@ export function skyline({ w, h, seed, r: [rmin, rmax], solid = 2, towers = [] })
 		shapes.push({ disc: [tx, base + tr * 0.2, tr] });
 		shapes.push({ disc: [tx + tr * 0.5, base - tr * 0.55, tr * 0.6] });
 	}
-	return rasterize(w, h, shapes);
+	return breakFlats(rasterize(w, h, shapes), maxFlat);
 }
 
-/** A skyline as an SVG of solid cells. */
-export function edgeSvg(grid, c, color) {
-	return svg(grid[0].length, grid.length, c, [[solidPath(grid, c), color]]);
+/**
+ * No change of ground in a drawing runs straight for more than `maxFlat`
+ * cells: wherever filled cells meet empty ones along a longer row boundary
+ * (the top of a cloud, the underside of a lobe, the drawing's own top row),
+ * two cells every `maxFlat` step across it, so the edge never reads as a
+ * straight line. Repeats until no long run is left.
+ */
+function breakFlats(grid, maxFlat) {
+	const h = grid.length;
+	const w = grid[0].length;
+	// Above the drawing is the other ground; below it, its own.
+	const cell = (j, i) => (j < 0 ? false : j >= h ? true : grid[j][i]);
+	for (let pass = 0; pass < 8; pass++) {
+		let changed = false;
+		for (let j = -1; j < h; j++) {
+			let run = 0;
+			let dir = 0;
+			for (let i = 0; i <= w; i++) {
+				const d = i < w && cell(j, i) !== cell(j + 1, i) ? (cell(j + 1, i) ? 1 : -1) : 0;
+				if (d !== 0 && d === dir) {
+					run++;
+					continue;
+				}
+				if (run > maxFlat) {
+					changed = true;
+					for (let k = i - run + maxFlat - 1; k < i; k += maxFlat + 1) {
+						for (const c of [k, k + 1].filter((c) => c < i)) {
+							// Filled below: raise the top by a cell, or lower it at the
+							// drawing's edge. Filled above: fill the cell below, or
+							// trim the cell above at the bottom edge.
+							if (dir === 1) {
+								if (j >= 0) grid[j][c] = true;
+								else grid[j + 1][c] = false;
+							} else if (j + 1 < h) grid[j + 1][c] = true;
+							else grid[j][c] = false;
+						}
+					}
+				}
+				run = d !== 0 ? 1 : 0;
+				dir = d;
+			}
+		}
+		if (!changed) break;
+	}
+	return grid;
+}
+
+/** Half-tone cells, like ░, as paths: two diagonal quarters of each cell. */
+function checkerPath(grid, c) {
+	const q = Math.floor(c / 2);
+	let d = '';
+	grid.forEach((row, j) =>
+		row.forEach((on, i) => {
+			if (on) d += `M${i * c} ${j * c}h${q}v${q}h${-q}zM${i * c + q} ${j * c + q}h${q}v${q}h${-q}z`;
+		}),
+	);
+	return d;
+}
+
+/** A path repeated `copies` times side by side, `width` pixels apart. */
+const repeated = (d, width, copies) => Array.from({ length: copies }, (_, k) => (k ? `<path transform="translate(${k * width} 0)" d="${d}"` : `<path d="${d}"`));
+
+/**
+ * An edge drawing as an inline SVG of plain paths, `copies` times side by
+ * side, with crisp edges: no pattern and no image, so it stays sharp at any
+ * pixel ratio and any position.
+ */
+function edgeMarkup(w, h, c, copies, parts) {
+	const width = w * c;
+	const body = parts
+		.filter(([d]) => d)
+		.flatMap(([d, fill]) => repeated(d, width, copies).map((p) => `${p} fill="${fill}"/>`))
+		.join('');
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="${width * copies}" height="${h * c}" viewBox="0 0 ${width * copies} ${h * c}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${body}</svg>`;
+}
+
+/** A skyline as an SVG of solid cells, `copies` times side by side. */
+export function edgeSvg(grid, c, color, copies = 1) {
+	return edgeMarkup(grid[0].length, grid.length, c, copies, [[solidPath(grid, c), color]]);
 }
 
 /**
@@ -138,7 +215,7 @@ export function edgeSvg(grid, c, color) {
  * over, with a row of half-tone cells under each column's lowest cell and a
  * sparse row under that, so the ground thins out as it ends.
  */
-export function fringeSvg(grid, c, color) {
+export function fringeSvg(grid, c, color, copies = 1) {
 	const hung = [...grid].reverse();
 	const h = hung.length;
 	const w = hung[0].length;
@@ -153,10 +230,10 @@ export function fringeSvg(grid, c, color) {
 	}
 	const q = Math.floor(c / 2);
 	let dots = '';
-	sparse.forEach((row, j) => row.forEach((on, i) => on && (dots += `M${i * c + q / 2} ${j * c + q / 2}h${q}v${q}h${-q}z`)));
-	return svg(w, h + 2, c, [
+	sparse.forEach((row, j) => row.forEach((on, i) => on && (dots += `M${i * c + Math.floor(q / 2)} ${j * c + Math.floor(q / 2)}h${q}v${q}h${-q}z`)));
+	return edgeMarkup(w, h + 2, c, copies, [
 		[solidPath(hung, c), color],
-		[solidPath(dense, c), cellFill(c, color, true)],
+		[checkerPath(dense, c), color],
 		[dots, color],
 	]);
 }
