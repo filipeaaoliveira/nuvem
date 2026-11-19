@@ -1,0 +1,65 @@
+---
+// The word "nuvem" set in terminal cells, on the same grid as the cloud
+// (CellCloud.astro). Every letter of the word sits on the x-height, so the
+// whole word is five cells tall. A second impression in `offset` sits a
+// fraction of a cell down and to the right, as when two printing plates
+// do not quite line up.
+//
+// The SVG has role="img" and the word as its name.
+
+interface Props {
+	ink: string;
+	offset: string;
+	class?: string;
+	/** Stack the letters top to bottom, one cell apart. */
+	vertical?: boolean;
+	/** Hide from assistive technology, when the word is given as text beside it. */
+	decorative?: boolean;
+}
+
+import { LETTERS } from '../../lib/sky-cells.mjs';
+
+const { ink, offset, class: className, vertical = false, decorative = false } = Astro.props;
+const GAP = 0.12;
+const SPACING = 1;
+const COLUMN = 5;
+let x0 = 0;
+let y0 = 0;
+const cells = [];
+for (const ch of 'nuvem') {
+	const glyph = LETTERS[ch];
+	// Stacked, each letter is centered in a five-cell column.
+	const dx = vertical ? Math.floor((COLUMN - glyph[0].length) / 2) : 0;
+	glyph.forEach((row, y) =>
+		[...row].forEach((c, x) => {
+			if (c === '#') cells.push(`M${x0 + dx + x + GAP / 2} ${y0 + y + GAP / 2}h${1 - GAP}v${1 - GAP}h${GAP - 1}z`);
+		}),
+	);
+	if (vertical) y0 += 5 + SPACING;
+	else x0 += glyph[0].length + SPACING;
+}
+const width = vertical ? COLUMN : x0 - SPACING;
+const height = vertical ? y0 - SPACING : 5;
+const d = cells.join('');
+const SHIFT = 0.28;
+---
+
+<svg
+	class:list={['wordmark', className]}
+	viewBox={`0 0 ${width + SHIFT} ${height + SHIFT}`}
+	role={decorative ? undefined : 'img'}
+	aria-label={decorative ? undefined : 'nuvem'}
+	aria-hidden={decorative ? 'true' : undefined}
+	shape-rendering="crispEdges"
+>
+	<path d={d} fill={offset} transform={`translate(${SHIFT} ${SHIFT})`}></path>
+	<path d={d} fill={ink}></path>
+</svg>
+
+<style>
+	.wordmark {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+</style>
