@@ -2477,3 +2477,70 @@ async fn the_footer_keeps_open_and_leave_at_120_columns() {
         check(&format!("BigQuery {level}"), &session, true);
     }
 }
+
+/// A message the operator's own key put on the status line stays until their
+/// next key, through any number of polls.
+///
+/// The demo's refusal to open SSH used to read for about two seconds before
+/// the next poll's list load replaced it with `[OK] GCE instances`. The same
+/// held for any message an action writes, in any session: the poll starts and
+/// finishes a background refresh, and neither may replace it. The next action
+/// releases it, and the poll after that may write again.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_message_the_operator_caused_outlives_the_poll() {
+    use nuvem::app::CommandAction;
+
+    let status = |session: &RuntimeSession| {
+        session
+            .app()
+            .root
+            .system
+            .status_message
+            .clone()
+            .unwrap_or_default()
+    };
+    let mut session = demo_session_showing(ResourceServiceKind::ComputeInstances).await;
+    session
+        .dispatch_action(Action::Command(CommandAction::Open))
+        .await;
+    for character in "ssh to".chars() {
+        session
+            .dispatch_action(Action::Command(CommandAction::AppendChar(character)))
+            .await;
+    }
+    session
+        .dispatch_action(Action::Command(CommandAction::Submit))
+        .await;
+    drain(&mut session).await;
+    session
+        .dispatch_action(Action::Resources(ResourcesAction::ConfirmSshLaunch))
+        .await;
+    drain(&mut session).await;
+    let refusal = status(&session);
+    assert!(
+        refusal.starts_with("Demo mode does not open sessions"),
+        "the walk reached the refusal: {refusal:?}"
+    );
+
+    for poll in 0..3 {
+        session.poll_active_resource().await;
+        drain(&mut session).await;
+        assert_eq!(
+            status(&session),
+            refusal,
+            "poll {poll} replaced the message"
+        );
+    }
+
+    session
+        .dispatch_action(Action::Resources(ResourcesAction::SelectNext))
+        .await;
+    drain(&mut session).await;
+    session.poll_active_resource().await;
+    drain(&mut session).await;
+    assert_ne!(
+        status(&session),
+        refusal,
+        "the next key releases the message, and the poll after it reports again"
+    );
+}

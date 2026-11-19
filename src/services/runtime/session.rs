@@ -557,6 +557,11 @@ pub struct RuntimeSession {
     /// Demo mode only: the context Home was last filled in for. See
     /// [`RuntimeSession::fill_demo_home`].
     demo_home_filled: Option<GcloudContext>,
+    /// Whether the status line holds a message the last action set, which
+    /// stays until the next action. A poll or other background load does not
+    /// replace it: a demo refusal, a copy confirmation or a refused key read
+    /// for two seconds and then vanished under the next poll's list label.
+    status_held_until_key: bool,
     pending_interactive_command: Option<InteractiveCommand>,
     kubectl_runner: Option<Arc<dyn CommandRunner + Send + Sync>>,
     k9s_binary: String,
@@ -825,6 +830,7 @@ impl RuntimeSession {
             pending_background_refreshes: 0,
             auto_loaded_scope: None,
             demo_home_filled: None,
+            status_held_until_key: false,
             pending_interactive_command: None,
             kubectl_runner,
             k9s_binary,
@@ -1037,11 +1043,19 @@ impl RuntimeSession {
             self.gated_scope = None;
         }
         let context_picker_was_open = self.app.root.configurations.context_picker().is_some();
+        let status_before = self.app.root.system.status_generation;
         let effects = self.reduce(&action);
         if context_picker_was_open && self.app.root.configurations.context_picker().is_none() {
             self.cancel_context_picker();
         }
         self.dispatch_effects(effects, false).await;
+        // A message this action wrote, as opposed to one an operation it
+        // started is reporting on, is the operator's answer to their key. It
+        // is held until their next one.
+        let system = &self.app.root.system;
+        self.status_held_until_key = system.status_generation != status_before
+            && system.status_message.is_some()
+            && system.status_operation_label.is_none();
         self.ensure_active_resource_loaded().await;
         self.fill_demo_home().await;
         true
@@ -1756,7 +1770,8 @@ impl RuntimeSession {
         status_generation: u64,
     ) {
         self.update_retry_gate(&result);
-        let preserve_status = self.app.root.system.status_generation != status_generation;
+        let preserve_status = self.status_held_until_key
+            || self.app.root.system.status_generation != status_generation;
         let status_message = self.app.root.system.status_message.clone();
         let status_operation_label = self.app.root.system.status_operation_label.clone();
         let status_phase = self.app.root.system.status_phase;
@@ -4910,7 +4925,10 @@ impl RuntimeSession {
             ResourceServiceKind::IamPolicy => Effect::RefreshIamPolicy { context },
             ResourceServiceKind::BigQueryDatasets => Effect::RefreshBigQueryDatasets { context },
         };
-        self.dispatch_effects(vec![effect], false).await;
+        // A held message survives the refresh starting, as it survives its
+        // result in `apply_background_effect_result`.
+        self.dispatch_effects(vec![effect], self.status_held_until_key)
+            .await;
         if first_load {
             self.app.root.system.operation.phase = OperationPhase::Loading;
         }
