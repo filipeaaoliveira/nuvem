@@ -175,9 +175,13 @@ jobs:
           curl -LsSf -o "$tmp/nextest.tar.gz" \
             "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-${NEXTEST_VERSION}/${NEXTEST_ARCHIVE}.tar.gz"
           echo "${NEXTEST_SHA256}  $tmp/nextest.tar.gz" | shasum -a 256 -c -
-          tar -xzf "$tmp/nextest.tar.gz" -C "${CARGO_HOME:-$HOME/.cargo}/bin"
+          # Into a directory this step creates: the arm64 macOS image keeps
+          # cargo outside ~/.cargo/bin, so that directory is not there.
+          mkdir -p "$HOME/.local/bin"
+          tar -xzf "$tmp/nextest.tar.gz" -C "$HOME/.local/bin"
           rm -rf "$tmp"
-          cargo nextest --version
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          PATH="$HOME/.local/bin:$PATH" cargo nextest --version
       - name: Run the test suite
         run: cargo nextest run --all --locked
 

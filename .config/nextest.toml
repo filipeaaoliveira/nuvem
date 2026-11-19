@@ -67,6 +67,18 @@ slow-timeout = { period = "60s", terminate-after = 1 }
 filter = 'test(=chrome_line_fitting_property_test::a_chrome_row_that_does_not_fit_says_so)'
 slow-timeout = { period = "60s", terminate-after = 1 }
 
+# The poll walk, which is slow on a slow machine and not hung.
+#
+# `a_poll_leaves_the_status_line_alone` builds a demo session for each of the
+# sixteen services, opens every level `Enter` reaches, and at each one polls
+# twice and paints the screen at three widths after every result. It runs
+# about 3s alone on a recent laptop and crossed the 10s ceiling on the
+# four-core Intel macOS runner, where the rest of the suite still passed.
+# The work is the walk itself, so the ceiling is widened for this test only.
+[[profile.default.overrides]]
+filter = 'test(=demo_runner_test::a_poll_leaves_the_status_line_alone)'
+slow-timeout = { period = "60s", terminate-after = 1 }
+
 # The render benchmark, which is `#[ignore]`d and so runs only when asked for
 # by name. It measures rather than asserts, and it deliberately repeats its
 # work to find a minimum, so the ceiling above — which exists to catch a test
