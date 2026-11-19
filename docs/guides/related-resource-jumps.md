@@ -6,27 +6,35 @@ sidebar:
 ---
 
 Press `J` (shifted) in a resource list or a resource detail pane to open the
-related-resource jump picker. It is a small dialog that lists the collections
-you can reach from the resource on screen. Each row names the destination tab
-and the resource, such as `Network of web-01` or `Replicas of orders-db`, so a
-row never reads as a generic "jump".
+related-resource jump picker. It is a small dialog that lists the tabs and
+lists you can reach from the resource on screen. Each row names the
+destination and the resource, such as `Network of web-01` or
+`Replicas of orders-db`. So one key means the same thing in every service,
+and a row never reads as a generic "jump".
 
 Move with `j`/`k` or the arrows. The cursor stops at both ends and does not
 wrap. Press `Enter` to jump, or `Esc` to cancel. The picker captures its rows
 when it opens, so a background reload of the list cannot change what a row
 means.
 
-Jump rules come from your configuration, and their number has no limit. If the
+Jump rules come from your config file, and their number has no limit. If the
 picker has more rows than the terminal can show, the rows scroll inside the
 picker to keep the selected row visible. Every configured rule stays reachable
 with `j`/`k`.
 
 ## Default jumps
 
-The table lists the jumps that nuvem offers by default. Of the rows that offer
-jumps, the first three land on a detail tab. The last two land on the VPC
-networks table, with the cursor on the network that the subnet or the rule is
-attached to:
+The table lists the jumps that nuvem offers by default:
+
+- Network, Disks, Replicas and Revisions open that tab of the selected
+  resource's detail pane.
+- VPC networks and VPC subnets open that list, with the cursor on the network
+  or subnet the selected resource is attached to.
+- Firewall rules, from a GCE instance, opens the firewall rules list narrowed
+  to the rules that target that instance.
+
+A GCE instance's VPC networks, VPC subnets and Firewall rules jumps need its
+network, which only the detail pane loads. They appear once that pane is open.
 
 | Selection             | Jumps offered      |
 | --------------------- | ------------------ |
@@ -72,8 +80,8 @@ the retry backoff, is left alone. nuvem asks each of these questions of the
 configuration you are in now. So switching configuration and jumping again
 fetches, instead of reusing the old configuration's result.
 
-Keep this in mind before you write a rule that crosses from one service to
-another. See [Jump rules](../configuration/jump-rules.md).
+This matters for a rule that crosses from one service to another. See
+[Jump rules](../configuration/jump-rules.md).
 
 ## When there is nothing to jump to
 

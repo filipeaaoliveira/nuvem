@@ -26,7 +26,7 @@ needs it:
 | --- | --- | --- |
 | `bq` | Browsing BigQuery datasets. It ships with the Google Cloud CLI. | `--bq-binary` |
 | `k9s` | Opening a GKE cluster in k9s | `--k9s-binary` |
-| `kubectl` | Checking whether a GKE kube context already exists before k9s opens | `--kubectl-binary` |
+| `kubectl` | Checking whether your kubeconfig already has a kube context (the entry `kubectl` and k9s use to reach a cluster) for the GKE cluster before k9s opens | `--kubectl-binary` |
 | `cloud-sql-proxy` | Cloud SQL tunnels | `--cloud-sql-proxy-binary` |
 | `wl-copy`, `xclip` or `xsel` | Copying to the clipboard on Linux. macOS uses `pbcopy`. | none |
 
@@ -64,11 +64,17 @@ there, and smoke-tests the binary before packaging it.
    shasum -a 256 -c nuvem-<target>.tar.gz.sha256
    ```
 
-3. Unpack it and put the binary on your `PATH`:
+3. Unpack it and put the binary in `~/.local/bin`. The first command creates
+   that directory if it does not exist yet:
 
    ```bash
+   mkdir -p ~/.local/bin
    tar xzf nuvem-<target>.tar.gz && install nuvem-<target>/nuvem ~/.local/bin/
    ```
+
+4. Make sure that `~/.local/bin` is on your `PATH`. If `command -v nuvem`
+   prints nothing, add `export PATH="$HOME/.local/bin:$PATH"` to your shell's
+   startup file, such as `~/.zshrc` or `~/.bashrc`, and open a new terminal.
 
 The Linux binaries need glibc 2.28 or newer. Ubuntu 20.04, Debian 10, RHEL 8
 and later releases have it. To see your version, run `ldd --version`. With an
@@ -85,10 +91,10 @@ gh attestation verify nuvem-x86_64-unknown-linux-gnu.tar.gz --repo filipeaaolive
 
 ## Build from source
 
-You need a recent stable Rust toolchain, a C toolchain and `cmake` on your
-`PATH`. The C toolchain and `cmake` are for the TLS library that the Google
-Cloud client libraries use, which compiles native code at build time. If you
-use `rustup`, it installs the pinned Rust version for you.
+You need Rust 1.94 or newer, a C toolchain and `cmake` on your `PATH`. The C
+toolchain and `cmake` build the TLS library that the Google Cloud client
+libraries use, which compiles native code. If you use `rustup`, it installs
+the pinned Rust version for you.
 
 ```bash
 git clone https://github.com/filipeaaoliveira/nuvem

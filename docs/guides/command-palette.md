@@ -5,8 +5,9 @@ sidebar:
   order: 6
 ---
 
-The command palette is a global command mode. Press `:` in any normal view to
-open it. It lists:
+The command palette runs any command by name. It is a global command mode:
+press `:` in any [normal view](../getting-started/the-screen.md) to open it.
+It lists:
 
 - Navigation commands: Home, Configurations, Tunnels, FinOps, Logging
   (`Open project logs`), one command per service, Refresh, Reload
@@ -19,8 +20,8 @@ as `gce`, `compute`, `gke`, `clusters`, `sql`, `run`, `gcs`, `logs`, `ssh`,
 `tunnels` or `k9s`. It also matches on your own
 [`[aliases]`](../configuration/aliases.md). An exact label or alias ranks
 first, then a prefix, then any other substring. If a search matches nothing,
-the palette shows your query and suggests a few commands to try. The palette
-never opens empty.
+the palette shows your query and suggests search words to try: `gce`, `gke`,
+`home` and `refresh`. The palette never opens empty.
 
 ## Run a command
 

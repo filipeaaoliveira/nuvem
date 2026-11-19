@@ -15,7 +15,7 @@ There are three ways into the workspace. They differ only in what the query
 is scoped to:
 
 - `l` opens the Logging workspace on all recent project logs, from anywhere in
-  the app. It never looks at your selection.
+  nuvem. It never looks at your selection.
 - `L` (shifted) opens Cloud Logging scoped to the one resource the current
   view has on screen. It works anywhere in the Resources workspace: in a
   resource list and in a resource detail pane.
@@ -24,8 +24,8 @@ is scoped to:
   palette form of `L`, one per service. Each one is offered only when that
   service has a resource the jump can resolve.
 
-`l` widens to the project, and `L` narrows to the selection. The help overlay
-(`?`) states this difference on both entries.
+The help overlay (`?`) states the difference between `l` and `L` on both
+entries.
 
 `L` covers all eleven services: the selected GCE instance, GKE cluster, Cloud
 SQL instance, Cloud Run service, Cloud Storage bucket, secret, Cloud Function,
@@ -60,11 +60,12 @@ cap, so memory use stays bounded. If a request fails on a quota or rate limit,
 polling waits a growing number of ticks before it retries. Other errors show a
 degraded status and keep the last entries on screen.
 
-`r` asks for the current window again and keeps the rows already on screen. If
-the page comes back unchanged, the view stays as it was. If no gcloud context
-is active, there is no project to read from, and nuvem fetches nothing. The
-rows stay on screen, so the status line reports the missing context. That
-message tells a refused refresh apart from one that returned the same page.
+`r` asks for the current time window again and keeps the rows already on
+screen. If the page comes back unchanged, the view stays as it was. If no
+context is active, there is no project to read from, and nuvem fetches
+nothing. The rows stay on screen, and the status line reports the missing
+context, so you can tell a refused refresh from one that returned the same
+page.
 
 ## Read the entries
 
@@ -84,18 +85,18 @@ In the Logging list:
 
 ## Narrow the window
 
-Two settings narrow the window on the server. They change the query that
+Two settings narrow the entries on the server. They change the query that
 nuvem sends to Cloud Logging, instead of hiding rows it already fetched.
 
-- `s` raises and `S` lowers the severity floor one rank at a time (`DEBUG`,
-  `INFO`, `NOTICE`, `WARNING`, `ERROR`, `CRITICAL`, `ALERT`, `EMERGENCY`). The
-  steps stop at either end and do not wrap. The default floor is `all`, which
-  adds no severity clause.
-- The since window has seven buckets, and the digits `0`-`6` pick one
-  directly: `1m`, `5m`, `15m`, `30m`, `1h` (the default), `6h`, `24h`. `T`
-  still cycles through them, shortest to longest.
+- `s` raises and `S` lowers the severity floor one rank at a time. The steps
+  stop at either end and do not wrap. The default floor is `all`, which adds
+  no severity clause.
+- The digits `0`-`6` pick the time window directly, from `1m` to `24h`. `T`
+  cycles through the windows, shortest to longest. The default is `1h`.
 
 The header shows both, as `Severity: <floor>` and `Range: <window> [<digit>]`.
+[Severity floor and time window](#severity-floor-and-time-window) lists every
+floor and window.
 
 ## Search the loaded entries
 
@@ -106,12 +107,13 @@ The `/` search runs over the loaded buffer and understands four forms:
 - `/pattern/` is a case-insensitive regex.
 - A leading `!` inverts any of them.
 
-While no search is applied, the header spells out the sigils. Once one is
-applied, the header names the mode the pattern selected. A regex that does
-not compile shows no rows and reports the reason. Substring is the default so
-that a bracketed level such as `[ERROR]` matches the brackets you typed. As a
-regex, `[ERROR]` is a character class. `ARCHITECTURE.md` records why, and why
-regex stays an explicit opt-in.
+While no search is applied, the header lists the `~`, `/…/` and `!`
+prefixes. Once one is applied, the header names the mode the pattern
+selected. A regex that does not compile shows no rows and reports the reason.
+Substring is the default so that a bracketed level such as `[ERROR]` matches
+the brackets you typed. As a regex, `[ERROR]` is a character class.
+`ARCHITECTURE.md` explains this choice, and why a regex search needs the
+`/…/` form.
 
 ## Save entries to a file
 
@@ -124,8 +126,7 @@ does not fall back to the working directory.
 
 ## Severity floor and time window
 
-The severity floor, lowest to highest. `s` moves one step up, `S` one step
-down.
+The severity floors, lowest to highest:
 
 <!-- log-severities -->
 
@@ -141,7 +142,7 @@ down.
 | `ALERT` | `ALERT` and above |
 | `EMERGENCY` | `EMERGENCY` only |
 
-The time window. Press the digit to pick a window, or `T` to cycle.
+The time windows, with the digit that picks each:
 
 <!-- log-windows -->
 

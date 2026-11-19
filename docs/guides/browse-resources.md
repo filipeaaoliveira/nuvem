@@ -11,7 +11,7 @@ service, and the rest of the screen shows the open service.
 ## Pick a service
 
 - Press `v` to show or hide the sidebar.
-- When the sidebar has focus, press `/` to search the service registry.
+- When the sidebar has focus, press `/` to search the list of services.
 - Press `j`/`k` or the arrows to move through the matching services.
 - Press `Enter` to open the selected service.
 - Press `Tab` to move focus between the sidebar and the resource content. This
@@ -24,8 +24,9 @@ status.
 
 In the Resources list, the left and right arrows move the selected column.
 Press `s` to sort by that column, and `s` again to reverse the direction. The
-column header shows the sort direction with an arrow. Press `w` to toggle wide
-columns.
+column header shows the sort direction with an arrow. Press `w` to switch
+between narrow columns, which drop columns to fit the terminal, and wide
+columns, which keep every column.
 
 You can set, per service, which columns show, in which order, and which column
 the list opens sorted by. See [Columns and sort](../configuration/columns-and-sort.md).
@@ -49,14 +50,13 @@ While a resource detail view is open, `q` also returns to the resource list.
 `Alt-Left` and `Alt-Right` move back and forward through navigation history
 from anywhere in the Resources workspace. The footer shows these hints only
 when there is somewhere to go. Where `Esc` and `Alt-Left` do the same thing,
-the footer and help list them as one entry, `Esc/Alt-←`. Navigation history
-is reset whenever the active gcloud context changes.
+the footer and help list them as one entry, `Esc/Alt-←`. nuvem resets
+navigation history whenever the context changes.
 
-From the home screen and list views, `q` quits the app. `Ctrl-C` quits from
-any mode.
+From Home and from a list, `q` quits nuvem. `Ctrl-C` quits from any view.
 
-If a project is empty, the rows are stale, or a refresh fails, the resource
-workspace says so instead of leaving the resource panel blank.
+If a project is empty, the rows are stale, or a refresh fails, the Resources
+workspace says so instead of leaving the list blank.
 
 ## Wide terminals
 
