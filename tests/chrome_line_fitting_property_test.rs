@@ -366,6 +366,77 @@ fn the_cloud_run_detail_header_says_when_its_rows_are_cut() {
     }
 }
 
+/// The detail pane's hint row keeps every hint whole: the row is a prefix of
+/// the hints it shows uncut, hint by hint, and a row that lost some ends in the
+/// marker.
+///
+/// The property above only asks that a cut row says so, and `Esc/q re...`
+/// does: at 134 columns with the navigator open the GCE detail read
+/// `[ and ] tabs   n/p field   y copy   Esc/q ...`, half a key and none of what
+/// it does. The footer and the tools row had already been brought under the
+/// rule that a hint is shown whole or dropped; this row had not.
+///
+/// Walks every service's detail pane, at every width from 80 to 160 (134 and
+/// 138 among them). The whole hints are read off the same
+/// row rendered at `UNCUT_WIDTH`, so the test names no hint itself.
+#[test]
+fn the_detail_hint_row_keeps_every_hint_whole() {
+    const SEPARATOR: &str = "   ";
+    // The row is the one that starts with the first hint, which survives at
+    // every width the walk renders: located by structure, it would move with
+    // the layout, and by the whole text, it would vanish at exactly the widths
+    // under test.
+    fn hint_row(lines: &[String]) -> Option<String> {
+        lines.iter().find_map(|line| {
+            line.split('│')
+                .find(|segment| segment.starts_with("[ and ] tabs"))
+                .map(|segment| segment.trim_end().to_string())
+        })
+    }
+
+    let mut walked = 0;
+    for index in 0..ResourceServiceKind::ALL.len() {
+        let kind = service_kind(index);
+        for height in [34] {
+            let Some(whole) = with_session(index, true, |session| {
+                hint_row(&render(session, UNCUT_WIDTH, height))
+            }) else {
+                // No detail pane, so no hint row.
+                continue;
+            };
+            let hints: Vec<&str> = whole.split(SEPARATOR).collect();
+            assert!(
+                hints.len() > 1,
+                "{kind:?}: the hint row is one hint: {whole:?}"
+            );
+            for width in 80u16..=160 {
+                let Some(shown) = with_session(index, true, |session| {
+                    hint_row(&render(session, width, height))
+                }) else {
+                    panic!("{kind:?} at {width}x{height}: the hint row is gone");
+                };
+                walked += 1;
+                if shown == whole {
+                    continue;
+                }
+                let kept = shown.strip_suffix(" ...").unwrap_or_else(|| {
+                    panic!(
+                        "{kind:?} at {width}x{height}: a short hint row must end in \
+                         the marker: {shown:?}"
+                    )
+                });
+                let kept: Vec<&str> = kept.split(SEPARATOR).collect();
+                assert!(
+                    kept.len() < hints.len() && hints.starts_with(&kept),
+                    "{kind:?} at {width}x{height}: a hint is cut.\n     shown: \
+                     {shown:?}\n     whole: {whole:?}"
+                );
+            }
+        }
+    }
+    assert!(walked > 0, "no detail pane painted a hint row");
+}
+
 // ---------------------------------------------------------------------------
 // FinOps
 //
