@@ -19,7 +19,7 @@ const sidebar = buildSidebar();
 export default defineConfig({
 	site: 'https://nuvem.fyi',
 	// Until the docs have an index page, /docs/ opens the first page. On
-	// Cloudflare Pages this is an HTTP redirect (src/lib/redirects.mjs).
+	// Cloudflare this is an HTTP redirect (src/lib/redirects.mjs).
 	redirects: hasDocsIndex() ? {} : { '/docs': firstPageUrl(sidebar) },
 	markdown: {
 		processor: satteri({ mdastPlugins: [docsMarkdown] }),

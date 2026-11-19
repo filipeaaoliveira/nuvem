@@ -1,5 +1,5 @@
 // Serves the site's redirects (the `redirects` in astro.config.mjs) as real
-// HTTP redirects on Cloudflare Pages, through dist/_redirects.
+// HTTP redirects on Cloudflare, through dist/_redirects.
 //
 // Astro writes a page with a meta refresh for each redirect. That page still
 // works with `npm run preview` and on any static host, so it stays; this also

@@ -1,0 +1,11 @@
+// Cloudflare serves the built site as static assets: no Worker code runs.
+// `npm run build` writes dist/, including the _headers and _redirects files.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nuvem",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

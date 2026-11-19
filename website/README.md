@@ -136,7 +136,7 @@ build the site, so run it locally after any change to the home page.
 
 ## Headers and the social card
 
-`public/_headers` sets the response headers on Cloudflare Pages: long-lived
+`public/_headers` sets the response headers on Cloudflare: long-lived
 caching for the hashed files in `/_astro/`, and a Content-Security-Policy
 that allows only the site's own files. The build replaces the placeholder in
 its `script-src` with a hash of every inline script it emitted
@@ -144,7 +144,7 @@ its `script-src` with a hash of every inline script it emitted
 rebuild. The site loads nothing from other origins. Keep it that way.
 
 The build also writes `dist/_redirects`, which makes `/docs` and `/docs/`
-an HTTP 301 to the first docs page on Cloudflare Pages
+an HTTP 301 to the first docs page on Cloudflare
 (`src/lib/redirects.mjs`). The page Astro writes at `/docs/` for the same
 redirect stays, for `npm run preview` and other static hosts.
 
@@ -182,3 +182,10 @@ sharp to compress the result).
 | `src/pages/index.astro` | The home page |
 | `src/pages/404.astro` | The page for an address the site does not have |
 | `DESIGN.md` | The design system: palette, type, components |
+
+## Deploying
+
+Cloudflare builds the site from this directory on every push to `main`: it
+runs `npm ci && npm run build`, then `npx wrangler deploy`. `wrangler.jsonc`
+tells it to serve `dist/` as static assets, with `404.html` for any address
+the site does not have. No Worker code runs.
