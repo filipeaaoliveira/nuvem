@@ -12,11 +12,12 @@
 // - Up to 40rem, a 138-column screen would shrink past reading, so until
 //   the reader presses Play the window shows a still instead: the Inventory
 //   box of the Home screen as text (demo/frames/home.html), at a readable
-//   size. Play swaps in the recording. Without JavaScript the still stays,
-//   and the caption links to the file to watch it full size.
+//   size. Play swaps in the recording.
 // - The poster is set by the script, and only where it shows: on a phone
-//   it is not downloaded until Play. Without JavaScript the browser's own
-//   controls are shown, with no poster.
+//   it is not downloaded until Play.
+// - Without JavaScript the window shows a still at every width, the
+//   Inventory box on a phone and the whole Home screen as text above
+//   40rem, and the caption links to the file to watch it full size.
 import { getImage } from 'astro:assets';
 import webm from '../../../../demo/out/nuvem-demo.webm?url';
 import mp4 from '../../../../demo/out/nuvem-demo.mp4?url';
@@ -33,7 +34,8 @@ const { description } = Astro.props;
 const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 });
 // The service names and their counts, ending at the "loaded" column, so no
 // status list is cut halfway and the text can be larger.
-const still = cropToBox(readTerminalFrame(demoPath('frame-home')), 'Inventory', 33);
+const home = readTerminalFrame(demoPath('frame-home'));
+const still = cropToBox(home, 'Inventory', 33);
 ---
 
 <figure class="recording" data-recording>
@@ -69,6 +71,27 @@ const still = cropToBox(readTerminalFrame(demoPath('frame-home')), 'Inventory', 
 	<div class="still" style={`--frame-bg: ${still.background}; --still-columns: ${still.columns}`}>
 		<pre role="img" aria-label="nuvem's Home view: the number of loaded resources for each of its services." style={`color: ${still.color}`} set:html={still.html} />
 	</div>
+	<div class="still still-wide" style={`--frame-bg: ${home.background}; --still-columns: ${home.columns}`}>
+		<pre role="img" aria-label="nuvem's Home view: the active configuration, account, region and project, then a count of loaded resources for each service." style={`color: ${home.color}`} set:html={home.html} />
+	</div>
+	<noscript>
+		<style>
+			[data-recording] video {
+				display: none !important;
+			}
+			[data-recording] .still:not(.still-wide) {
+				display: block !important;
+			}
+			@media (min-width: 40.0625rem) {
+				[data-recording] .still:not(.still-wide) {
+					display: none !important;
+				}
+				[data-recording] .still-wide {
+					display: block !important;
+				}
+			}
+		</style>
+	</noscript>
 	<figcaption><span id="recording-description">{description}</span> <a href={mp4}>Open it full size</a>.</figcaption>
 </figure>
 
@@ -231,6 +254,10 @@ const still = cropToBox(readTerminalFrame(demoPath('frame-home')), 'Inventory', 
 		background-color: var(--nv-plate);
 	}
 
+	.recording {
+		container-type: inline-size;
+	}
+
 	.still {
 		display: none;
 		overflow-x: auto;
@@ -250,17 +277,18 @@ const still = cropToBox(readTerminalFrame(demoPath('frame-home')), 'Inventory', 
 		white-space: pre;
 	}
 
+	/* The whole screen, for readers without JavaScript above 40rem. */
+	.still-wide pre {
+		font-size: max(0.6875rem, (100cqi - 1.5rem - 6px) / (var(--still-columns) * 0.602));
+	}
+
 	/* Narrow: the still until Play, then the recording. */
 	@media (max-width: 40rem) {
-		.recording {
-			container-type: inline-size;
-		}
-
 		.recording:not([data-started]) video {
 			display: none;
 		}
 
-		.recording:not([data-started]) .still {
+		.recording:not([data-started]) .still:not(.still-wide) {
 			display: block;
 		}
 	}
