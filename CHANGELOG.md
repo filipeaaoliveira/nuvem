@@ -6,6 +6,15 @@ All notable changes to nuvem are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-19
+
+### Changed
+
+- Updated `arc-swap`, `toml`, `google-cloud-wkt` and
+  `google-cloud-resourcemanager-v3`.
+- The commit history was rewritten to use Conventional Commits. The files at
+  `v0.1.0` are unchanged, but that tag is no longer an ancestor of `main`.
+
 ## [0.1.0] - 2026-11-19
 
 ### Added
@@ -46,5 +55,6 @@ All notable changes to nuvem are documented here. The format follows
   (Apple silicon and Intel), each with a `.sha256` file and a build-provenance
   attestation, and a Homebrew formula: `brew install filipeaaoliveira/tap/nuvem`.
 
-[Unreleased]: https://github.com/filipeaaoliveira/nuvem/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/filipeaaoliveira/nuvem/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/filipeaaoliveira/nuvem/releases/tag/v0.1.1
 [0.1.0]: https://github.com/filipeaaoliveira/nuvem/releases/tag/v0.1.0

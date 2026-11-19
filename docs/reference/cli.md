@@ -50,7 +50,7 @@ subcommand, as in `nuvem info --config ./dev.toml`.
 `nuvem info` prints:
 
 ```text
-nuvem 0.1.0
+nuvem 0.1.1
 config:  /home/dev/.config/nuvem/config.toml (loaded)
 plugins: /home/dev/.config/nuvem/plugins.toml (not found)
 log:     /home/dev/.cache/nuvem/nuvem.log

@@ -2,7 +2,7 @@
 members = [".", "crates/nuvem-domain"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
@@ -51,7 +51,7 @@ name = "suite"
 path = "tests/suite.rs"
 
 [dependencies]
-nuvem-domain = { path = "crates/nuvem-domain", version = "0.1.0" }
+nuvem-domain = { path = "crates/nuvem-domain", version = "0.1.1" }
 
 # Native Google Cloud clients for the read paths. See
 # docs/decisions/0001-native-sdk-for-read-paths.md: listings and detail loads

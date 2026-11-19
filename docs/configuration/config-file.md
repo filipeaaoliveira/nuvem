@@ -50,7 +50,7 @@ Run `nuvem info` to see the resolved config, plugin, log, and cache paths and
 the active theme. It does not start the interface:
 
 ```
-nuvem 0.1.0
+nuvem 0.1.1
 config:  /home/dev/.config/nuvem/config.toml (loaded)
 plugins: /home/dev/.config/nuvem/plugins.toml (2 loaded)
 log:     /home/dev/.cache/nuvem/nuvem.log
