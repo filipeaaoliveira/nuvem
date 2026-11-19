@@ -12,6 +12,7 @@ use google_cloud_iam_admin_v1::client::Iam;
 use google_cloud_resourcemanager_v3::client::Projects;
 
 use super::envelope;
+use crate::services::demo::Corpus;
 
 /// The service accounts capture: `gcloud iam service-accounts list --format=json`.
 const SERVICE_ACCOUNTS: &str = include_str!("../../../../tests/fixtures/iam_service_accounts.json");
@@ -19,13 +20,19 @@ const SERVICE_ACCOUNTS: &str = include_str!("../../../../tests/fixtures/iam_serv
 /// The policy capture: `gcloud projects get-iam-policy --format=json`.
 const POLICY: &str = include_str!("../../../../tests/fixtures/iam_policy.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_SERVICE_ACCOUNTS: &str =
+    include_str!("../../../../tests/fixtures/demo/iam_service_accounts.json");
+
 /// Answers `list_service_accounts` from the capture.
 ///
 /// One page, so the item paginator stops after it. The generated
 /// `ListServiceAccounts` builder has no poller, so no other method of this
 /// trait is reached.
 #[derive(Debug, Default)]
-pub struct AccountsStub;
+pub struct AccountsStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_iam_admin_v1::stub::Iam for AccountsStub {
     async fn list_service_accounts(
@@ -39,7 +46,8 @@ impl google_cloud_iam_admin_v1::stub::Iam for AccountsStub {
     > {
         Ok(google_cloud_gax::response::Response::from(envelope(
             "accounts",
-            SERVICE_ACCOUNTS,
+            self.corpus
+                .pick(SERVICE_ACCOUNTS, SHOWCASE_SERVICE_ACCOUNTS),
         )?))
     }
 }
@@ -76,8 +84,13 @@ impl google_cloud_resourcemanager_v3::stub::Projects for PolicyStub {
 
 /// The two clients `SdkIamService::from_fixtures` is built from.
 pub fn clients() -> (Iam, Projects) {
+    clients_of(Corpus::Captures)
+}
+
+/// The clients over either corpus.
+pub fn clients_of(corpus: Corpus) -> (Iam, Projects) {
     (
-        Iam::from_stub(AccountsStub),
+        Iam::from_stub(AccountsStub { corpus }),
         Projects::from_stub(PolicyStub),
     )
 }

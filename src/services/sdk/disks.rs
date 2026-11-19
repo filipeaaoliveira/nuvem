@@ -40,6 +40,16 @@ impl SdkDisksService {
             disks: crate::services::demo::sdk::disks::client(),
         }
     }
+
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self {
+            disks: crate::services::demo::sdk::disks::client_of(
+                crate::services::demo::Corpus::Showcase,
+            ),
+        }
+    }
     pub async fn load_disks(&self, project: &str) -> Result<Vec<PersistentDisk>, ApiError> {
         use google_cloud_gax::paginator::ItemPaginator;
         let mut rows = Vec::new();

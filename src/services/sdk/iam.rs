@@ -64,6 +64,14 @@ impl SdkIamService {
         let (accounts, projects) = crate::services::demo::sdk::iam::clients();
         Self { accounts, projects }
     }
+
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        let (accounts, projects) =
+            crate::services::demo::sdk::iam::clients_of(crate::services::demo::Corpus::Showcase);
+        Self { accounts, projects }
+    }
     pub async fn load_service_accounts(
         &self,
         project: &str,

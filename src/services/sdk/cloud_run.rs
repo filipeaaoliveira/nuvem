@@ -66,6 +66,18 @@ impl SdkCloudRunService {
         }
     }
 
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        let (services, revisions) = crate::services::demo::sdk::cloud_run::clients_of(
+            crate::services::demo::Corpus::Showcase,
+        );
+        Self {
+            services,
+            revisions,
+        }
+    }
+
     /// Services in every region: `-` is the API's own location wildcard, which
     /// is what `gcloud run services list` asks for unqualified.
     pub async fn load_services(&self, project: &str) -> Result<Vec<CloudRunService>, ApiError> {

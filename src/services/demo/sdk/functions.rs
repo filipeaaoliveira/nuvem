@@ -9,9 +9,14 @@ use google_cloud_functions_v2::client::FunctionService;
 use google_cloud_functions_v2::model;
 
 use super::envelope;
+use crate::services::demo::Corpus;
 
 /// The functions capture: `gcloud functions list --format=json`.
 const FUNCTIONS: &str = include_str!("../../../../tests/fixtures/cloud_functions.json");
+
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_FUNCTIONS: &str =
+    include_str!("../../../../tests/fixtures/demo/cloud_functions.json");
 
 /// Answers `list_functions` from the capture.
 ///
@@ -19,7 +24,9 @@ const FUNCTIONS: &str = include_str!("../../../../tests/fixtures/cloud_functions
 /// poller in the generated builder, and the service makes no other call, so
 /// this is the only method of the trait that is reached.
 #[derive(Debug, Default)]
-pub struct FunctionsStub;
+pub struct FunctionsStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_functions_v2::stub::FunctionService for FunctionsStub {
     async fn list_functions(
@@ -30,12 +37,17 @@ impl google_cloud_functions_v2::stub::FunctionService for FunctionsStub {
     {
         Ok(google_cloud_gax::response::Response::from(envelope(
             "functions",
-            FUNCTIONS,
+            self.corpus.pick(FUNCTIONS, SHOWCASE_FUNCTIONS),
         )?))
     }
 }
 
 /// The client `SdkFunctionsService::from_fixtures` is built from.
 pub fn client() -> FunctionService {
-    FunctionService::from_stub(FunctionsStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> FunctionService {
+    FunctionService::from_stub(FunctionsStub { corpus })
 }

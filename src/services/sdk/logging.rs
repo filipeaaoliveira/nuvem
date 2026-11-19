@@ -64,6 +64,13 @@ impl SdkLoggingService {
             logging: crate::services::demo::sdk::logging::client(),
         }
     }
+
+    /// The same service over the demo showcase. It has no showcase documents
+    /// of its own, so it answers from the captures, as
+    /// [`Self::from_fixtures`] does. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self::from_fixtures()
+    }
     /// The recent window.
     ///
     /// `--freshness` has no API equivalent, so the window becomes a

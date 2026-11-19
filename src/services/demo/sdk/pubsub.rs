@@ -20,6 +20,7 @@ use google_cloud_pubsub::client::{SubscriptionAdmin, TopicAdmin};
 use google_cloud_pubsub::model;
 
 use super::envelope;
+use crate::services::demo::Corpus;
 
 /// The topics capture: `gcloud pubsub topics list --format=json`.
 const TOPICS: &str = include_str!("../../../../tests/fixtures/pubsub_topics.json");
@@ -28,13 +29,20 @@ const TOPICS: &str = include_str!("../../../../tests/fixtures/pubsub_topics.json
 /// and the topics table's count column.
 const SUBSCRIPTIONS: &str = include_str!("../../../../tests/fixtures/pubsub_subscriptions.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_TOPICS: &str = include_str!("../../../../tests/fixtures/demo/pubsub_topics.json");
+const SHOWCASE_SUBSCRIPTIONS: &str =
+    include_str!("../../../../tests/fixtures/demo/pubsub_subscriptions.json");
+
 /// Answers `list_topics` from the capture, and nothing else.
 ///
 /// Every other method of the trait stays defaulted deliberately: this service
 /// makes exactly one call on this client, and a default that panics is a
 /// louder answer to a call nobody expected than a fabricated success would be.
 #[derive(Debug, Default)]
-pub struct TopicStub;
+pub struct TopicStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_pubsub::stub::TopicAdmin for TopicStub {
     async fn list_topics(
@@ -46,14 +54,17 @@ impl google_cloud_pubsub::stub::TopicAdmin for TopicStub {
         // No `next_page_token` is set, so the paginator reads this as the one
         // and only page and stops -- the same shape a small project answers.
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "topics", TOPICS,
+            "topics",
+            self.corpus.pick(TOPICS, SHOWCASE_TOPICS),
         )?))
     }
 }
 
 /// Answers `list_subscriptions` from the capture, and nothing else.
 #[derive(Debug, Default)]
-pub struct SubscriptionStub;
+pub struct SubscriptionStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_pubsub::stub::SubscriptionAdmin for SubscriptionStub {
     async fn list_subscriptions(
@@ -65,15 +76,20 @@ impl google_cloud_pubsub::stub::SubscriptionAdmin for SubscriptionStub {
     > {
         Ok(google_cloud_gax::response::Response::from(envelope(
             "subscriptions",
-            SUBSCRIPTIONS,
+            self.corpus.pick(SUBSCRIPTIONS, SHOWCASE_SUBSCRIPTIONS),
         )?))
     }
 }
 
 /// The two clients `SdkPubSubService::from_fixtures` is built from.
 pub fn clients() -> (TopicAdmin, SubscriptionAdmin) {
+    clients_of(Corpus::Captures)
+}
+
+/// The clients over either corpus.
+pub fn clients_of(corpus: Corpus) -> (TopicAdmin, SubscriptionAdmin) {
     (
-        TopicAdmin::from_stub(TopicStub),
-        SubscriptionAdmin::from_stub(SubscriptionStub),
+        TopicAdmin::from_stub(TopicStub { corpus }),
+        SubscriptionAdmin::from_stub(SubscriptionStub { corpus }),
     )
 }

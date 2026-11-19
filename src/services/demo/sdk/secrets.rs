@@ -14,6 +14,7 @@ use google_cloud_secretmanager_v1::client::SecretManagerService;
 use google_cloud_secretmanager_v1::model;
 
 use super::{envelope, named, short_name};
+use crate::services::demo::Corpus;
 
 /// The secrets capture: `gcloud secrets list --format=json`.
 const SECRETS: &str = include_str!("../../../../tests/fixtures/secrets.json");
@@ -24,6 +25,9 @@ const VERSIONS: &str = include_str!("../../../../tests/fixtures/secret_versions.
 /// The detail capture: `gcloud secrets describe --format=json`, one secret.
 const SECRET_DETAIL: &str = include_str!("../../../../tests/fixtures/secret_detail.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_SECRETS: &str = include_str!("../../../../tests/fixtures/demo/secrets.json");
+
 /// Answers the three metadata reads the service makes.
 ///
 /// Both listings leave `next_page_token` unset, so each item paginator reads
@@ -31,7 +35,9 @@ const SECRET_DETAIL: &str = include_str!("../../../../tests/fixtures/secret_deta
 /// `GetSecret` has a poller in the generated builder, so no fourth method is
 /// reached on this stub's behalf.
 #[derive(Debug, Default)]
-pub struct SecretsStub;
+pub struct SecretsStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_secretmanager_v1::stub::SecretManagerService for SecretsStub {
     async fn list_secrets(
@@ -41,7 +47,8 @@ impl google_cloud_secretmanager_v1::stub::SecretManagerService for SecretsStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::ListSecretsResponse>>
     {
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "secrets", SECRETS,
+            "secrets",
+            self.corpus.pick(SECRETS, SHOWCASE_SECRETS),
         )?))
     }
 
@@ -67,7 +74,9 @@ impl google_cloud_secretmanager_v1::stub::SecretManagerService for SecretsStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Secret>> {
         let wanted = short_name(&request.name);
         let secret: model::Secret = named(
-            &[SECRET_DETAIL, SECRETS],
+            &self
+                .corpus
+                .documents(&[SECRET_DETAIL, SECRETS], &[SHOWCASE_SECRETS]),
             |name| short_name(name) == wanted,
             &format!("secret `{wanted}`"),
         )?;
@@ -77,5 +86,10 @@ impl google_cloud_secretmanager_v1::stub::SecretManagerService for SecretsStub {
 
 /// The client `SdkSecretsService::from_fixtures` is built from.
 pub fn client() -> SecretManagerService {
-    SecretManagerService::from_stub(SecretsStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> SecretManagerService {
+    SecretManagerService::from_stub(SecretsStub { corpus })
 }

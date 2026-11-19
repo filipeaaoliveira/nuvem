@@ -49,6 +49,16 @@ impl SdkComputeService {
         }
     }
 
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self {
+            instances: crate::services::demo::sdk::compute::client_of(
+                crate::services::demo::Corpus::Showcase,
+            ),
+        }
+    }
+
     /// Every instance in the project, across zones, capped like every other
     /// resource list.
     ///

@@ -17,8 +17,10 @@ nuvem --demo
 
 Every workspace shows sample data: Configurations, Compute Engine, GKE,
 Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager,
-persistent disks, Pub/Sub, BigQuery, VPC, IAM, Cloud Logging and FinOps. The
-data uses fixture names such as `dev-project`.
+persistent disks, Pub/Sub, BigQuery, VPC, IAM, Cloud Logging and FinOps. Each
+service lists a handful of resources in several states, the way a small real
+project would. The data uses fixture names such as `dev-project` and
+`example.com`, and addresses from private and documentation ranges.
 
 Demo mode opens on [Home](home-overview.md) with every service already listed
 and gcloud already checked, so the first screen shows the inventory rather

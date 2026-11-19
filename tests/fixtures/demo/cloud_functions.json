@@ -1,0 +1,9 @@
+[
+{"environment":"GEN_2","labels":{"env":"dev"},"name":"projects/dev-project/locations/europe-west1/functions/api-gateway","state":"ACTIVE","updateTime":"2026-07-14T08:31:05Z","url":"https://europe-west1-dev-project.cloudfunctions.net/api-gateway"},
+{"environment":"GEN_2","labels":{"env":"dev"},"name":"projects/dev-project/locations/europe-west1/functions/image-thumbnailer","state":"ACTIVE","updateTime":"2026-08-01T11:59:12Z","url":"https://europe-west1-dev-project.cloudfunctions.net/image-thumbnailer"},
+{"environment":"GEN_2","labels":{"env":"dev"},"name":"projects/dev-project/locations/europe-west1/functions/order-events-handler","state":"ACTIVE","updateTime":"2026-08-22T09:10:00Z","url":"https://europe-west1-dev-project.cloudfunctions.net/order-events-handler"},
+{"environment":"GEN_2","labels":{"env":"dev"},"name":"projects/dev-project/locations/europe-west4/functions/nightly-report","state":"DEPLOYING","updateTime":"2026-09-06T22:00:00Z"},
+{"environment":"GEN_1","labels":{"env":"dev"},"name":"projects/dev-project/locations/europe-west1/functions/slack-notifier","state":"ACTIVE","updateTime":"2025-11-02T16:04:44Z","url":"https://europe-west1-dev-project.cloudfunctions.net/slack-notifier"},
+{"environment":"GEN_2","labels":{"env":"dev"},"name":"projects/dev-project/locations/us-central1/functions/user-signup-hook","state":"FAILED","updateTime":"2026-09-04T13:20:00Z"},
+{"environment":"GEN_2","labels":{"env":"dev"},"name":"projects/dev-project/locations/europe-west1/functions/cleanup-tmp-exports","state":"ACTIVE","updateTime":"2026-06-30T06:00:00Z","url":"https://europe-west1-dev-project.cloudfunctions.net/cleanup-tmp-exports"}
+]

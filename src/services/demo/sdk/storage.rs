@@ -58,6 +58,7 @@ use google_cloud_storage::client::StorageControl;
 use google_cloud_storage::model;
 
 use super::{envelope, named, parent_matches, short_name};
+use crate::services::demo::Corpus;
 
 /// The bucket listing, re-shaped: Storage v2 `Bucket` rows mirroring
 /// `tests/fixtures/gcs_buckets.json` (`gcloud storage buckets list
@@ -68,6 +69,9 @@ const BUCKETS: &str = include_str!("../../../../tests/fixtures/gcs_buckets_v2.js
 /// `tests/fixtures/gcs_bucket_detail.json` (`gcloud storage buckets describe
 /// gs://alpha-bucket --format=json`).
 const BUCKET_DETAIL: &str = include_str!("../../../../tests/fixtures/gcs_bucket_detail_v2.json");
+
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_BUCKETS: &str = include_str!("../../../../tests/fixtures/demo/gcs_buckets_v2.json");
 
 /// The object listing, re-shaped: v2 `Object` rows mirroring
 /// `tests/fixtures/gcs_objects.json` (`gcloud storage objects list
@@ -117,7 +121,9 @@ fn object_page(prefix: &str, delimiter: &str) -> Result<model::ListObjectsRespon
 
 /// Answers both listings and both detail panes from the captures.
 #[derive(Debug, Default)]
-pub struct ControlStub;
+pub struct ControlStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_storage::stub::StorageControl for ControlStub {
     /// The parent is read before the capture is answered. Storage takes the
@@ -131,7 +137,8 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
     {
         parent_matches(&request.parent, "projects/*")?;
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "buckets", BUCKETS,
+            "buckets",
+            self.corpus.pick(BUCKETS, SHOWCASE_BUCKETS),
         )?))
     }
 
@@ -145,7 +152,9 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Bucket>> {
         let wanted = short_name(&request.name);
         let bucket: model::Bucket = named(
-            &[BUCKET_DETAIL, BUCKETS],
+            &self
+                .corpus
+                .documents(&[BUCKET_DETAIL, BUCKETS], &[SHOWCASE_BUCKETS]),
             |name| short_name(name) == wanted,
             &format!("bucket `{wanted}`"),
         )?;
@@ -189,5 +198,10 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
 
 /// The client `SdkStorageService::from_fixtures` is built from.
 pub fn client() -> StorageControl {
-    StorageControl::from_stub(ControlStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> StorageControl {
+    StorageControl::from_stub(ControlStub { corpus })
 }

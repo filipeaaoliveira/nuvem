@@ -244,7 +244,7 @@ async fn opening_a_native_detail_pane_does_not_panic() {
 /// the real API, so having nothing to make the call with was the whole
 /// mechanism. It is not the mechanism any more. Demo now reads and mutates
 /// through clients, and what keeps it offline is which clients they are:
-/// [`ClientSource::Fixtures`] builds every one `from_stub`, which takes no
+/// [`ClientSource::Showcase`] builds every one `from_stub`, which takes no
 /// credentials and no transport.
 ///
 /// So the property has to be asserted by source rather than by absence. A
@@ -265,7 +265,7 @@ async fn a_demo_session_holds_fixture_backed_native_clients() {
 
     assert_eq!(
         session.native_client_source(),
-        Some(ClientSource::Fixtures),
+        Some(ClientSource::Showcase),
         "a demo session must reach no real API: its clients are built from \
          stubs, which hold no credentials and no transport"
     );
@@ -305,13 +305,13 @@ async fn a_demo_session_holds_fixture_backed_native_clients() {
 /// # Both halves are measured, because neither is free
 ///
 /// A cache uses its runner for exactly one thing, the token, and
-/// `SdkClients::fixtures` holds a `DemoCommandRunner` so that even a stray ask
+/// `SdkClients::showcase` holds a `DemoCommandRunner` so that even a stray ask
 /// could not reach real gcloud. That also makes the ask invisible: written
 /// with the session's runner recording and the cache's own runner left alone,
-/// this test passed with the macro's `Fixtures` arm hand-mutated to build
-/// *live* clients. `fixtures_over_for_test` is what closes that -- one
-/// recorder behind both the session and the cache -- and with it that mutation
-/// fails here.
+/// this test passed with the macro's fixture arm hand-mutated to build *live*
+/// clients. `showcase_over_for_test` is what closes that -- one recorder
+/// behind both the session and the cache -- and with it that mutation fails
+/// here.
 ///
 /// The first assertion is the other half. This session is handed its clients,
 /// so on its own it says nothing about what `RuntimeSession::new` decides for
@@ -332,7 +332,7 @@ async fn a_demo_session_never_asks_gcloud_for_credentials() {
     );
     assert_eq!(
         built_by_the_binary.native_client_source(),
-        Some(ClientSource::Fixtures),
+        Some(ClientSource::Showcase),
         "the source the walk below asserts about has to be the source a real \
          demo session holds, or the walk is about a cache nothing builds"
     );
@@ -345,7 +345,7 @@ async fn a_demo_session_never_asks_gcloud_for_credentials() {
         Box::new(RecordingRunner {
             commands: std::sync::Arc::clone(&recorded),
         }),
-        std::sync::Arc::new(SdkClients::fixtures_over_for_test(runner)),
+        std::sync::Arc::new(SdkClients::showcase_over_for_test(runner)),
     );
 
     session.initialize().await;

@@ -40,6 +40,16 @@ impl SdkFunctionsService {
             functions: crate::services::demo::sdk::functions::client(),
         }
     }
+
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self {
+            functions: crate::services::demo::sdk::functions::client_of(
+                crate::services::demo::Corpus::Showcase,
+            ),
+        }
+    }
     pub async fn load_functions(&self, project: &str) -> Result<Vec<CloudFunction>, ApiError> {
         use google_cloud_gax::paginator::ItemPaginator;
         let mut rows = Vec::new();

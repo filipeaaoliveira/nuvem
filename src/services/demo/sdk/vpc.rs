@@ -36,12 +36,19 @@ use google_cloud_gax::error::Error;
 use crate::services::resources::vpc::resource_id;
 
 use super::{aggregated_project, by_scope, envelope, scope};
+use crate::services::demo::Corpus;
 
 /// The networks capture: `gcloud compute networks list --format=json`.
 const NETWORKS: &str = include_str!("../../../../tests/fixtures/vpc_networks.json");
 
 /// The firewall rules capture: `gcloud compute firewall-rules list --format=json`.
 const FIREWALL_RULES: &str = include_str!("../../../../tests/fixtures/vpc_firewall_rules.json");
+
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_NETWORKS: &str = include_str!("../../../../tests/fixtures/demo/vpc_networks.json");
+const SHOWCASE_SUBNETS: &str = include_str!("../../../../tests/fixtures/demo/vpc_subnets.json");
+const SHOWCASE_FIREWALL_RULES: &str =
+    include_str!("../../../../tests/fixtures/demo/vpc_firewall_rules.json");
 
 /// Answers `list` from the networks capture.
 ///
@@ -51,7 +58,9 @@ const FIREWALL_RULES: &str = include_str!("../../../../tests/fixtures/vpc_firewa
 /// on this client, and the generated `networks::List` builder has no poller,
 /// so nothing calls on its behalf either.
 #[derive(Debug, Default)]
-pub struct NetworksStub;
+pub struct NetworksStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_compute_v1::stub::Networks for NetworksStub {
     async fn list(
@@ -61,7 +70,8 @@ impl google_cloud_compute_v1::stub::Networks for NetworksStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::NetworkList>> {
         aggregated_project(&request.project)?;
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "items", NETWORKS,
+            "items",
+            self.corpus.pick(NETWORKS, SHOWCASE_NETWORKS),
         )?))
     }
 }
@@ -70,8 +80,8 @@ impl google_cloud_compute_v1::stub::Networks for NetworksStub {
 const SUBNETS: &str = include_str!("../../../../tests/fixtures/vpc_subnets.json");
 
 /// The capture regrouped into the region-keyed map the RPC answers.
-fn aggregated() -> Result<model::SubnetworkAggregatedList, Error> {
-    let scopes = by_scope(SUBNETS, |subnet: &model::Subnetwork| {
+fn aggregated(subnets: &str) -> Result<model::SubnetworkAggregatedList, Error> {
+    let scopes = by_scope(subnets, |subnet: &model::Subnetwork| {
         scope(None, subnet.region.as_deref().map(resource_id))
     })?;
     Ok(
@@ -89,7 +99,9 @@ fn aggregated() -> Result<model::SubnetworkAggregatedList, Error> {
 /// Answers `aggregated_list` from the subnets capture, which is what the CLI's
 /// unqualified subnets listing returns.
 #[derive(Debug, Default)]
-pub struct SubnetworksStub;
+pub struct SubnetworksStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_compute_v1::stub::Subnetworks for SubnetworksStub {
     /// The project is read; the two scope flags are not, because
@@ -105,13 +117,17 @@ impl google_cloud_compute_v1::stub::Subnetworks for SubnetworksStub {
         google_cloud_gax::response::Response<model::SubnetworkAggregatedList>,
     > {
         aggregated_project(&request.project)?;
-        Ok(google_cloud_gax::response::Response::from(aggregated()?))
+        Ok(google_cloud_gax::response::Response::from(aggregated(
+            self.corpus.pick(SUBNETS, SHOWCASE_SUBNETS),
+        )?))
     }
 }
 
 /// Answers `list` from the firewall rules capture.
 #[derive(Debug, Default)]
-pub struct FirewallsStub;
+pub struct FirewallsStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_compute_v1::stub::Firewalls for FirewallsStub {
     async fn list(
@@ -122,16 +138,21 @@ impl google_cloud_compute_v1::stub::Firewalls for FirewallsStub {
         aggregated_project(&request.project)?;
         Ok(google_cloud_gax::response::Response::from(envelope(
             "items",
-            FIREWALL_RULES,
+            self.corpus.pick(FIREWALL_RULES, SHOWCASE_FIREWALL_RULES),
         )?))
     }
 }
 
 /// The three clients `SdkVpcService::from_fixtures` is built from.
 pub fn clients() -> (Networks, Subnetworks, Firewalls) {
+    clients_of(Corpus::Captures)
+}
+
+/// The clients over either corpus.
+pub fn clients_of(corpus: Corpus) -> (Networks, Subnetworks, Firewalls) {
     (
-        Networks::from_stub(NetworksStub),
-        Subnetworks::from_stub(SubnetworksStub),
-        Firewalls::from_stub(FirewallsStub),
+        Networks::from_stub(NetworksStub { corpus }),
+        Subnetworks::from_stub(SubnetworksStub { corpus }),
+        Firewalls::from_stub(FirewallsStub { corpus }),
     )
 }
