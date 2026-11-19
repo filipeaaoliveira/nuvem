@@ -13,28 +13,53 @@ Every other escape sequence (other CSI sequences such as cursor movement or
 private modes, OSC titles and hyperlinks, DCS and the like) is dropped, and so
 are control characters other than newline and tab.
 
-The 16-colour palette is the one demo/tour.tape gives the terminal, so a frame
-on a docs page matches the recordings. Keep the two in step.
+The 16-colour palette below is also the recordings' terminal theme:
+scripts/render-demo.sh asks for it with --vhs-theme and hands it to VHS, so a
+frame on a docs page and the recordings share one definition.
 
 Usage: scripts/ansi2html.py [--class NAME] < capture.txt > frame.html
+       scripts/ansi2html.py --vhs-theme
        scripts/ansi2html.py --self-test
 """
 
 import argparse
 import html
+import json
 import re
 import sys
 
+# Wada Sanzo, combination 47. nuvem draws with the 16 ANSI colours only, so
+# this palette is what themes the app in the recordings and the frames.
 BACKGROUND = "#1b1816"
 FOREGROUND = "#f1ece6"
+# The terminal's own cursor and mouse selection. nuvem hides the cursor, and
+# the recordings never select text, so neither shows in a frame.
+CURSOR = "#fbe6a0"
+SELECTION = "#423b36"
 
-# ANSI 0-7, then 8-15 (the bright variants).
-PALETTE = [
-    "#1b1816", "#e2625e", "#54afb4", "#fbe6a0",
-    "#423b36", "#f58e84", "#54afb4", "#f1ece6",
-    "#8c8178", "#f58e84", "#9fd3d5", "#fbe6a0",
-    "#54afb4", "#f58e84", "#9fd3d5", "#faf7f3",
+# ANSI 0-7, then 8-15 (the bright variants), in the order VHS names them.
+ANSI_NAMES = [
+    "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+    "brightBlack", "brightRed", "brightGreen", "brightYellow",
+    "brightBlue", "brightMagenta", "brightCyan", "brightWhite",
 ]
+# nuvem paints red only as text (error statuses), and magenta both as overlay
+# borders and as changed-value text, so both are Coral Red. Eugenia Red would
+# be fine for a border or a fill but falls under 4.5:1 as text, and no slot
+# here is painted only as a border or a fill. Blue is the selected row's
+# background, and bright black the muted text and the borders.
+PALETTE = [
+    "#1b1816", "#f58e84", "#64b5b9", "#fbe6a0",
+    "#423b36", "#f58e84", "#64b5b9", "#f1ece6",
+    "#afa69e", "#f58e84", "#9fd3d5", "#fbe6a0",
+    "#64b5b9", "#f58e84", "#9fd3d5", "#faf7f3",
+]
+# Slots nuvem paints as backgrounds rather than text: black and blue.
+BACKGROUND_SLOTS = (0, 4)
+# The background of the selected row.
+SELECTED_ROW = PALETTE[4]
+# WCAG AA for normal text, the size every cell in a terminal frame is.
+MIN_CONTRAST = 4.5
 
 # How far dim text moves from its colour toward the background behind it.
 DIM_TOWARD_BACKGROUND = 0.4
@@ -193,6 +218,29 @@ class Style:
         return ";".join(rules)
 
 
+def luminance(colour):
+    """WCAG relative luminance of a #rrggbb colour."""
+    def channel(value):
+        value /= 255
+        return value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(colour[i:i + 2], 16) for i in (1, 3, 5))
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+
+
+def contrast(a, b):
+    """WCAG contrast ratio of two #rrggbb colours."""
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def vhs_theme():
+    """The palette as a VHS theme, the JSON a tape's `Set Theme` takes."""
+    theme = {"name": "nuvem-47", "background": BACKGROUND, "foreground": FOREGROUND,
+             "cursor": CURSOR, "selection": SELECTION}
+    theme.update(zip(ANSI_NAMES, PALETTE))
+    return json.dumps(theme, separators=(", ", ": "))
+
+
 def convert(text):
     """The HTML for `text`, without the enclosing <pre>."""
     style = Style()
@@ -228,8 +276,8 @@ def convert(text):
 # (input, expected output of convert) pairs, run by --self-test.
 SELF_TEST = [
     ("plain <&>", "plain &lt;&amp;&gt;"),
-    ("\x1b[31mred\x1b[0m", '<span style="color:#e2625e">red</span>'),
-    ("\x1b[38;5;8mgrey", '<span style="color:#8c8178">grey</span>'),
+    ("\x1b[31mred\x1b[0m", '<span style="color:#f58e84">red</span>'),
+    ("\x1b[38;5;8mgrey", '<span style="color:#afa69e">grey</span>'),
     ("\x1b[38;5;196mx", '<span style="color:#ff0000">x</span>'),
     ("\x1b[38;5;244mx", '<span style="color:#808080">x</span>'),
     # An index past 255 sets nothing, and the sequence is still consumed.
@@ -240,8 +288,8 @@ SELF_TEST = [
     # Colon forms, with and without the colour-space field.
     ("\x1b[38:2::1:2:3mx", '<span style="color:#010203">x</span>'),
     ("\x1b[38:2:1:2:3mx", '<span style="color:#010203">x</span>'),
-    ("\x1b[48:5:1mx", '<span style="background:#e2625e">x</span>'),
-    ("\x1b[38:5:8;1mx", '<span style="color:#8c8178;font-weight:700">x</span>'),
+    ("\x1b[48:5:1mx", '<span style="background:#f58e84">x</span>'),
+    ("\x1b[38:5:8;1mx", '<span style="color:#afa69e;font-weight:700">x</span>'),
     # Private modes, cursor movement and erase are dropped whole.
     ("a\x1b[?25hb\x1b[?1049lc", "abc"),
     ("a\x1b[2;5Hb\x1b[2Kc\x1b[>4;1md", "abcd"),
@@ -260,6 +308,19 @@ SELF_TEST = [
 ]
 
 
+def palette_problems():
+    """Every text colour that reads under MIN_CONTRAST on a background nuvem
+    puts it on: the terminal background and the selected row."""
+    problems = []
+    texts = [FOREGROUND] + [c for i, c in enumerate(PALETTE) if i not in BACKGROUND_SLOTS]
+    for colour in dict.fromkeys(texts):
+        for ground in (BACKGROUND, SELECTED_ROW):
+            ratio = contrast(colour, ground)
+            if ratio < MIN_CONTRAST:
+                problems.append("%s on %s is %.2f:1" % (colour, ground, ratio))
+    return problems
+
+
 def self_test():
     failures = 0
     for given, expected in SELF_TEST:
@@ -268,7 +329,13 @@ def self_test():
             failures += 1
             print("FAIL %r\n  expected %r\n  got      %r" % (given, expected, got))
     print("%d of %d cases passed" % (len(SELF_TEST) - failures, len(SELF_TEST)))
-    return 1 if failures else 0
+    problems = palette_problems()
+    for problem in problems:
+        print("FAIL palette: %s, under %.1f:1" % (problem, MIN_CONTRAST))
+    if not problems:
+        print("every text colour reaches %.1f:1 on the background and the selected row"
+              % MIN_CONTRAST)
+    return 1 if failures or problems else 0
 
 
 def main():
@@ -276,10 +343,16 @@ def main():
     parser.add_argument("--class", dest="cls", default="terminal-frame",
                         help="class attribute for the <pre> (default: terminal-frame)")
     parser.add_argument("--self-test", action="store_true",
-                        help="run the built-in conversion cases and exit")
+                        help="run the built-in conversion cases and the palette's "
+                             "contrast check, and exit")
+    parser.add_argument("--vhs-theme", action="store_true",
+                        help="print the palette as a VHS theme (JSON) and exit")
     args = parser.parse_args()
     if args.self_test:
         sys.exit(self_test())
+    if args.vhs_theme:
+        print(vhs_theme())
+        return
     body = convert(sys.stdin.read().rstrip("\n"))
     sys.stdout.write(
         '<pre class="%s" style="background:%s;color:%s">%s</pre>\n'
