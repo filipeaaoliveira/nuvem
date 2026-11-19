@@ -1,0 +1,212 @@
+---
+// The services as one color plate, in four named families, one color of
+// the combination each. Every family is a column headed by its swatch and
+// name, so the colors read as a legend and no row mixes two families. Each
+// tile is a link to the service's docs page, with its name and the id the
+// config file uses. The list, the categories (which place a service in its
+// family) and the ids come from the docs (services-index.mjs).
+//
+// A category that is not listed here fails the build, so a new one joins a
+// family on purpose rather than by accident.
+import { readServices } from '../../lib/services-index.mjs';
+import { docHref } from '../../lib/doc-links.mjs';
+
+const FAMILIES = [
+	{ name: 'Compute and serverless', field: 'methyl', categories: ['Compute', 'Containers', 'Serverless'] },
+	{ name: 'Data and storage', field: 'naples', categories: ['Databases', 'Storage', 'Analytics'] },
+	{ name: 'Messaging and networking', field: 'coral', categories: ['Messaging', 'Networking'] },
+	{ name: 'Identity and security', field: 'eugenia', categories: ['Security'] },
+];
+
+const services = readServices();
+const familyOf = (category) => {
+	const i = FAMILIES.findIndex((f) => f.categories.includes(category));
+	if (i === -1) {
+		throw new Error(`The home page's service plate has no color for the category "${category}". Add it to FAMILIES in ServicePlate.astro.`);
+	}
+	return i;
+};
+const tiles = await Promise.all(
+	services
+		.map((s, order) => ({ ...s, family: familyOf(s.category), order }))
+		.sort(
+			(a, b) =>
+				a.family - b.family ||
+				FAMILIES[a.family].categories.indexOf(a.category) - FAMILIES[b.family].categories.indexOf(b.category) ||
+				a.order - b.order,
+		)
+		.map(async (s) => ({ ...s, field: FAMILIES[s.family].field, href: await docHref(s.file) })),
+);
+const families = FAMILIES.map((f, i) => ({ ...f, tiles: tiles.filter((t) => t.family === i) }));
+---
+
+<div class="plate">
+	{
+		families.map((f) => (
+			<section class:list={['family', f.field]} aria-labelledby={`family-${f.field}`}>
+				<h3 class="family-name" id={`family-${f.field}`}>
+					<span class="swatch" aria-hidden="true" />
+					{f.name}
+				</h3>
+				<ul>
+					{f.tiles.map((t) => (
+						<li>
+							<a href={t.href}>
+								<span class="name">{t.name}</span>
+								<code class="id">{t.id}</code>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		))
+	}
+</div>
+
+<style>
+	/* Four family columns from 60rem; two from 40rem; one family after
+	   another below that, two tiles to a row. */
+	.plate {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--nv-space-6) var(--nv-space-4);
+		align-items: start;
+	}
+
+	@media (min-width: 40rem) {
+		.plate {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 60rem) {
+		.plate {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+
+	.methyl {
+		--tile: var(--nv-methyl);
+	}
+	.naples {
+		--tile: var(--nv-naples);
+	}
+	.coral {
+		--tile: var(--nv-coral);
+	}
+	.eugenia {
+		--tile: var(--nv-eugenia);
+	}
+
+	/* The family's name with its swatch: the plate's legend. */
+	.family-name {
+		display: flex;
+		align-items: center;
+		gap: var(--nv-space-2);
+		margin: 0 0 var(--nv-space-3);
+		color: var(--nv-text);
+		font-size: var(--nv-text-body-sm);
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	.swatch {
+		flex: none;
+		width: 1.5rem;
+		height: 0.75rem;
+		background-color: var(--tile);
+	}
+
+	ul {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 3px;
+		margin: 0;
+		padding: 3px;
+		background-color: var(--nv-ink);
+		list-style: none;
+	}
+
+	@media (min-width: 40rem) {
+		ul {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	li {
+		margin: 0;
+	}
+
+	/* Two to a row, a family with an odd count ends on a tile as wide as the
+	   row, so no slot of the frame stands empty. */
+	@media (max-width: 40rem) {
+		li:last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+	}
+
+	a {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: var(--nv-space-3);
+		height: 100%;
+		min-height: 6.5rem;
+		padding: var(--nv-space-3) var(--nv-space-4);
+		background-color: var(--tile);
+		color: var(--nv-ink);
+		text-decoration: none;
+		transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	a:hover {
+		background-color: color-mix(in srgb, var(--tile) 82%, var(--nv-text));
+	}
+
+	/* Coral and Eugenia are close in lightness, so the security family also
+	   carries a row of half-tone cells along its top edge, and in its swatch:
+	   the same shade the cloud's underside uses. */
+	.eugenia a,
+	.eugenia .swatch {
+		background-image: repeating-conic-gradient(var(--nv-ink) 0 25%, transparent 0 50%);
+		background-size: 6px 6px;
+		background-repeat: repeat-x;
+	}
+
+	.eugenia .swatch {
+		background-repeat: repeat;
+	}
+
+	a:hover .name {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.15em;
+	}
+
+	/* Naples would vanish on a Naples tile, so the ring is ink, inset. */
+	a:focus-visible {
+		outline: 3px solid var(--nv-ink);
+		outline-offset: -7px;
+	}
+
+	.name {
+		font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.3125rem);
+		font-weight: 750;
+		line-height: 1.15;
+		letter-spacing: -0.015em;
+		text-wrap: balance;
+	}
+
+	/* The id, under a rule at the tile's foot. */
+	.id {
+		margin-top: auto;
+		padding: var(--nv-space-2) 0 0;
+		border-top: 1px solid color-mix(in srgb, var(--nv-ink) 40%, transparent);
+		background: none;
+		color: inherit;
+		font-family: var(--nv-font-mono);
+		font-size: 0.8125rem;
+		hyphens: none;
+		overflow-wrap: normal;
+	}
+</style>

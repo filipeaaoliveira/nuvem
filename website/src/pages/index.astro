@@ -3,15 +3,29 @@
 // shares the docs' header, search (`/`), skip link and footer. The hero is
 // Starlight's, restyled below; everything after it is this page's own.
 //
+// The page is one sky, from day to night. The ground changes three times,
+// each time at an edge of terminal cells rather than a straight line:
+// Pale Methyl Blue day behind the title, Naples Yellow dusk rising behind
+// the pitch and running through the key tour, the brown night of the
+// ground color under the services and the diagram, and near-black cloud
+// tops rising behind the closing into the footer. The cells come from
+// src/lib/sky-cells.mjs. Text takes the ink of the ground it can sit on:
+// dark ink on blue and yellow, off-white on brown and near-black.
+//
 // Every docs link goes through docHref(), which fails the build when the
 // page or anchor it names does not exist.
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import InstallCommand from '../components/landing/InstallCommand.astro';
 import DemoRecording from '../components/landing/DemoRecording.astro';
-import TerminalFrame from '../components/landing/TerminalFrame.astro';
-import { demoPath } from '../lib/demo-assets.mjs';
+import KeyTour from '../components/landing/KeyTour.astro';
+import ServicePlate from '../components/landing/ServicePlate.astro';
+import HowItWorks from '../components/landing/HowItWorks.astro';
+import CellCloud from '../components/landing/CellCloud.astro';
+import Wordmark from '../components/landing/Wordmark.astro';
 import { docHref } from '../lib/doc-links.mjs';
 import { REPO_BLOB_URL, buildSidebar, firstPageUrl } from '../lib/docs-source.mjs';
+import { countDetailServices, readServices } from '../lib/services-index.mjs';
+import { COLORS, cloudSvg, cssUrl, edgeSvg, fringeSvg, moonSvg, skyline, starSvg } from '../lib/sky-cells.mjs';
 
 const INSTALL = 'brew install filipeaaoliveira/tap/nuvem';
 const pageTitle = 'nuvem: a terminal UI for Google Cloud';
@@ -24,42 +38,105 @@ const docs = {
 	release: await docHref('getting-started/install.md#download-a-release'),
 	source: await docHref('getting-started/install.md#build-from-source'),
 	firstRun: await docHref('getting-started/first-run.md'),
+	demo: await docHref('guides/demo-mode.md'),
 	credentials: await docHref('troubleshooting/faq.md#does-nuvem-store-my-credentials'),
 	beforeChange: await docHref('reference/services/overview.md#before-a-change-runs'),
 	keys: await docHref('reference/keys.md'),
 	start: firstPageUrl(buildSidebar()),
 };
 
-/**
- * What someone deciding whether to install should know, each introduced by
- * the key or flag that reaches it and linked to its docs page. The docs
- * cover the rest.
- */
-const capabilities = [
+const serviceCount = readServices().length;
+const COUNT_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty'];
+const serviceWord = COUNT_WORDS[serviceCount] ?? String(serviceCount);
+const detailCount = countDetailServices();
+const detailWord = (COUNT_WORDS[detailCount] ?? String(detailCount)).toLowerCase();
+
+/** The key tour: each stop is a captured screen and the key that reaches it. */
+const stops = [
 	{
-		reach: [{ key: 'g' }],
-		name: 'Services',
-		href: 'reference/services/overview.md',
-		text: 'Sixteen of them, from Compute Engine, GKE and Cloud SQL to Pub/Sub, BigQuery and IAM. Each is a list you can sort, and seven open to more detail.',
+		id: 'home',
+		keys: ['h'],
+		shortcut: 'h',
+		label: 'Home',
+		frame: 'frame-home',
+		focus: 'Inventory',
+		description: "nuvem's Home view: the active configuration, account, region and project, then a count of loaded resources for each service.",
+		caption: 'Home shows the active gcloud configuration and how many resources each service holds.',
+		link: { text: 'Home', href: 'guides/home-overview.md' },
 	},
 	{
-		reach: [{ key: '/' }],
-		name: 'Filter a list',
-		href: 'guides/filter-a-list.md',
-		text: 'Narrow a list by regex, fuzzy match, label or inverse match.',
+		id: 'services',
+		keys: ['g'],
+		shortcut: 'g',
+		label: 'Services',
+		frame: 'frame-resources',
+		focus: 'Service navigator',
+		description: 'The Resources view: a sidebar of services grouped by kind, a list of ten GCE instances, and a preview of the selected one.',
+		captionKey: 'g',
+		caption: `opens Resources: ${serviceWord.toLowerCase()} services in a sidebar, grouped by kind, each a list you can sort.`,
+		link: { text: 'Services', href: 'reference/services/overview.md' },
 	},
 	{
-		reach: [{ key: ':' }],
-		name: 'Command palette',
-		href: 'guides/command-palette.md',
-		text: 'Run a command by name instead of remembering its key.',
+		id: 'filter',
+		keys: ['/', 'Enter'],
+		shortcut: '/',
+		label: 'Filter, open',
+		frame: 'frame-detail',
+		focus: 'GCE instance detail',
+		description: 'A GCE instance list filtered by the regex "web" to two of ten rows, with the detail of web-frontend-1 open beside it.',
+		caption: 'Filter by regex, fuzzy match, label or inverse match, then open a row with Enter.',
+		link: { text: 'Filter a list', href: 'guides/filter-a-list.md' },
 	},
 	{
-		reach: [{ key: 'Space' }, { word: 'then' }, { key: ':' }],
-		name: 'Lifecycle actions',
-		href: 'guides/batch-actions.md',
-		text: 'Start, stop, reset, suspend or resume Compute Engine (GCE) instances. Start, stop, restart or fail over Cloud SQL instances. Mark rows with Space to act on several at once. A confirmation shows the API call for each one first.',
+		id: 'palette',
+		keys: [':'],
+		shortcut: ':',
+		label: 'Command palette',
+		frame: 'frame-palette',
+		focus: 'commands',
+		description: "nuvem's command palette open over a resource list, offering the commands for the selected row and the views it can open.",
+		caption: 'Run a command by name instead of remembering its key.',
+		link: { text: 'Command palette', href: 'guides/command-palette.md' },
 	},
+	{
+		id: 'lifecycle',
+		keys: ['Space', ':'],
+		shortcut: 'Space :',
+		label: 'Lifecycle',
+		frame: 'frame-confirm',
+		focus: 'confirm GCE action',
+		description: 'A confirmation to stop the instance web-frontend-1, showing its zone, configuration, project, impact and the call compute.instances.stop.',
+		caption: 'Mark rows with Space to act on several at once. The confirmation shows the API call first.',
+		link: { text: 'Lifecycle actions', href: 'guides/batch-actions.md' },
+	},
+	{
+		id: 'bigquery',
+		keys: ['Enter'],
+		label: 'BigQuery',
+		frame: 'frame-bigquery',
+		focus: 'Preview',
+		description: 'The tables of the BigQuery dataset analytics, with their type, creation time, rows and size, and a preview of daily_active_users.',
+		captionKey: 'Enter',
+		caption: 'on a BigQuery dataset lists its tables, with the selected one in a preview.',
+		link: { text: 'BigQuery datasets', href: 'reference/services/bigquery-datasets.md' },
+	},
+	{
+		id: 'help',
+		keys: ['?'],
+		shortcut: '?',
+		label: 'Help',
+		frame: 'frame-help',
+		focus: 'help',
+		description: 'The help overlay for the Resources view, listing its keys and the global ones.',
+		captionKey: '?',
+		caption: 'lists the keys for the view you are in. Every key is on the',
+		link: { text: 'Keys page', href: 'reference/keys.md' },
+	},
+];
+for (const stop of stops) stop.link.href = await docHref(stop.link.href);
+
+/** The rest of what someone deciding whether to install should know. */
+const more = [
 	{
 		reach: [{ key: 'l' }],
 		name: 'Cloud Logging',
@@ -85,11 +162,42 @@ const capabilities = [
 		text: 'Add your own gcloud commands to a service. They run against the selected row, after a confirmation that shows the whole command line.',
 	},
 ];
+for (const item of more) item.href = await docHref(item.href);
 
-for (const item of capabilities) item.href = await docHref(item.href);
+/** Spoken before the key column, so a screen reader hears "Key: l", not "l". */
+const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : 'Key:');
 
-/** Spoken before the key column, so a screen reader hears "Key: g", not "g". */
-const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.key).length > 1 ? 'Keys:' : 'Key:');
+/*
+ * The sky. Edges are drawn on 12-pixel cells, 160 cells wide (1920 pixels),
+ * and repeat sideways; phones show the same drawing at 6-pixel cells.
+ */
+const EDGE_CELL = 12;
+// Each edge is only as tall as the clear space kept for it, so no edge can
+// cross a line of text: the dusk rises at most 36px above the recording,
+// into a 48px gap under the hero's text; the close rises into padding kept
+// below the closing's text.
+const dusk = skyline({ w: 160, h: 7, seed: 4, r: [2, 4.4], solid: 3 });
+const nightfall = skyline({ w: 160, h: 8, seed: 9, r: [2, 4.5] });
+const closing = skyline({ w: 160, h: 8, seed: 17, r: [2, 4.6] });
+const sky = {
+	'--sky-dusk': cssUrl(edgeSvg(dusk, EDGE_CELL, COLORS.naples)),
+	'--sky-dusk-h': `${dusk.length * EDGE_CELL}px`,
+	'--sky-fall': cssUrl(fringeSvg(nightfall, EDGE_CELL, COLORS.naples)),
+	'--sky-fall-h': `${(nightfall.length + 2) * EDGE_CELL}px`,
+	'--sky-close': cssUrl(edgeSvg(closing, EDGE_CELL, COLORS.ink)),
+	'--sky-close-h': `${closing.length * EDGE_CELL}px`,
+	// Day clouds beside the title: a large one cropped by the page edge, a small one.
+	'--sky-day-large': cssUrl(cloudSvg('large', 6, COLORS.text, COLORS.coral)),
+	'--sky-day-small': cssUrl(cloudSvg('small', 4, COLORS.text, COLORS.coral)),
+};
+const skyStyle = Object.entries(sky)
+	.map(([k, v]) => `${k}: ${v}`)
+	.join('; ');
+
+/** Night decorations: a cell moon and stars, placed by fraction of their row. */
+const moon = moonSvg(6, COLORS.naples);
+const plus = starSvg('plus', 4, COLORS.text);
+const dot = (color) => starSvg('dot', 4, color);
 ---
 
 <StarlightPage
@@ -102,123 +210,297 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		next: false,
 		hero: {
 			title: 'A terminal UI for Google&nbsp;Cloud',
-			tagline:
-				'Browse and operate your Google Cloud projects from the keyboard, in the spirit of k9s. nuvem works with the gcloud configurations you already have, and shows you what it is about to do before it changes anything.',
 		},
 		head: [
 			{ tag: 'title', content: pageTitle },
 			{ tag: 'meta', attrs: { property: 'og:title', content: pageTitle } },
 			{ tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
-			{ tag: 'meta', attrs: { name: 'theme-color', content: '#423b36' } },
+			{ tag: 'meta', attrs: { name: 'theme-color', content: '#54afb4' } },
 			{ tag: 'meta', attrs: { name: 'color-scheme', content: 'dark' } },
 		],
 	}}
 >
+	<Fragment set:html={`<style>:root { ${skyStyle} }</style>`} />
 	<div class="nv-landing not-content">
-		<section class="get-it">
-			<InstallCommand id="install-top" command={INSTALL} />
-			<p class="also">Homebrew on macOS and Linux. Or install with <a href={docs.cargo}>cargo</a>, download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
-			<p class="next">Try it first with <code>nuvem --demo</code>, on sample data with no account. Your own projects need the gcloud CLI, signed in. See <a href={docs.firstRun}>First run</a>.</p>
-		</section>
+		<div class="get-it">
+			<p class="pitch">Browse and operate your Google Cloud projects from the keyboard, in the spirit of k9s. nuvem works with the gcloud configurations you already have, and shows you what it is about to do before it changes anything.</p>
+			<div class="install-stack">
+				<InstallCommand id="install-top" command={INSTALL} />
+				<p class="also">Homebrew on macOS and Linux. Or install with <a href={docs.cargo}>cargo</a>, download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
+				<p class="next">Try it first with <code>nuvem --demo</code>, on sample data with no account. Your own projects need the gcloud CLI, signed in. See <a href={docs.firstRun}>First run</a>.</p>
+			</div>
+		</div>
 
-		<DemoRecording
-			description="A tour of nuvem --demo on its built-in sample data: Home, a resource list, a filter, a detail view, a Stop confirmation, BigQuery tables and help."
-		/>
+		<div class="dusk">
+			<div class="sky-edge dusk-edge" aria-hidden="true"></div>
+			<DemoRecording
+				description="A tour of nuvem --demo on its built-in sample data: Home, a resource list, a filter, a detail view, a Stop confirmation, BigQuery tables and help."
+			/>
 
-		<section aria-labelledby="what">
-			<h2 id="what">What you can do with it</h2>
-			<ul class="keyed">
-				{
-					capabilities.map((item) => (
-						<li>
-							<span class="head">
-								<span class="reach">
-									<span class="sr-only">{reachLabel(item.reach)} </span>
-									{item.reach.map((r) =>
-										r.key ? <kbd>{r.key}</kbd> : r.flag ? <code>{r.flag}</code> : <span class="word"> {r.word} </span>,
-									)}
-								</span>
-								<a href={item.href}>{item.name}</a>
-							</span>
-							<span class="text">{item.text}</span>
-						</li>
-					))
-				}
-			</ul>
-			<p class="rest">Configurations, FinOps, related-resource jumps and themes are in the <a href={docs.start}>documentation</a>, and the <a href={docs.keys}>Keys</a> page lists every key.</p>
-			<TerminalFrame
-				id="palette-frame"
-				file={demoPath('frame')}
-				focus="commands"
-				description="nuvem's command palette open over a resource list, offering the commands for the selected row and the views it can open."
-			>
-				The command palette, as nuvem draws it. Open it with <kbd>:</kbd>.
-			</TerminalFrame>
-		</section>
+			<section class="tour-section" aria-labelledby="tour">
+				<div class="tour-head">
+					<div class="title-row">
+						<h2 id="tour" class="title">Press a key</h2>
+						<CellCloud class="title-cloud" shape="small" body={COLORS.coral} shade={COLORS.eugenia} cell={4} />
+					</div>
+					<p class="intro">Real screens from <code>nuvem --demo</code>, set as text. Click a key, or move to the keys with Tab and type one.</p>
+					<div class="deco-column" aria-hidden="true">
+						<CellCloud class="dusk-cloud" shape="large" body={COLORS.coral} shade={COLORS.eugenia} cell={8} />
+						<CellCloud class="dusk-cloud-small" shape="small" body={COLORS.coral} shade={COLORS.eugenia} cell={6} />
+					</div>
+				</div>
+				{/* The recording's poster is Home, so the tour opens on the next screen. */}
+				<KeyTour stops={stops} initial="services" />
 
-		<div class="closing">
-		<section aria-labelledby="how">
-			<h2 id="how">How it works</h2>
-			<p>nuvem reads Google Cloud through the official client libraries for Rust. It uses a short-lived token that gcloud issues for your configuration and keeps it in memory only, so nuvem stores no credentials of its own. A few reads, such as BigQuery, run <code>bq</code> or <code>gcloud</code> instead.</p>
-			<p>Lifecycle actions use the same client libraries. SSH, plugins, tunnels to GCE instances and configuration changes run the <code>gcloud</code> CLI you already have. Before anything changes, a confirmation shows what is about to happen. For a lifecycle action, that is the API call, such as <code>compute.instances.stop</code>.</p>
-			<p>Read more in <a href={docs.beforeChange}>Before a change runs</a>, the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
-		</section>
+				{/* Set as nuvem sets its own help overlay: a framed list of keys. */}
+				<section class="help" aria-labelledby="more-title">
+					<h3 class="help-title" id="more-title">Also in nuvem</h3>
+					<dl class="help-keys">
+						{
+							more.map((item) => (
+								<div class="help-row">
+									<dt>
+										<span class="sr-only">{reachLabel(item.reach)} </span>
+										{item.reach.map((r) => (r.key ? <kbd>{r.key}</kbd> : <code>{r.flag}</code>))}
+										<a href={item.href}>{item.name}</a>
+									</dt>
+									<dd>{item.text}</dd>
+								</div>
+							))
+						}
+					</dl>
+				</section>
+				<p class="rest">Configurations, FinOps, related-resource jumps and themes are in the <a href={docs.start}>documentation</a>, and the <a href={docs.keys}>Keys</a> page lists every key.</p>
+			</section>
+		</div>
 
-		<section aria-labelledby="install">
-			<h2 id="install">Install</h2>
-			<InstallCommand id="install-bottom" command={INSTALL} />
-			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page.</p>
-			<p class="then">Then run <code>nuvem --demo</code> to try it on sample data, with no account, or <code>nuvem</code> to open your active gcloud configuration.</p>
-		</section>
+		<div class="night">
+			<div class="sky-edge fall-edge" aria-hidden="true"></div>
+			{/* A row kept free of text for the first stars of the night. */}
+			<div class="deco-row stars-row" aria-hidden="true">
+				<span class="star" data-deco style="left: 8%; top: 30%" set:html={dot(COLORS.text)} />
+				<span class="star" data-deco style="left: 27%; top: 50%" set:html={plus} />
+				<span class="star" data-deco style="left: 49%; top: 20%" set:html={dot(COLORS.naples)} />
+				<span class="star wide-only" data-deco style="left: 71%; top: 52%" set:html={dot(COLORS.text)} />
+				<span class="star wide-only" data-deco style="left: 90%; top: 25%" set:html={plus} />
+			</div>
+
+			<section class="services" aria-labelledby="services">
+				<div class="services-head">
+					<h2 id="services" class="title">{serviceWord} services</h2>
+					<p>Each one is a list you can sort, and {detailWord} open to more detail.</p>
+				</div>
+				<ServicePlate />
+			</section>
+
+			{/* Between the plate and the diagram: a night cloud, the moon and stars, in a row kept free of text. */}
+			<div class="deco-row night-row" aria-hidden="true">
+				<CellCloud class="night-cloud" shape="large" body={COLORS.methyl} shade={COLORS.text} cell={8} />
+				<CellCloud class="night-cloud-small" shape="large" body={COLORS.methyl} shade={COLORS.text} cell={4} />
+				<span class="moon" data-deco set:html={moon} />
+				<span class="star" data-deco style="left: 52%; top: 22%" set:html={plus} />
+				<span class="star" data-deco style="left: 63%; top: 70%" set:html={dot(COLORS.naples)} />
+				<span class="star wide-only" data-deco style="left: 88%; top: 64%" set:html={dot(COLORS.text)} />
+				<span class="star wide-only" data-deco style="left: 40%; top: 78%" set:html={dot(COLORS.text)} />
+			</div>
+
+			<section class="how" aria-labelledby="how">
+				<div class="how-head stacked">
+					<h2 id="how" class="title">How it works</h2>
+					<p>nuvem stores no credentials of its own. gcloud issues a short-lived token for the configuration you chose, and nuvem keeps it in memory. Before anything changes, a confirmation shows what is about to run.</p>
+				</div>
+				<HowItWorks />
+				<p class="read-more">Read more in <a href={docs.beforeChange}>Before a change runs</a>, the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
+			</section>
+
+			<div class="deco-row close-row" aria-hidden="true">
+				<CellCloud class="close-cloud" shape="wisp" body={COLORS.text} shade={COLORS.muted} cell={8} />
+				<span class="star" data-deco style="left: 70%; top: 40%" set:html={dot(COLORS.naples)} />
+				<span class="star wide-only" data-deco style="left: 86%; top: 15%" set:html={plus} />
+			</div>
+
+			{/* Stars in the page's side margins, only where the margins are wide. */}
+			<div class="gutter-stars" aria-hidden="true">
+				<span class="star left" data-deco style="top: 8%" set:html={plus} />
+				<span class="star left far" data-deco style="top: 31%" set:html={dot(COLORS.naples)} />
+				<span class="star left" data-deco style="top: 58%" set:html={dot(COLORS.text)} />
+				<span class="star right" data-deco style="top: 18%" set:html={dot(COLORS.text)} />
+				<span class="star right far" data-deco style="top: 44%" set:html={plus} />
+				<span class="star right" data-deco style="top: 72%" set:html={dot(COLORS.naples)} />
+			</div>
+
+			<section class="closing" aria-labelledby="install">
+				<div class="sky-edge close-edge" aria-hidden="true"></div>
+				<div class="mark">
+					<Wordmark ink="var(--nv-naples)" offset="var(--nv-coral)" />
+					<p class="entry" lang="pt"><b>nuvem</b> <span class="ipa">/ˈnu.vẽj/</span> <span class="pos" lang="en">noun, Portuguese:</span> <span lang="en">cloud.</span></p>
+				</div>
+				<div class="get">
+					<h2 id="install" class="title">Install</h2>
+					<InstallCommand id="install-bottom" command={INSTALL} />
+					<p>Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page.</p>
+					<p>Then run <code>nuvem --demo</code> to try it on sample data, with no account, or <code>nuvem</code> to open your active gcloud configuration.</p>
+				</div>
+			</section>
 		</div>
 	</div>
 </StarlightPage>
 
 <style is:global>
-	/* The hero is Starlight's; here it is centred, with the install block under it. */
-	main:has(.nv-landing) .hero {
-		display: block;
-		padding-block: 0;
+	/* The home page is wider than a docs page, and its sky runs to both edges
+	   of the window. The panel clips what runs past them. */
+	main:has(.nv-landing) .sl-container {
+		position: relative;
+		max-width: 76rem;
 	}
 
-	/* Keep the hero, the install block and the recording close, so the
-	   recording starts in the first viewport of a laptop screen. */
+	main:has(.nv-landing) .content-panel {
+		overflow-x: clip;
+		padding-top: var(--nv-space-4);
+		padding-bottom: 0;
+		background-color: var(--nv-methyl);
+	}
+
+	/* Below the footer the page is the footer's near-black. */
+	:root:has(.nv-landing) body {
+		background-color: var(--nv-ink);
+	}
+
+	/* Day: the header sits on the same blue as the hero, without the strip,
+	   and everything in it is dark ink. */
+	:root:has(.nv-landing) header.header {
+		background-color: var(--nv-methyl);
+		background-image: none;
+	}
+
+	/* The Naples wordmark, darkened to ink for the blue sky. */
+	:root:has(.nv-landing) .site-title img {
+		filter: brightness(0.107);
+	}
+
+	:root:has(.nv-landing) site-search button[data-open-modal],
+	:root:has(.nv-landing) site-search button[data-open-modal]:hover {
+		border-color: var(--nv-ink);
+		background-color: transparent;
+		color: var(--nv-ink);
+	}
+
+	:root:has(.nv-landing) site-search button[data-open-modal]::after {
+		border-color: var(--nv-ink);
+		color: var(--nv-ink);
+	}
+
+	:root:has(.nv-landing) .header .site-links a {
+		color: var(--nv-ink);
+	}
+
+	:root:has(.nv-landing) .header .site-links .docs-link {
+		font-weight: 650;
+		text-decoration-thickness: 2px;
+	}
+
+	/* Rings on the blue header bar are ink. The search dialog opens inside
+	   the header but on the brown, so its controls keep the Naples ring. */
+	:root:has(.nv-landing) header.header :focus-visible:not(dialog :focus-visible) {
+		outline: 3px solid var(--nv-ink);
+	}
+
+	/* The skip link appears over the blue header. */
+	:root:has(.nv-landing) .sl-skip-link:focus-visible {
+		outline: 3px solid var(--nv-ink);
+	}
+
+	/* The hero is Starlight's: the title, set left, in ink on the blue. */
+	main:has(.nv-landing) .hero {
+		position: relative;
+		display: block;
+		padding-block: clamp(0rem, 4vw - 1rem, 0.5rem) 0;
+	}
+
 	main:has(.nv-landing) .sl-container > .sl-markdown-content {
-		margin-top: var(--nv-space-5);
+		margin-top: clamp(0.5rem, 1vw, 1rem);
+	}
+
+	@media (max-width: 40rem) {
+		main:has(.nv-landing) .content-panel {
+			padding-top: var(--nv-space-2);
+		}
 	}
 
 	main:has(.nv-landing) .hero .stack {
 		gap: 0;
-		text-align: center;
+		text-align: start;
 	}
 
 	main:has(.nv-landing) .hero .copy {
-		align-items: center;
-		gap: var(--nv-space-3);
+		align-items: start;
+		gap: var(--nv-space-4);
 	}
 
 	main:has(.nv-landing) .hero .copy > * {
 		max-width: none;
 	}
 
-	main:has(.nv-landing) .hero h1 {
-		color: var(--nv-naples);
-		font-size: var(--nv-text-display);
-		font-weight: 700;
-		line-height: 1.08;
-		letter-spacing: -0.025em;
+	main:has(.nv-landing) .hero h1#_top {
+		color: var(--nv-ink);
+		font-size: var(--nv-text-hero);
+		font-weight: 800;
+		line-height: 0.98;
+		letter-spacing: -0.035em;
 		text-wrap: balance;
 	}
 
-	main:has(.nv-landing) .hero .tagline {
-		max-width: 58rem;
-		color: var(--nv-text);
-		font-size: var(--nv-text-lead);
-		line-height: 1.55;
+	/* Day clouds: from 64rem the title stops 15rem short of the column's
+	   edge, and the clouds live in that space, inside the title's own box,
+	   so they can never reach text. The large one runs off the page. */
+	@media (min-width: 64rem) {
+		main:has(.nv-landing) .hero .copy > h1#_top {
+			max-width: calc(100% - 15rem);
+		}
+
+		main:has(.nv-landing) .hero::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			right: calc(-1 * var(--sl-content-pad-x) - 4rem);
+			width: calc(14rem + var(--sl-content-pad-x) + 4rem);
+			background:
+				var(--sky-day-large) right 0 bottom 0 / 228px 72px no-repeat,
+				var(--sky-day-small) left 0 top 0 / 80px 28px no-repeat;
+			pointer-events: none;
+		}
 	}
 
 	.sl-markdown-content > .nv-landing.not-content {
 		max-width: none;
+	}
+
+	/* The page ends on the closing; the colophon follows it, on near-black. */
+	main:has(.nv-landing) footer.sl-flex {
+		display: none;
+	}
+
+	main:has(.nv-landing) .colophon {
+		margin-top: 0;
+		padding-block: var(--nv-space-6) var(--nv-space-7);
+		position: relative;
+		isolation: isolate;
+		background-image: none;
+	}
+
+	/* The footer's near-black, edge to edge, a little past its bottom so
+	   no row of the blue panel shows under it. */
+	main:has(.nv-landing) .colophon::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: -2px;
+		left: 50%;
+		z-index: -1;
+		width: 100vw;
+		margin-left: -50vw;
+		background-color: var(--nv-ink);
 	}
 </style>
 
@@ -255,146 +537,645 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		white-space: nowrap;
 	}
 
-	/* Install, alternatives and the first-run step, then the recording. */
+	.title {
+		margin: 0;
+		color: inherit;
+		font-size: var(--nv-text-section);
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.035em;
+		text-wrap: balance;
+	}
+
+	/* On blue and yellow, everything is dark ink: text, links, code, rings. */
+	.get-it,
+	.tour-section {
+		color: var(--nv-ink);
+	}
+
+	.get-it a,
+	.tour-section a {
+		color: var(--nv-ink);
+		font-weight: 700;
+		text-decoration-thickness: 2px;
+	}
+
+	.get-it a:hover,
+	.tour-section a:hover {
+		text-decoration-thickness: 3px;
+	}
+
+	.get-it a:focus-visible,
+	.tour-section a:focus-visible {
+		outline: 3px solid var(--nv-ink);
+	}
+
+	.get-it :not(pre) > code,
+	.tour-section :not(pre) > code {
+		background-color: color-mix(in srgb, var(--nv-ink) 14%, transparent);
+		color: var(--nv-ink);
+	}
+
+	/* The pitch, then the install command with the other ways to get nuvem
+	   and the first step. Side by side from 60rem, so the recording starts
+	   high on a laptop screen. Above the dusk's edge, which rises behind it. */
 	.get-it {
+		position: relative;
+		z-index: 2;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		justify-items: center;
+		gap: var(--nv-space-4);
+		align-items: start;
+		/* The dusk's cloud tops rise into this gap, and stop 12px short of
+		   the text. */
+		margin-bottom: var(--nv-space-7);
+	}
+
+	@media (min-width: 60rem) {
+		.get-it {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			column-gap: clamp(2rem, 4vw, 4rem);
+		}
+	}
+
+	@media (max-width: 48rem) {
+		.get-it {
+			margin-bottom: var(--nv-space-5);
+		}
+	}
+
+	@media (max-width: 40rem) {
+		.get-it {
+			gap: var(--nv-space-3);
+		}
+	}
+
+	.nv-landing .pitch {
+		max-width: 36rem;
+		font-size: clamp(1rem, 0.9rem + 0.45vw, 1.25rem);
+		line-height: 1.5;
+	}
+
+	.install-stack {
+		display: grid;
 		gap: var(--nv-space-2);
-		margin-bottom: var(--nv-space-4);
-		text-align: center;
 	}
 
-	.get-it > p {
-		max-width: 60rem;
-	}
-
-	.get-it > p + p {
-		margin-top: 0;
+	.install-stack > :global(.install) {
+		max-width: none;
 	}
 
 	.also,
 	.next {
-		color: var(--nv-text-muted);
 		font-size: var(--nv-text-body-sm);
 	}
 
-	.next {
-		color: var(--nv-text);
+	/* An edge of the sky: a full-width strip of cells, repeated sideways and
+	   shown at whole pixels. Phones show the same drawing at half the cell. */
+	.sky-edge {
+		position: absolute;
+		left: 50%;
+		z-index: -1;
+		width: 100vw;
+		margin-left: -50vw;
+		background-repeat: repeat-x;
+		pointer-events: none;
 	}
 
-	section + section,
-	.nv-landing > figure + section {
-		margin-top: var(--nv-space-8);
+	/* Dusk: Naples rises as cloud tops in the gap above the recording and
+	   turns flat a little below its top, so the window sits across the
+	   change. The edge is 84px tall and the flat yellow starts 48px down:
+	   its tops reach at most 36px above the window, never into the text. */
+	.dusk {
+		--seam: 3rem;
+		position: relative;
+		isolation: isolate;
 	}
 
-	h2 {
-		margin: 0 0 var(--nv-space-5);
-		padding-top: var(--nv-space-4);
-		border-top: 1px solid var(--nv-rule);
-		color: var(--nv-text);
-		font-size: var(--nv-text-h2);
-		font-weight: 650;
-		line-height: var(--nv-leading-tight);
-		letter-spacing: -0.01em;
+	/* Each ground runs 2px under its neighbor, so no seam at a fractional
+	   pixel shows a hairline of the ground beneath. */
+	.dusk::before {
+		content: '';
+		position: absolute;
+		top: calc(var(--seam) - 2px);
+		bottom: -2px;
+		left: 50%;
+		z-index: -1;
+		width: 100vw;
+		margin-left: -50vw;
+		background-color: var(--nv-naples);
 	}
 
-	/* How it works, then the closing install, each at the full width. */
-	.closing {
-		margin-top: var(--nv-space-8);
+	.dusk-edge {
+		bottom: calc(100% - var(--seam));
+		height: var(--sky-dusk-h);
+		background-image: var(--sky-dusk);
+		background-size: 1920px var(--sky-dusk-h);
+		background-position: center bottom;
 	}
 
-	.closing .also,
-	.closing .then {
-		margin-top: var(--nv-space-3);
-	}
+	/* On a phone the edge is 42px and the flat yellow starts 30px down, so
+	   12px of stepped tops clear the window's top edge, into a 24px gap
+	   that keeps them 12px from the text. */
+	@media (max-width: 48rem) {
+		.dusk {
+			--seam: 1.875rem;
+		}
 
-	section > p + p {
-		margin-top: var(--nv-space-4);
-	}
-
-	/* What you can do: each capability is a row whose title line starts with
-	   the key or flag that reaches it, on the same baseline as the link. */
-	.keyed {
-		display: grid;
-		column-gap: var(--nv-space-7);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.keyed li {
-		display: grid;
-		align-content: start;
-		gap: var(--nv-space-1);
-		padding-block: var(--nv-space-3);
-		border-bottom: 1px solid var(--nv-rule);
-	}
-
-	@media (min-width: 64rem) {
-		.keyed {
-			grid-template-columns: 1fr 1fr;
+		.dusk-edge {
+			height: calc(var(--sky-dusk-h) / 2);
+			background-size: 960px calc(var(--sky-dusk-h) / 2);
 		}
 	}
 
-	.head {
+	/* The recording's offset block is the night's brown, which reads on both
+	   the blue and the yellow it crosses. */
+	.dusk > :global(.recording) {
+		box-shadow: clamp(0.5rem, 1.2vw, 1rem) clamp(0.5rem, 1.2vw, 1rem) 0 var(--nv-bg);
+	}
+
+	/* Key tour, on the yellow. */
+	.tour-section {
+		position: relative;
+		padding-block: clamp(3rem, 2rem + 4vw, 6rem) clamp(4rem, 3rem + 3vw, 6rem);
+	}
+
+	.tour-head {
+		position: relative;
+	}
+
+	/* Coral clouds, in space no text can reach: on a phone, in the free part
+	   of the title's own row; from 64rem, in a column beside the title and
+	   the intro, which stop at the reading measure. */
+	.title-row {
 		display: flex;
-		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--nv-space-4);
+	}
+
+	.title-row :global(.title-cloud) {
+		flex: none;
+	}
+
+	.deco-column {
+		display: none;
+	}
+
+	@media (min-width: 64rem) {
+		.tour-head {
+			min-height: 9rem;
+		}
+
+		.title-row :global(.title-cloud) {
+			display: none;
+		}
+
+		/* The column is a size container: when it is too narrow for the
+		   clouds to keep 16px from the intro (a larger root font makes the
+		   measure wider), the clouds stay out. */
+		.deco-column {
+			display: block;
+			position: absolute;
+			inset: 0 0 0 calc(var(--nv-measure) + 3rem);
+			container: deco / inline-size;
+		}
+
+		.deco-column :global(.dusk-cloud),
+		.deco-column :global(.dusk-cloud-small) {
+			visibility: hidden;
+		}
+
+		@container deco (min-width: 300px) {
+			.deco-column :global(.dusk-cloud) {
+				visibility: visible;
+			}
+		}
+
+		@container deco (min-width: 520px) {
+			.deco-column :global(.dusk-cloud-small) {
+				visibility: visible;
+			}
+		}
+
+		.deco-column :global(.dusk-cloud) {
+			position: absolute;
+			top: 0.5rem;
+			right: calc(-1 * var(--sl-content-pad-x) - 3rem);
+		}
+
+		.deco-column :global(.dusk-cloud-small) {
+			display: none;
+			position: absolute;
+			bottom: 1rem;
+			left: 1rem;
+		}
+	}
+
+	@media (min-width: 80rem) {
+		.deco-column :global(.dusk-cloud-small) {
+			display: block;
+		}
+	}
+
+	@media (max-width: 22rem) {
+		.title-row :global(.title-cloud) {
+			display: none;
+		}
+	}
+
+	.intro {
+		margin-top: var(--nv-space-4) !important;
+		margin-bottom: var(--nv-space-6) !important;
+		font-size: var(--nv-text-lead);
+	}
+
+	/* What else nuvem does, set as nuvem's help overlay: a dark frame with
+	   its title set into the top rule, and one ruled row per key. */
+	.help {
+		position: relative;
+		margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+		padding: var(--nv-space-5) var(--nv-space-5) var(--nv-space-3);
+		border: 3px solid var(--nv-ink);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+		color: var(--nv-text);
+	}
+
+	.help-title {
+		position: absolute;
+		top: -0.85em;
+		left: var(--nv-space-4);
+		margin: 0;
+		padding: 0 var(--nv-space-2);
+		background-color: var(--nv-plate);
+		color: var(--nv-naples);
+		font-family: var(--nv-font-mono);
+		font-size: var(--nv-text-body-sm);
+		font-weight: 700;
+		line-height: 1.4;
+	}
+
+	.help-keys {
+		margin: 0;
+	}
+
+	.help-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--nv-space-1);
+		padding-block: var(--nv-space-3);
+	}
+
+	.help-row + .help-row {
+		border-top: 1px solid var(--nv-rule);
+	}
+
+	@media (min-width: 48rem) {
+		.help-row {
+			grid-template-columns: 17rem minmax(0, 1fr);
+			column-gap: var(--nv-space-5);
+			align-items: baseline;
+		}
+	}
+
+	.help-row dt {
+		display: flex;
 		align-items: baseline;
-		gap: var(--nv-space-1) var(--nv-space-3);
+		gap: var(--nv-space-3);
+		font-family: var(--nv-font-mono);
+		font-size: var(--nv-text-body-sm);
 	}
 
-	.head a {
+	.help-row dd {
+		margin: 0;
+		color: var(--nv-text-muted);
+		font-size: var(--nv-text-body-sm);
+		line-height: 1.5;
+	}
+
+	.tour-section .help a {
+		color: var(--nv-coral);
+		font-family: var(--nv-font-sans);
+		font-size: var(--nv-text-body);
 		font-weight: 650;
+		text-decoration-thickness: 1px;
 	}
 
-	.nv-landing .rest {
-		margin-top: var(--nv-space-4);
+	.tour-section .help a:hover {
+		text-decoration-thickness: 2px;
+	}
+
+	.tour-section .help a:focus-visible {
+		outline: 2px solid var(--nv-naples);
+	}
+
+	/* The key, as the help overlay prints it: a Naples letter, not a cap. */
+	.help-row kbd,
+	.tour-section .help-row code {
+		min-width: 2ch;
+		padding: 0;
+		border: 0;
+		background: none !important;
+		color: var(--nv-naples) !important;
+		font-family: var(--nv-font-mono);
+		font-size: var(--nv-text-body-sm);
+		font-weight: 700;
+	}
+
+	.rest {
+		margin-top: var(--nv-space-5) !important;
+		font-size: var(--nv-text-body-sm);
+	}
+
+	/* Night: the ground color, from the dusk's hanging edge to the closing. */
+	.night {
+		position: relative;
+		isolation: isolate;
+		padding-top: var(--sky-fall-h);
+	}
+
+	/* The night's ground, edge to edge of the window. */
+	.night::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto;
+		left: 50%;
+		z-index: -2;
+		width: 100vw;
+		margin-left: -50vw;
+		background-color: var(--nv-bg);
+	}
+
+	@media (max-width: 48rem) {
+		.night {
+			padding-top: calc(var(--sky-fall-h) / 2);
+		}
+	}
+
+	.fall-edge {
+		top: -6px;
+		height: var(--sky-fall-h);
+		background-image: var(--sky-fall);
+		background-size: 1920px var(--sky-fall-h);
+		background-position: center top;
+	}
+
+	@media (max-width: 48rem) {
+		.fall-edge {
+			height: calc(var(--sky-fall-h) / 2);
+			background-size: 960px calc(var(--sky-fall-h) / 2);
+		}
+	}
+
+	.night .title {
+		color: var(--nv-naples);
+	}
+
+	/* Rows kept free of text, for the clouds, the moon and the stars. Every
+	   decoration sits inside its row, at least 16px from the row's top and
+	   bottom at every row height, so none can reach the text above or below
+	   at any width. `npm run check:sky` measures this. */
+	.deco-row {
+		position: relative;
+		pointer-events: none;
+	}
+
+	.stars-row {
+		height: 6rem;
+	}
+
+	.night-row {
+		height: 10rem;
+	}
+
+	.close-row {
+		height: 7rem;
+	}
+
+	@media (max-width: 48rem) {
+		.stars-row {
+			height: 5rem;
+		}
+
+		.night-row {
+			height: 8rem;
+		}
+
+		.close-row {
+			height: 5rem;
+		}
+
+		.wide-only {
+			display: none;
+		}
+	}
+
+	.star {
+		position: absolute;
+		line-height: 0;
+	}
+
+	.star :global(svg),
+	.moon :global(svg) {
+		display: block;
+	}
+
+	.night-row :global(.night-cloud) {
+		position: absolute;
+		top: 2rem;
+		left: 4%;
+	}
+
+	.night-row .moon {
+		position: absolute;
+		top: 1.5rem;
+		right: 14%;
+		line-height: 0;
+	}
+
+	.close-row :global(.close-cloud) {
+		position: absolute;
+		top: 2.5rem;
+		left: 6%;
+	}
+
+	@media (max-width: 48rem) {
+		.night-row :global(.night-cloud) {
+			display: none;
+		}
+
+		.night-row :global(.night-cloud-small) {
+			display: block;
+			position: absolute;
+			top: 2rem;
+			left: 0;
+		}
+
+		.night-row .moon {
+			right: 8%;
+		}
+
+		.close-row :global(.close-cloud) {
+			top: 1.5rem;
+		}
+	}
+
+	@media (min-width: 48.0625rem) {
+		.night-row :global(.night-cloud-small) {
+			display: none;
+		}
+	}
+
+	.gutter-stars {
+		display: none;
+	}
+
+	@media (min-width: 90rem) {
+		.gutter-stars {
+			display: block;
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+		}
+
+		.gutter-stars .left {
+			right: calc(100% + 2.5rem);
+		}
+
+		.gutter-stars .left.far {
+			right: calc(100% + 5rem);
+		}
+
+		.gutter-stars .right {
+			left: calc(100% + 2.5rem);
+		}
+
+		.gutter-stars .right.far {
+			left: calc(100% + 5rem);
+		}
+	}
+
+	/* Services, on the night. */
+	.services-head {
+		display: grid;
+		gap: var(--nv-space-4);
+		align-items: end;
 		margin-bottom: var(--nv-space-6);
 	}
 
-	.reach {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.25em;
-		color: var(--nv-text);
-		font-family: var(--nv-font-mono);
-		font-size: var(--nv-text-body-sm);
+	@media (min-width: 60rem) {
+		.services-head {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+			column-gap: var(--nv-space-7);
+		}
 	}
 
-	.reach .word {
-		color: var(--nv-text-muted);
-		font-family: var(--nv-font-sans);
-		font-size: var(--nv-text-small);
-	}
-
-	.reach code {
-		padding: 0;
-		background: none;
-		font-size: inherit;
-		color: inherit;
-	}
-
-	kbd {
-		display: inline-block;
-		min-width: 1.75em;
-		padding: 0 0.45em;
-		border: 1px solid var(--nv-rule-strong);
-		border-bottom-width: 2px;
-		border-radius: var(--nv-radius);
-		background-color: var(--nv-plate-raised);
-		color: var(--nv-text);
-		font-family: var(--nv-font-mono);
-		font-size: var(--nv-text-body-sm);
-		font-weight: 650;
-		line-height: 1.5;
-		text-align: center;
-	}
-
-	.text {
+	.services-head p,
+	.how-head p {
 		color: var(--nv-text-muted);
 		font-size: var(--nv-text-body-sm);
-		line-height: 1.55;
+	}
+
+	/* How it works: its text on the night, the diagram on a lit plate. */
+	.how-head {
+		display: grid;
+		gap: var(--nv-space-4);
+		margin-bottom: var(--nv-space-6);
+	}
+
+	/* Unlike the services' heading, this one is set over its text, which
+	   reads as the lead of the section, off-white and larger. */
+	.how-head.stacked p {
+		max-width: 40rem;
+		color: var(--nv-text);
+		font-size: var(--nv-text-lead);
+	}
+
+	.read-more {
+		margin-top: var(--nv-space-6) !important;
+		font-size: var(--nv-text-body-sm);
+	}
+
+	/* The close: the wordmark and the install command again. Near-black
+	   cloud tops rise behind them into the footer. */
+	/* The near-black edge rises into padding kept for it, 24px clear of
+	   the closing's last line. */
+	.closing {
+		position: relative;
+		isolation: isolate;
+		display: grid;
+		gap: var(--nv-space-6);
+		padding-bottom: calc(var(--sky-close-h) + var(--nv-space-5));
+	}
+
+	@media (max-width: 48rem) {
+		.closing {
+			padding-bottom: calc(var(--sky-close-h) / 2 + var(--nv-space-5));
+		}
+	}
+
+	@media (min-width: 60rem) {
+		.closing {
+			grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+			align-items: end;
+			column-gap: var(--nv-space-8);
+		}
+	}
+
+	.close-edge {
+		bottom: -6px;
+		height: var(--sky-close-h);
+		background-image: var(--sky-close);
+		background-size: 1920px var(--sky-close-h);
+		background-position: center bottom;
+	}
+
+	@media (max-width: 48rem) {
+		.close-edge {
+			height: calc(var(--sky-close-h) / 2);
+			background-size: 960px calc(var(--sky-close-h) / 2);
+		}
+	}
+
+	.mark {
+		display: grid;
+		gap: var(--nv-space-4);
+	}
+
+	.mark :global(.wordmark) {
+		max-width: 34rem;
+	}
+
+	.entry {
+		font-size: var(--nv-text-lead);
+	}
+
+	.entry b {
+		font-weight: 800;
+	}
+
+	.pos {
+		color: var(--nv-text-muted);
+	}
+
+	.ipa {
+		font-family: var(--nv-font-mono);
+		font-size: 0.9em;
+	}
+
+	.get {
+		display: grid;
+		gap: var(--nv-space-4);
+		justify-items: start;
+	}
+
+	/* On near-black the install plate needs an edge of its own. */
+	.get > :global(.install) {
+		max-width: 36rem;
+		border-color: var(--nv-rule-strong);
+	}
+
+	.get p {
+		font-size: var(--nv-text-body-sm);
 	}
 </style>
