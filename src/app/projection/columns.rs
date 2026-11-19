@@ -966,8 +966,9 @@ pub static PERSISTENT_DISK_COLUMNS: &[ColumnDef<PersistentDiskRowProjection, Dis
 /// (POSTGRES_15)", was cut at common widths before it reached the one part
 /// that differed between rows. A constant with no version after its engine
 /// prefix is shown as it came, so nothing is lost; the detail pane keeps the
-/// raw value either way.
-fn cloud_sql_engine_cell(engine: &str, database_version: &str) -> String {
+/// raw value either way. The list's preview pane reads its `Engine` line from
+/// here too, so the two never name the same instance differently.
+pub(crate) fn cloud_sql_engine_cell(engine: &str, database_version: &str) -> String {
     let Some((_, version)) = database_version.split_once('_') else {
         return match database_version {
             "" => engine.to_string(),

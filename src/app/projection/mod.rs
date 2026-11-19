@@ -1582,7 +1582,13 @@ pub fn project_resource_preview(resources: &ResourcesState) -> Option<ResourcePr
                         "Status".to_string(),
                         cloud_sql_status_label(&instance.status),
                     ),
-                    ("Engine".to_string(), instance.engine.clone()),
+                    (
+                        "Engine".to_string(),
+                        columns::cloud_sql_engine_cell(
+                            &instance.engine,
+                            &instance.database_version,
+                        ),
+                    ),
                     ("Region".to_string(), instance.region.clone()),
                     ("Tier".to_string(), instance.tier.clone()),
                     (
