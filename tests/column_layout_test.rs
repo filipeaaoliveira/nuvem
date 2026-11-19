@@ -176,7 +176,7 @@ fn compute_fields() -> Vec<(&'static str, &'static str, CellKind)> {
 fn cloud_sql_fields() -> Vec<(&'static str, &'static str, CellKind)> {
     vec![
         ("name", "orders", CellKind::Plain),
-        ("engine", "PostgreSQL (POSTGRES_15)", CellKind::Plain),
+        ("engine", "PostgreSQL 15", CellKind::Plain),
         ("region", "europe-west1", CellKind::Plain),
         ("tier", "db-custom-2-7680", CellKind::Plain),
         ("availability", "HA (regional)", CellKind::Plain),

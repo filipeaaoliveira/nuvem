@@ -428,7 +428,7 @@ pub static CLOUD_SQL_COLUMNS: &[ColumnDef<
             key: "engine",
             header: "ENGINE",
             min_width: 7,
-            preferred_width: 20,
+            preferred_width: 24,
             priority: 2,
             align: CellAlign::Left,
             sortable: true,
@@ -957,14 +957,43 @@ pub static PERSISTENT_DISK_COLUMNS: &[ColumnDef<PersistentDiskRowProjection, Dis
     },
 ];
 
-/// Combines engine and raw database version into a single display cell,
-/// e.g. "PostgreSQL (POSTGRES_15)".
+/// Combines engine and database version into a single display cell, reading
+/// the version out of the API's constant: `POSTGRES_15` is "PostgreSQL 15",
+/// `MYSQL_8_0_31` is "MySQL 8.0.31", `SQLSERVER_2019_STANDARD` is
+/// "SQL Server 2019 Standard".
+///
+/// The constant spelled the engine a second time, so the old cell, "PostgreSQL
+/// (POSTGRES_15)", was cut at common widths before it reached the one part
+/// that differed between rows. A constant with no version after its engine
+/// prefix is shown as it came, so nothing is lost; the detail pane keeps the
+/// raw value either way.
 fn cloud_sql_engine_cell(engine: &str, database_version: &str) -> String {
-    if database_version.is_empty() {
-        engine.to_string()
-    } else {
-        format!("{engine} ({database_version})")
+    let Some((_, version)) = database_version.split_once('_') else {
+        return match database_version {
+            "" => engine.to_string(),
+            raw => format!("{engine} ({raw})"),
+        };
+    };
+    let mut numbers = Vec::new();
+    let mut words = Vec::new();
+    for token in version.split('_').filter(|token| !token.is_empty()) {
+        if words.is_empty() && token.chars().all(|c| c.is_ascii_digit()) {
+            numbers.push(token.to_string());
+        } else {
+            let lower = token.to_lowercase();
+            let mut chars = lower.chars();
+            words.push(match chars.next() {
+                Some(first) => first.to_uppercase().chain(chars).collect(),
+                None => String::new(),
+            });
+        }
     }
+    let mut parts = vec![engine.to_string()];
+    if !numbers.is_empty() {
+        parts.push(numbers.join("."));
+    }
+    parts.extend(words);
+    parts.join(" ")
 }
 
 /// The Pub/Sub topics table.
@@ -2026,4 +2055,29 @@ fn iam_policy_member_cell(row: &IamPolicyRowProjection) -> Cell {
         format!("{} {}", badges.join(" "), row.name),
         StatusSemantic::Warning,
     )
+}
+
+#[cfg(test)]
+mod engine_cell_tests {
+    use super::cloud_sql_engine_cell;
+
+    #[test]
+    fn the_engine_cell_reads_the_version_out_of_the_constant() {
+        for (engine, version, cell) in [
+            ("PostgreSQL", "POSTGRES_15", "PostgreSQL 15"),
+            ("MySQL", "MYSQL_8_0", "MySQL 8.0"),
+            ("MySQL", "MYSQL_8_0_31", "MySQL 8.0.31"),
+            (
+                "SQL Server",
+                "SQLSERVER_2019_STANDARD",
+                "SQL Server 2019 Standard",
+            ),
+            ("SQL Server", "SQLSERVER_2022_WEB", "SQL Server 2022 Web"),
+            // Nothing to read a version out of: shown as it came.
+            ("PostgreSQL", "POSTGRES", "PostgreSQL (POSTGRES)"),
+            ("PostgreSQL", "", "PostgreSQL"),
+        ] {
+            assert_eq!(cloud_sql_engine_cell(engine, version), cell, "{version}");
+        }
+    }
 }

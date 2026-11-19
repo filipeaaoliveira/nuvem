@@ -26,7 +26,7 @@ const GAP: u16 = 2;
 /// (`europe-west1-b`, `db-custom-2-76`), and no wider, so long columns do not
 /// crowd out the columns after them. Content no wider than this is never
 /// truncated by a narrow table; its column is dropped whole first.
-const READABLE_WIDTH: u16 = 14;
+const READABLE_WIDTH: u16 = 16;
 
 pub const ROW_SELECT_SYMBOL: &str = "> ";
 
@@ -129,18 +129,6 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     }
 
     let mut visible = vec![true; n];
-    // Each column starts at the width it reads at, not at its floor. A column
-    // whose whole content is short — a status, a region, an availability —
-    // reads only at its full width, so it starts there: `Runna…` and
-    // `AVAIL…` say less than the column a drop would have removed. A column
-    // with long content starts at `READABLE_WIDTH`, enough to recognise a
-    // value, and grows from there below.
-    //
-    // So a narrow table drops a low-priority column before it truncates the
-    // short ones, rather than cutting every column at once.
-    let readable =
-        |c: usize| -> u16 { target(c).min(model.columns[c].min_width.max(READABLE_WIDTH)) };
-    let mut widths: Vec<u16> = (0..n).map(readable).collect();
 
     // The column with the smallest priority value is protected from dropping,
     // and that column is NAME in every table: each catalog gives NAME priority
@@ -151,6 +139,32 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     let survivor = (0..n)
         .min_by_key(|&c| (model.columns[c].priority, c))
         .unwrap_or(0);
+
+    // Each column starts at the width it reads at, not at its floor, and the
+    // drops below are decided at those widths:
+    //
+    // - the identity column starts at its whole target, so a lower-priority
+    //   column is dropped before a name is cut (`oauth-client-s…` beside a
+    //   column nobody needed);
+    // - a column whose whole content is short — a status, a region — starts
+    //   at its full width, because `Runna…` says less than the column a drop
+    //   would have removed;
+    // - a column with long content starts at `READABLE_WIDTH`, enough to
+    //   recognise a value, and grows from there below;
+    // - no column starts narrower than its header, so a header is never cut.
+    //
+    // So a narrow table drops low-priority columns before it truncates
+    // anything, rather than cutting every column at once.
+    let readable = |c: usize| -> u16 {
+        if c == survivor {
+            return target(c);
+        }
+        let header = display_width(model.columns[c].header);
+        target(c)
+            .min(model.columns[c].min_width.max(READABLE_WIDTH))
+            .max(header)
+    };
+    let mut widths: Vec<u16> = (0..n).map(readable).collect();
 
     // Drop the lowest-priority visible column until the min-width line fits.
     while masked_line_width(&widths, &visible) > available_width {

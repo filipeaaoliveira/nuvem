@@ -887,7 +887,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                 &[
                     [
                         "mysql-ha",
-                        "MySQL (MYSQL_8_0)",
+                        "MySQL 8.0",
                         "us-east1",
                         "db-n1-standard-4",
                         "HA (regional)",
@@ -896,7 +896,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     ],
                     [
                         "pg-replica",
-                        "PostgreSQL (POSTGRES_15)",
+                        "PostgreSQL 15",
                         "us-central1",
                         "db-custom-2-7680",
                         "Zonal",
@@ -905,7 +905,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     ],
                     [
                         "pg-standalone",
-                        "PostgreSQL (POSTGRES_15)",
+                        "PostgreSQL 15",
                         "us-central1",
                         "db-custom-2-7680",
                         "Zonal",
@@ -914,7 +914,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     ],
                     [
                         "pg-stopped",
-                        "PostgreSQL (POSTGRES_14)",
+                        "PostgreSQL 14",
                         "europe-west1",
                         "db-g1-small",
                         "Zonal",
@@ -923,7 +923,7 @@ async fn every_service_fills_its_painted_columns_through_a_demo_session() {
                     ],
                     [
                         "sqlserver-maint",
-                        "SQL Server (SQLSERVER_2019_STANDARD)",
+                        "SQL Server 2019 Standard",
                         "us-west1",
                         "db-custom-4-16384",
                         "HA (regional)",
@@ -1810,12 +1810,13 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
 /// `AVAIL…` across the row: every column was cut at once. Now a column whose
 /// whole content (header included) fits in a short width is shown whole or
 /// not at all, and a long column is cut no shorter than that width. Walked for
-/// every service's demo table at every width from 20 to 200; the identity
-/// column is exempt only once it is the last column standing.
+/// every service's demo table at every width from 20 to 200. The identity
+/// column is held to more: it is shown whole while any other column is shown,
+/// and no header is cut. All of it is exempt once one column is left standing.
 #[tokio::test(flavor = "multi_thread")]
 async fn no_demo_table_cuts_a_short_column_at_any_width() {
     use nuvem::ui::shared::table::{display_width, plan_table};
-    const SHORT: u16 = 14;
+    const SHORT: u16 = 16;
 
     for kind in ResourceServiceKind::ALL {
         let session = demo_session_showing(kind).await;
@@ -1838,8 +1839,21 @@ async fn no_demo_table_cuts_a_short_column_at_any_width() {
             if shown.len() <= 1 {
                 continue;
             }
+            let identity = plan
+                .columns
+                .iter()
+                .filter(|c| c.visible)
+                .min_by_key(|c| (table.columns[c.index].priority, c.index))
+                .expect("a column is shown");
             for column in shown {
-                let wants = content(column.index).min(SHORT);
+                let header = display_width(table.columns[column.index].header);
+                let wants = if column.index == identity.index {
+                    // The identity column is never cut while another column
+                    // could have been dropped instead.
+                    content(column.index)
+                } else {
+                    content(column.index).min(SHORT).max(header)
+                };
                 assert!(
                     column.width >= wants,
                     "{kind:?} at {width}: {} is {} wide where it reads at {wants}",
