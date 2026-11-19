@@ -160,6 +160,8 @@ mod delta_test;
 mod demo_runner_test;
 #[path = "demo_sdk_fixture_test.rs"]
 mod demo_sdk_fixture_test;
+#[path = "demo_showcase_test.rs"]
+mod demo_showcase_test;
 #[path = "detached_fetch_evidence.rs"]
 mod detached_fetch_evidence;
 #[path = "detail_field_projection_test.rs"]

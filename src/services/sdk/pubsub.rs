@@ -59,6 +59,17 @@ impl SdkPubSubService {
             subscriptions,
         }
     }
+
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        let (topics, subscriptions) =
+            crate::services::demo::sdk::pubsub::clients_of(crate::services::demo::Corpus::Showcase);
+        Self {
+            topics,
+            subscriptions,
+        }
+    }
     /// Every topic in the project, each carrying its subscription count.
     ///
     /// # Why this makes a second request

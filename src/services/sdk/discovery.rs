@@ -72,6 +72,13 @@ impl SdkDiscoveryService {
         }
     }
 
+    /// The same service over the demo showcase. It has no showcase documents
+    /// of its own, so it answers from the captures, as
+    /// [`Self::from_fixtures`] does. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self::from_fixtures()
+    }
+
     /// Every project the caller can see. `search` rather than `list` because
     /// `list` enumerates one parent's children, while `gcloud projects list`
     /// answers "what can I reach" -- which is the question the picker asks.

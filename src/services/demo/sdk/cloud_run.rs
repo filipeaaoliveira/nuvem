@@ -59,6 +59,7 @@ use google_cloud_run_v2::client::{Revisions, Services};
 use google_cloud_run_v2::model;
 
 use super::{envelope, named, parent_matches, short_name};
+use crate::services::demo::Corpus;
 
 /// The service listing, re-shaped: Cloud Run Admin v2 `Service` rows mirroring
 /// `tests/fixtures/cloud_run_services.json`, which is
@@ -82,9 +83,17 @@ const REVISIONS: &str = include_str!("../../../../tests/fixtures/cloud_run_revis
 const REVISION_DETAIL: &str =
     include_str!("../../../../tests/fixtures/cloud_run_revision_detail_v2.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_SERVICES: &str =
+    include_str!("../../../../tests/fixtures/demo/cloud_run_services_v2.json");
+const SHOWCASE_REVISIONS: &str =
+    include_str!("../../../../tests/fixtures/demo/cloud_run_revisions_v2.json");
+
 /// Answers the service listing and the service detail pane from the captures.
 #[derive(Debug, Default)]
-pub struct ServicesStub;
+pub struct ServicesStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_run_v2::stub::Services for ServicesStub {
     /// The parent is read before the capture is answered. `-` in the location
@@ -100,7 +109,8 @@ impl google_cloud_run_v2::stub::Services for ServicesStub {
     {
         parent_matches(&request.parent, "projects/*/locations/*")?;
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "services", SERVICES,
+            "services",
+            self.corpus.pick(SERVICES, SHOWCASE_SERVICES),
         )?))
     }
 
@@ -114,7 +124,9 @@ impl google_cloud_run_v2::stub::Services for ServicesStub {
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Service>> {
         let service: model::Service = named(
-            &[SERVICE_DETAIL, SERVICES],
+            &self
+                .corpus
+                .documents(&[SERVICE_DETAIL, SERVICES], &[SHOWCASE_SERVICES]),
             |name| name == request.name,
             &format!("service `{}`", request.name),
         )?;
@@ -124,7 +136,9 @@ impl google_cloud_run_v2::stub::Services for ServicesStub {
 
 /// Answers the revision listing and the revision detail pane from the captures.
 #[derive(Debug, Default)]
-pub struct RevisionsStub;
+pub struct RevisionsStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_run_v2::stub::Revisions for RevisionsStub {
     /// Revisions hang off one service, so the parent carries two more segments
@@ -136,9 +150,16 @@ impl google_cloud_run_v2::stub::Revisions for RevisionsStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::ListRevisionsResponse>>
     {
         parent_matches(&request.parent, "projects/*/locations/*/services/*")?;
+        let revisions = match self.corpus {
+            // One service's revisions answer every service, as they always
+            // have for the captures.
+            Corpus::Captures => REVISIONS.to_string(),
+            // Each service lists its own revisions, as the API does.
+            Corpus::Showcase => of_service(SHOWCASE_REVISIONS, &request.parent)?,
+        };
         Ok(google_cloud_gax::response::Response::from(envelope(
             "revisions",
-            REVISIONS,
+            &revisions,
         )?))
     }
 
@@ -151,7 +172,9 @@ impl google_cloud_run_v2::stub::Revisions for RevisionsStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Revision>> {
         let wanted = short_name(&request.name);
         let revision: model::Revision = named(
-            &[REVISION_DETAIL, REVISIONS],
+            &self
+                .corpus
+                .documents(&[REVISION_DETAIL, REVISIONS], &[SHOWCASE_REVISIONS]),
             |name| short_name(name) == wanted,
             &format!("revision `{wanted}`"),
         )?;
@@ -160,9 +183,25 @@ impl google_cloud_run_v2::stub::Revisions for RevisionsStub {
 }
 
 /// The two clients `SdkCloudRunService::from_fixtures` is built from.
+/// The rows of a revisions listing that belong to `service`, as JSON.
+fn of_service(listing: &str, service: &str) -> Result<String, google_cloud_gax::error::Error> {
+    let rows: Vec<serde_json::Value> =
+        serde_json::from_str(listing).map_err(google_cloud_gax::error::Error::deser)?;
+    let mine: Vec<serde_json::Value> = rows
+        .into_iter()
+        .filter(|row| row.get("service").and_then(serde_json::Value::as_str) == Some(service))
+        .collect();
+    serde_json::to_string(&mine).map_err(google_cloud_gax::error::Error::ser)
+}
+
 pub fn clients() -> (Services, Revisions) {
+    clients_of(Corpus::Captures)
+}
+
+/// The clients over either corpus.
+pub fn clients_of(corpus: Corpus) -> (Services, Revisions) {
     (
-        Services::from_stub(ServicesStub),
-        Revisions::from_stub(RevisionsStub),
+        Services::from_stub(ServicesStub { corpus }),
+        Revisions::from_stub(RevisionsStub { corpus }),
     )
 }

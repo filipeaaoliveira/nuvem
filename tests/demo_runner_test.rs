@@ -606,6 +606,36 @@ async fn demo_session_showing(kind: ResourceServiceKind) -> RuntimeSession {
     session
 }
 
+/// The same session over the parser captures rather than the showcase.
+///
+/// `--demo` lists the showcase (see `nuvem::services::demo::Corpus`). The
+/// captures are the documents the parsers are pinned against, edge cases
+/// included, and the column-by-column walk below is written against them, so
+/// it drives a demo-configured session whose backends answer from the
+/// captures: the same routing, effects and projection, over the corpus the
+/// expectations name.
+async fn captures_session_showing(kind: ResourceServiceKind) -> RuntimeSession {
+    let cli = nuvem::Cli::parse_from(["nuvem", "--demo", "--config", "/nonexistent/nuvem.toml"]);
+    let config = nuvem::Config::resolve(&cli).config;
+    let mut session = RuntimeSession::new_with_sdk_clients_for_test(
+        config,
+        AppState::new(),
+        Box::new(DemoCommandRunner::new()),
+        std::sync::Arc::new(nuvem::services::sdk::SdkClients::fixtures()),
+    );
+    session.initialize().await;
+    drain(&mut session).await;
+    for action in [
+        Action::Workspace(WorkspaceAction::Resources),
+        Action::Resources(ResourcesAction::SelectService(kind)),
+        Action::Resources(ResourcesAction::Refresh),
+    ] {
+        session.dispatch_action(action).await;
+        drain(&mut session).await;
+    }
+    session
+}
+
 /// One painted cell, spelled so the assertion carries the styling as well as
 /// the text.
 ///
@@ -764,7 +794,7 @@ fn assert_table<const N: usize>(
 #[tokio::test(flavor = "multi_thread")]
 async fn every_service_fills_its_painted_columns_through_a_demo_session() {
     for kind in ResourceServiceKind::ALL {
-        let session = demo_session_showing(kind).await;
+        let session = captures_session_showing(kind).await;
 
         match kind {
             // Row 2 is the instance with no public address, and its EXTERNAL-IP is

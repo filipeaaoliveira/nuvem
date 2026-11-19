@@ -49,6 +49,16 @@ impl SdkGkeService {
         }
     }
 
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self {
+            clusters: crate::services::demo::sdk::gke::client_of(
+                crate::services::demo::Corpus::Showcase,
+            ),
+        }
+    }
+
     /// Clusters in every location.
     ///
     /// `-` as the location is the API's own wildcard, and it is what

@@ -84,6 +84,9 @@ pub enum ClientSource {
     /// holds a stub where a transport would be, so it is offline by
     /// construction rather than by a flag anyone can forget to check.
     Fixtures,
+    /// The same, answering the demo showcase: what `nuvem --demo` lists. See
+    /// [`crate::services::demo::Corpus`].
+    Showcase,
 }
 
 /// The native clients a session uses, built on demand and kept per gcloud
@@ -177,6 +180,19 @@ macro_rules! sdk_client_cache {
                 }
             }
 
+            /// A cache whose clients answer the demo showcase: what
+            /// `nuvem --demo` lists. Built like [`Self::fixtures`].
+            pub fn showcase() -> Self {
+                Self {
+                    source: ClientSource::Showcase,
+                    ..Self::new(std::sync::Arc::new(
+                        crate::services::demo::DemoCommandRunner::over(
+                            crate::services::demo::Corpus::Showcase,
+                        ),
+                    ))
+                }
+            }
+
             /// The same fixture cache, over a runner the caller supplies.
             ///
             /// The one thing a cache uses its runner for is fetching a
@@ -193,6 +209,19 @@ macro_rules! sdk_client_cache {
             ) -> Self {
                 Self {
                     source: ClientSource::Fixtures,
+                    ..Self::new(runner)
+                }
+            }
+
+            /// The showcase cache, over a runner the caller supplies, for the
+            /// reason [`Self::fixtures_over_for_test`] gives.
+            pub fn showcase_over_for_test(
+                runner: std::sync::Arc<
+                    dyn crate::services::gcloud::cli::CommandRunner + Send + Sync,
+                >,
+            ) -> Self {
+                Self {
+                    source: ClientSource::Showcase,
                     ..Self::new(runner)
                 }
             }
@@ -307,6 +336,9 @@ macro_rules! sdk_client_cache {
                         // path's TLS setup and token.
                         ClientSource::Fixtures => {
                             std::sync::Arc::new(<$service>::from_fixtures())
+                        }
+                        ClientSource::Showcase => {
+                            std::sync::Arc::new(<$service>::from_showcase())
                         }
                     };
                     self.$field

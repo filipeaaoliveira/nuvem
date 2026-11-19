@@ -1,8 +1,9 @@
 //! The fixture backend for the native clients.
 //!
 //! `DemoCommandRunner` next door answers a *subprocess*; this answers a
-//! *client*. Both serve the same files under `tests/fixtures/`, which is the
-//! point: demo mode reads through the generated clients now, and a second copy
+//! *client*. Both serve the same files under `tests/fixtures/` (the captures,
+//! or the showcase under `tests/fixtures/demo/` that `nuvem --demo` lists; see
+//! [`crate::services::demo::Corpus`]), which is the point: demo mode reads through the generated clients now, and a second copy
 //! of any capture would let the two backends drift while every test stayed
 //! green. The runner still answers what no client covers -- BigQuery, FinOps
 //! budgets (Cloud Billing publishes no Rust client; the recommender calls are

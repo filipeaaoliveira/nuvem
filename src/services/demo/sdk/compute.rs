@@ -59,6 +59,7 @@ use google_cloud_gax::error::Error;
 use crate::services::resources::compute::tail_segment;
 
 use super::{aggregated_project, by_scope, fans_out_over_every_scope, named, scope};
+use crate::services::demo::Corpus;
 
 /// The instances capture: `gcloud compute instances list --format=json`.
 const INSTANCES: &str = include_str!("../../../../tests/fixtures/gce_instances.json");
@@ -67,9 +68,12 @@ const INSTANCES: &str = include_str!("../../../../tests/fixtures/gce_instances.j
 /// single instance rather than a list.
 const INSTANCE_DETAIL: &str = include_str!("../../../../tests/fixtures/gce_instance_detail.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_INSTANCES: &str = include_str!("../../../../tests/fixtures/demo/gce_instances.json");
+
 /// The capture regrouped into the zone-keyed map the RPC answers.
-fn aggregated() -> Result<model::InstanceAggregatedList, Error> {
-    let scopes = by_scope(INSTANCES, |instance: &model::Instance| {
+fn aggregated(instances: &str) -> Result<model::InstanceAggregatedList, Error> {
+    let scopes = by_scope(instances, |instance: &model::Instance| {
         scope(instance.zone.as_deref().map(tail_segment), None)
     })?;
     Ok(
@@ -122,7 +126,9 @@ fn finished() -> model::Operation {
 /// Answers the aggregated listing, the detail pane and the five lifecycle
 /// verbs from the captures.
 #[derive(Debug, Default)]
-pub struct InstancesStub;
+pub struct InstancesStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_compute_v1::stub::Instances for InstancesStub {
     /// The request is read before it is answered. See
@@ -138,7 +144,9 @@ impl google_cloud_compute_v1::stub::Instances for InstancesStub {
     {
         aggregated_project(&request.project)?;
         fans_out_over_every_scope(request.include_all_scopes, request.return_partial_success)?;
-        Ok(google_cloud_gax::response::Response::from(aggregated()?))
+        Ok(google_cloud_gax::response::Response::from(aggregated(
+            self.corpus.pick(INSTANCES, SHOWCASE_INSTANCES),
+        )?))
     }
 
     /// The instance the request names: the detail capture for the instance it
@@ -150,7 +158,9 @@ impl google_cloud_compute_v1::stub::Instances for InstancesStub {
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Instance>> {
         let instance: model::Instance = named(
-            &[INSTANCE_DETAIL, INSTANCES],
+            &self
+                .corpus
+                .documents(&[INSTANCE_DETAIL, INSTANCES], &[SHOWCASE_INSTANCES]),
             |name| name == request.instance,
             &format!("instance `{}`", request.instance),
         )?;
@@ -218,5 +228,10 @@ impl google_cloud_compute_v1::stub::Instances for InstancesStub {
 
 /// The client `SdkComputeService::from_fixtures` is built from.
 pub fn client() -> Instances {
-    Instances::from_stub(InstancesStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> Instances {
+    Instances::from_stub(InstancesStub { corpus })
 }

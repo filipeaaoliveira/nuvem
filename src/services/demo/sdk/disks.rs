@@ -30,13 +30,17 @@ use google_cloud_gax::error::Error;
 use crate::services::resources::disks::short_id;
 
 use super::{aggregated_project, by_scope, fans_out_over_every_scope, scope};
+use crate::services::demo::Corpus;
 
 /// The disks capture: `gcloud compute disks list --format=json`.
 const DISKS: &str = include_str!("../../../../tests/fixtures/persistent_disks.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_DISKS: &str = include_str!("../../../../tests/fixtures/demo/persistent_disks.json");
+
 /// The capture regrouped into the scope-keyed map the RPC answers.
-fn aggregated() -> Result<model::DiskAggregatedList, Error> {
-    let scopes = by_scope(DISKS, |disk: &model::Disk| {
+fn aggregated(disks: &str) -> Result<model::DiskAggregatedList, Error> {
+    let scopes = by_scope(disks, |disk: &model::Disk| {
         scope(
             disk.zone.as_deref().map(short_id),
             disk.region.as_deref().map(short_id),
@@ -51,7 +55,9 @@ fn aggregated() -> Result<model::DiskAggregatedList, Error> {
 
 /// Answers `aggregated_list` from the disks capture.
 #[derive(Debug, Default)]
-pub struct DisksStub;
+pub struct DisksStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_compute_v1::stub::Disks for DisksStub {
     /// The project and both scope flags are read before the capture is
@@ -65,11 +71,18 @@ impl google_cloud_compute_v1::stub::Disks for DisksStub {
     {
         aggregated_project(&request.project)?;
         fans_out_over_every_scope(request.include_all_scopes, request.return_partial_success)?;
-        Ok(google_cloud_gax::response::Response::from(aggregated()?))
+        Ok(google_cloud_gax::response::Response::from(aggregated(
+            self.corpus.pick(DISKS, SHOWCASE_DISKS),
+        )?))
     }
 }
 
 /// The client `SdkDisksService::from_fixtures` is built from.
 pub fn client() -> Disks {
-    Disks::from_stub(DisksStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> Disks {
+    Disks::from_stub(DisksStub { corpus })
 }

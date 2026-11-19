@@ -1,0 +1,8 @@
+[
+{"labels":{"app":"orders","env":"dev"},"messageRetentionDuration":"604800s","name":"projects/dev-project/topics/orders"},
+{"labels":{"app":"orders"},"messageRetentionDuration":"604800s","name":"projects/dev-project/topics/order-events-dlq"},
+{"labels":{"app":"payments"},"messageRetentionDuration":"86400s","name":"projects/dev-project/topics/payments"},
+{"labels":{"app":"notifications"},"name":"projects/dev-project/topics/notifications"},
+{"labels":{"team":"platform"},"messageRetentionDuration":"2678400s","name":"projects/dev-project/topics/audit-log"},
+{"labels":{"app":"media"},"name":"projects/dev-project/topics/image-uploads"}
+]

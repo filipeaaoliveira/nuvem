@@ -598,7 +598,9 @@ impl RuntimeSession {
         // the session, and `load_remembered_views` withholds the matching
         // read; services, reducers, and views are unchanged.
         let runner: Arc<dyn CommandRunner + Send + Sync> = if config.demo {
-            Arc::new(DemoCommandRunner::new())
+            Arc::new(DemoCommandRunner::over(
+                crate::services::demo::Corpus::Showcase,
+            ))
         } else {
             Arc::new(ProcessCommandRunner::with_binaries(
                 config.gcloud_binary.clone(),
@@ -620,7 +622,7 @@ impl RuntimeSession {
         // which the native filter cannot express and which falls back to the
         // pushed gcloud filter.
         let sdk_clients = Some(Arc::new(if config.demo {
-            crate::services::sdk::SdkClients::fixtures()
+            crate::services::sdk::SdkClients::showcase()
         } else {
             crate::services::sdk::SdkClients::new(Arc::clone(&runner))
         }));
@@ -725,9 +727,10 @@ impl RuntimeSession {
     /// Where this session's native clients get their answers, or `None` when
     /// it holds none (the test harnesses).
     ///
-    /// [`crate::services::sdk::ClientSource::Fixtures`] is the whole of demo
-    /// mode's offline guarantee at this level: such a cache builds every
-    /// client `from_stub`, which takes no credentials and no transport.
+    /// [`crate::services::sdk::ClientSource::Showcase`], the source a demo
+    /// session holds, is the whole of demo mode's offline guarantee at this
+    /// level: such a cache builds every client `from_stub`, which takes no
+    /// credentials and no transport.
     pub fn native_client_source(&self) -> Option<crate::services::sdk::ClientSource> {
         self.sdk_clients.as_deref().map(|clients| clients.source())
     }

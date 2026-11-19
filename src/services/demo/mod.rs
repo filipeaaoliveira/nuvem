@@ -23,12 +23,60 @@
 //! The fixtures embedded here (`include_str!("../../../tests/fixtures/*.json")`)
 //! are the exact same files the test suite parses against the real service
 //! layer, so demo mode and the tests can never drift silently out of sync.
+//! `nuvem --demo` itself lists the showcase under `tests/fixtures/demo/`
+//! where a service has one; see [`Corpus`] for why there are two sets.
 //!
 //! `sdk/` is the same idea one layer down: the fixture backend for the
 //! generated clients, serving those same files to a stub-backed client
 //! instead of to a spawned command. See its module documentation.
 
 pub mod sdk;
+
+/// Which set of embedded documents a demo backend answers from.
+///
+/// Two sets, for two jobs. The captures under `tests/fixtures/` exist to pin
+/// the parsers: they carry the edge cases a parser has to survive (a service
+/// account with no fields at all, a disk with no location, a function in a
+/// state no build knows) and only as many rows as each case needs. That makes
+/// them right for the suite and wrong for a first impression: two instances,
+/// three buckets and a blank service account look like an empty tool.
+///
+/// The showcase under `tests/fixtures/demo/` is what `nuvem --demo` lists: a
+/// credible project with several rows per service, in the same wire shapes,
+/// with fixture names only (`dev-project`, `example.com`, documentation and
+/// private address ranges). A service with no showcase file answers from its
+/// captures in both corpora. Every backend in a demo session reads the same
+/// corpus, so the native and CLI paths still tell one story.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Corpus {
+    /// The parser captures. What the suite's stub tests read.
+    #[default]
+    Captures,
+    /// What `nuvem --demo` shows.
+    Showcase,
+}
+
+impl Corpus {
+    /// The document this corpus answers with, of the two given.
+    pub fn pick(self, captures: &'static str, showcase: &'static str) -> &'static str {
+        match self {
+            Self::Captures => captures,
+            Self::Showcase => showcase,
+        }
+    }
+
+    /// The documents a `get` searches in this corpus, of the two sets given.
+    pub fn documents(
+        self,
+        captures: &[&'static str],
+        showcase: &[&'static str],
+    ) -> Vec<&'static str> {
+        match self {
+            Self::Captures => captures.to_vec(),
+            Self::Showcase => showcase.to_vec(),
+        }
+    }
+}
 
 use crate::services::gcloud::cli::{
     CommandError, CommandOutput, CommandProgram, CommandRunner, GcloudCommand,
@@ -38,11 +86,19 @@ use crate::services::gcloud::cli::{
 ///
 /// See the module documentation for why this is the only demo-aware seam.
 #[derive(Debug, Clone, Default)]
-pub struct DemoCommandRunner;
+pub struct DemoCommandRunner {
+    corpus: Corpus,
+}
 
 impl DemoCommandRunner {
+    /// A runner answering from the parser captures.
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    /// A runner answering from `corpus`.
+    pub fn over(corpus: Corpus) -> Self {
+        Self { corpus }
     }
 }
 
@@ -60,7 +116,7 @@ impl CommandRunner for DemoCommandRunner {
         let args = &command.args;
 
         match command.program {
-            CommandProgram::Gcloud => gcloud_fixture(args),
+            CommandProgram::Gcloud => gcloud_fixture(args, self.corpus),
             CommandProgram::Bq => bq_fixture(args),
         }
     }
@@ -198,7 +254,7 @@ fn is_bq_tables_listing(args: &[String]) -> bool {
 }
 
 /// The gcloud fixtures. Only reached for [`CommandProgram::Gcloud`].
-fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
+fn gcloud_fixture(args: &[String], corpus: Corpus) -> Result<CommandOutput, CommandError> {
     // Specific `list`/`describe` matches are checked first so the
     // broader mutating fallbacks below never shadow them.
     if matches(args, &["config", "configurations", "list"]) {
@@ -222,8 +278,9 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
         )));
     }
     if matches(args, &["compute", "instances", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/gce_instances.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/gce_instances.json"),
+            include_str!("../../../tests/fixtures/demo/gce_instances.json"),
         )));
     }
     if matches(args, &["compute", "instances", "describe"]) {
@@ -232,8 +289,9 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
         )));
     }
     if matches(args, &["container", "clusters", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/gke_clusters.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/gke_clusters.json"),
+            include_str!("../../../tests/fixtures/demo/gke_clusters.json"),
         )));
     }
     if matches(args, &["container", "clusters", "describe"]) {
@@ -250,8 +308,9 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
         )));
     }
     if matches(args, &["secrets", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/secrets.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/secrets.json"),
+            include_str!("../../../tests/fixtures/demo/secrets.json"),
         )));
     }
     if matches(args, &["secrets", "describe"]) {
@@ -280,8 +339,9 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
     // an absent flag parses to. The constructed row is what makes the column
     // carry a value that has to be read to be rendered.
     if matches(args, &["compute", "networks", "subnets", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/vpc_subnets.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/vpc_subnets.json"),
+            include_str!("../../../tests/fixtures/demo/vpc_subnets.json"),
         )));
     }
     //
@@ -302,8 +362,9 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
     // a claim about evidence, and the way that regressed before was a deleted
     // sentence rather than a wrong one.
     if matches(args, &["compute", "networks", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/vpc_networks.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/vpc_networks.json"),
+            include_str!("../../../tests/fixtures/demo/vpc_networks.json"),
         )));
     }
     //
@@ -327,18 +388,21 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
     // re-derive first. Saying that here rather than only in the commit
     // message is the rule.
     if matches(args, &["compute", "firewall-rules", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/vpc_firewall_rules.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/vpc_firewall_rules.json"),
+            include_str!("../../../tests/fixtures/demo/vpc_firewall_rules.json"),
         )));
     }
     if matches(args, &["compute", "disks", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/persistent_disks.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/persistent_disks.json"),
+            include_str!("../../../tests/fixtures/demo/persistent_disks.json"),
         )));
     }
     if matches(args, &["functions", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/cloud_functions.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/cloud_functions.json"),
+            include_str!("../../../tests/fixtures/demo/cloud_functions.json"),
         )));
     }
     // Pub/Sub. Both list calls are routed: the topics table's count column
@@ -346,19 +410,22 @@ fn gcloud_fixture(args: &[String]) -> Result<CommandOutput, CommandError> {
     // first would show every count as unknown and quietly demo the
     // degraded path as if it were the normal one.
     if matches(args, &["pubsub", "topics", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/pubsub_topics.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/pubsub_topics.json"),
+            include_str!("../../../tests/fixtures/demo/pubsub_topics.json"),
         )));
     }
     if matches(args, &["pubsub", "subscriptions", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/pubsub_subscriptions.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/pubsub_subscriptions.json"),
+            include_str!("../../../tests/fixtures/demo/pubsub_subscriptions.json"),
         )));
     }
     // IAM service accounts, list only.
     if matches(args, &["iam", "service-accounts", "list"]) {
-        return Ok(fixture(include_str!(
-            "../../../tests/fixtures/iam_service_accounts.json"
+        return Ok(fixture(corpus.pick(
+            include_str!("../../../tests/fixtures/iam_service_accounts.json"),
+            include_str!("../../../tests/fixtures/demo/iam_service_accounts.json"),
         )));
     }
     // The project IAM policy. `get-iam-policy` names the project

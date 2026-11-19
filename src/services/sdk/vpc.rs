@@ -74,6 +74,18 @@ impl SdkVpcService {
             firewalls,
         }
     }
+
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        let (networks, subnetworks, firewalls) =
+            crate::services::demo::sdk::vpc::clients_of(crate::services::demo::Corpus::Showcase);
+        Self {
+            networks,
+            subnetworks,
+            firewalls,
+        }
+    }
     pub async fn load_networks(&self, project: &str) -> Result<Vec<VpcNetwork>, ApiError> {
         use google_cloud_gax::paginator::ItemPaginator;
         let mut rows = Vec::new();

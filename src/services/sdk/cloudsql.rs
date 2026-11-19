@@ -82,6 +82,13 @@ impl SdkCloudSqlService {
         }
     }
 
+    /// The same service over the demo showcase. It has no showcase documents
+    /// of its own, so it answers from the captures, as
+    /// [`Self::from_fixtures`] does. See [`crate::services::demo::Corpus`].
+    pub fn from_showcase() -> Self {
+        Self::from_fixtures()
+    }
+
     /// Every instance in the project.
     ///
     /// # Why this drains a paginator rather than reading one response

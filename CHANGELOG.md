@@ -29,8 +29,9 @@ All notable changes to nuvem are documented here. The format follows
   the root or in `[general]` is reported by name.
 - Plugins: your own `gcloud` commands, declared in `plugins.toml` and offered
   against the selected row, behind the same confirmation.
-- `--demo`, which runs the whole UI against built-in fixtures with no project
-  or credentials, and `--read-only`, which refuses every mutating path.
+- `--demo`, which runs the whole UI against built-in sample data with no Google
+  Cloud account or credentials, and `--read-only`, which refuses every mutating
+  path.
 - `nuvem info` for environment diagnostics, and distinct exit statuses: `0`
   success, `1` failure, `2` usage error, `3` no terminal, `4` startup failure.
 - Text from Google Cloud and plugins is sanitised before it reaches the

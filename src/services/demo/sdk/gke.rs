@@ -13,6 +13,7 @@
 //! this one response, exactly as `SdkGkeService::load_clusters` expects.
 
 use super::{envelope, named, short_name};
+use crate::services::demo::Corpus;
 use google_cloud_container_v1::client::ClusterManager;
 use google_cloud_container_v1::model;
 
@@ -23,9 +24,14 @@ const CLUSTERS: &str = include_str!("../../../../tests/fixtures/gke_clusters.jso
 /// single cluster rather than a list.
 const CLUSTER_DETAIL: &str = include_str!("../../../../tests/fixtures/gke_cluster_detail.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_CLUSTERS: &str = include_str!("../../../../tests/fixtures/demo/gke_clusters.json");
+
 /// Answers the listing and the detail pane from the two captures.
 #[derive(Debug, Default)]
-pub struct ClusterStub;
+pub struct ClusterStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_container_v1::stub::ClusterManager for ClusterStub {
     async fn list_clusters(
@@ -35,7 +41,8 @@ impl google_cloud_container_v1::stub::ClusterManager for ClusterStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::ListClustersResponse>>
     {
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "clusters", CLUSTERS,
+            "clusters",
+            self.corpus.pick(CLUSTERS, SHOWCASE_CLUSTERS),
         )?))
     }
 
@@ -49,7 +56,9 @@ impl google_cloud_container_v1::stub::ClusterManager for ClusterStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Cluster>> {
         let wanted = short_name(&request.name);
         let cluster: model::Cluster = named(
-            &[CLUSTER_DETAIL, CLUSTERS],
+            &self
+                .corpus
+                .documents(&[CLUSTER_DETAIL, CLUSTERS], &[SHOWCASE_CLUSTERS]),
             |name| short_name(name) == wanted,
             &format!("cluster `{wanted}`"),
         )?;
@@ -59,5 +68,10 @@ impl google_cloud_container_v1::stub::ClusterManager for ClusterStub {
 
 /// The client `SdkGkeService::from_fixtures` is built from.
 pub fn client() -> ClusterManager {
-    ClusterManager::from_stub(ClusterStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> ClusterManager {
+    ClusterManager::from_stub(ClusterStub { corpus })
 }
