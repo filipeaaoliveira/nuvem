@@ -6,9 +6,9 @@ sidebar:
 ---
 
 Some commands need a value the row cannot supply: the machine type to resize
-*to*, a new disk size, a reason to record. A plugin declares those as `inputs`,
-and each one's `name` becomes a `{field}` its own `label` and `args` may use,
-alongside the row's fields:
+*to*, a new disk size, a reason to record. A plugin declares those as `inputs`.
+Each input's `name` becomes a `{field}` that the plugin's own `label` and
+`args` can use, beside the row's fields:
 
 ```toml
 [[plugins]]
@@ -31,21 +31,21 @@ default = 200                 # optional
 | `choices` | for `dropdown` | non-empty list of strings; only a dropdown takes it |
 | `default` | no | must match `type`, and be one of `choices` for a dropdown |
 
-`integer` is its own type rather than a flag on `number` because the value
-reaches gcloud verbatim: `number` accepts `0.5`, `integer` accepts `200` and
-rejects `1.5` at load, and the type you declared is the type that can be sent.
+`integer` is a type of its own, not a flag on `number`, because the value
+reaches gcloud verbatim. `number` accepts `0.5`. `integer` accepts `200` and
+rejects `1.5` at load. Only a value of the type you declared can be sent.
 
-An input may not be named after one of its scope's own fields, and which names
-those are depends on the scope. On Compute Engine `{zone}` and `{machine_type}`
-are the row's own, so an input called `zone` is rejected at load rather than one
-of the two silently winning, and an input for the machine type to resize *to*
-has to be named something else — `target_type`. On persistent disks neither
-name is taken, so a disks plugin could call its input `size`; `new_size` above
-is a readability choice, not a requirement.
+An input cannot be named after one of its scope's own fields, and those names
+depend on the scope. On Compute Engine, `{zone}` and `{machine_type}` are the
+row's own. An input called `zone` is thus rejected at load, so neither of the
+two silently wins. An input for the machine type to resize *to* needs another
+name, such as `target_type`. On persistent disks neither name is taken, so a
+disks plugin can call its input `size`. The example uses `new_size` because it
+reads more clearly.
 
-**Every type is prompted for.** Choosing a plugin whose `args` or `label` name
-inputs opens a prompt first, one field per input the plugin's own templates
-name, in declaration order:
+nuvem prompts for every input type. If a plugin's `args` or `label` name
+inputs, choosing it opens a prompt first. The prompt has one field for each
+input the plugin's own templates name, in declaration order:
 
 ```text
 ┌plugin input───────────────────────────────────┐
@@ -59,52 +59,55 @@ name, in declaration order:
 └───────────────────────────────────────────────┘
 ```
 
-A `string`, `number` or `integer` field is typed into; a `dropdown` and a `bool`
-are moved through with `Left` and `Right`. `Tab` and `Shift-Tab` move between
-fields, and the `>` marks the one your keystrokes reach. `Enter` is inert until every field
-holds something it can send, and the modal names only the keys that do something
-right now, so `Enter` is not offered until it works. `Esc` closes the prompt and
-**runs nothing**: no log entry, because nothing was ever issued.
+You type into a `string`, `number` or `integer` field. You step through a
+`dropdown` or a `bool` with `Left` and `Right`. `Tab` and `Shift-Tab` move
+between fields, and the `>` marks the one your keystrokes reach. `Enter` does
+nothing until every field holds something it can send. The modal names only
+the keys that do something right now, so it does not offer `Enter` until
+`Enter` works. `Esc` closes the prompt and runs nothing. There is no log
+entry, because nothing was issued.
 
-A field that is not ready says what it wants, next to what you typed: an empty
-`string` reads `(needs a value)`, and a `number` or an `integer` reads
+A field that is not ready says what it wants, next to what you typed. An empty
+`string` reads `(needs a value)`. A `number` or an `integer` reads
 `(needs a number)` or `(needs a whole number)` until it parses. The rule is the
-one your `default` is validated against, not Rust's — `inf` and `NaN` parse as
-floats and are refused here for the reason `default = inf` is refused at load:
-`--share inf` is not a number, and the text reaches gcloud verbatim. A refusal
-takes nothing away, so you correct the one field with everything else you typed
-still in place.
+one your `default` is validated against, not Rust's number parser. Rust parses
+`inf` and `NaN` as floats. The prompt refuses them, for the same reason
+`default = inf` is refused at load: `--share inf` is not a number, and the
+text reaches gcloud verbatim. A refusal takes nothing away. You correct the
+one field, and everything else you typed stays in place.
 
 What you type is what is sent. A declared `default = 0.50` is stored as `0.5`,
-but a `0.50` you type stays `0.50` all the way to the confirmation — that line
-shows the exact characters that will run, and re-rendering your value would put
-text on it you never entered. An `integer` accepts a negative, and a negative in
-a leading position is refused for the reason any substituted value beginning
-with `-` is: gcloud would read it as a flag.
+but a `0.50` you type stays `0.50` all the way to the confirmation. That line
+shows the exact characters that will run, so nuvem never rewrites a value you
+entered. An `integer` accepts a negative. A negative in a leading position is
+refused, for the same reason as any substituted value that begins with `-`:
+gcloud reads it as a flag.
 
-`Enter` does not run the command either. It closes the prompt and opens the
-ordinary confirmation, showing the exact argv with your values substituted, and
-your `label` — rendered with them — as its heading. The line you approve is the
-line that runs, and that confirmation stays the only thing that starts a
-process. A `dangerous` plugin still asks you to type `1` there. `--read-only`,
-when it refuses a plugin, refuses as you choose it, before the prompt opens, so
-you are never asked to type values for a command that was never going to run.
+`Enter` on the prompt does not run the command either. It closes the prompt
+and opens the ordinary confirmation. The confirmation shows the exact argv
+with your values substituted, under your `label` rendered with them. The line
+you approve is the line that runs, and the confirmation is still the only
+thing that starts a process. A `dangerous` plugin still asks you to type `1`
+there. If `--read-only` refuses a plugin, it refuses as you choose it, before
+the prompt opens. You are never asked to type values for a command that
+cannot run.
 
-Until the values exist there is nothing to render a label naming one against, so
-a plugin whose `label` names an input is captioned by its `id` in the palette
-and on the prompt, and by the label you wrote from the confirmation onwards.
+A label that names an input cannot render until the values exist. The palette
+and the prompt thus caption such a plugin by its `id`. From the confirmation
+onwards, the caption is the label you wrote.
 
-**A `bool` sends the text `true` or `false`.** It is a two-state field showing
-the text it will send, so `"--async={async}"` becomes `--async=true` or
-`--async=false` and the argv has the same number of elements either way. With no
-`default` it starts at `false`, the answer that adds nothing, so a field you tab
-past cannot opt you into anything.
+A `bool` sends the text `true` or `false`. It is a two-state field that shows
+the text it sends, so `"--async={async}"` becomes `--async=true` or
+`--async=false`, and the argv has the same number of elements either way.
+Without a `default`, it starts at `false`, the answer that adds nothing, so a
+field you tab past cannot opt you into anything.
 
-It is deliberately not a flag's *presence*: making `{async}` disappear from the
-argv when false would make the command's length depend on an answer, and the
-confirmation exists to show you the exact line that will run. If you want a flag
-that is there or not there, write two plugins, or use gcloud's own
-`--flag=false` form where it takes one.
+A `bool` never adds or removes a flag. If `{async}` disappeared from the argv
+when false, the command's length would depend on an answer, and the
+confirmation must show you the exact line that runs. For a flag that is there
+or not there, write two plugins, or use gcloud's own `--flag=false` form where
+the command accepts it.
 
-An input no template names withholds nothing and is not a field on the prompt
-either — that plugin's command line and caption are complete without it.
+An input that no template names withholds nothing, and it is not a field on
+the prompt either. That plugin's command line and caption are complete without
+it.
