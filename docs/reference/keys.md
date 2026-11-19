@@ -6,13 +6,13 @@ sidebar:
 ---
 
 nuvem has no mouse support. You drive it entirely from the keyboard. This page
-lists every key, grouped by the view it works in. The **Footer label** column
-is the text nuvem shows in the footer and in help (`?`), so you can match a row
-to what is on screen. Keys written as an uppercase letter need `Shift`: `L` is
-`Shift-L`. A `Ctrl-` key is the Ctrl key with that letter and no `Shift`,
-whatever case the page writes it in: `Ctrl-S` and `Ctrl-s` are the same key.
-A key shown as `type` means any printable character, and `j/k` also works with
-the arrow keys.
+lists every key, grouped by workspace and then by the view it works in. The
+**Footer label** column is the text nuvem shows in the footer and in help
+(`?`), so you can match a row to what is on screen. Keys written as an
+uppercase letter need `Shift`: `L` is `Shift-L`. A `Ctrl-` key is the Ctrl key
+with that letter and no `Shift`, whatever case the page writes it in: `Ctrl-S`
+and `Ctrl-s` are the same key. A key shown as `type` means any printable
+character, and `j/k` also works with the arrow keys.
 
 You can rebind seven keys in the config file. See
 [Hotkeys](../configuration/hotkeys.md). The tables show the default keys.
@@ -41,13 +41,17 @@ These work in every normal view: Home, Configurations, the Resources list and de
 | `Alt-←` | Back | Go back through navigation history. |
 | `Alt-→` | Forward | Go forward through navigation history. |
 
-## Home
+## Home and Configurations
+
+The Home workspace, and the Configurations workspace with its forms and pickers.
+
+### Home
 
 Home has no keys of its own beyond the global keys.
 
 <!-- help-context: Home -->
 
-## Configurations
+### Configurations
 
 The list of gcloud configurations. See [Switch gcloud configurations](../guides/switch-configurations.md).
 
@@ -62,7 +66,7 @@ The list of gcloud configurations. See [Switch gcloud configurations](../guides/
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
 | `Enter` | Activate | Activate the selected configuration. A confirmation shows the command first. |
 
-## Configuration filter
+### Configuration filter
 
 While typing a filter in Configurations.
 
@@ -75,7 +79,7 @@ While typing a filter in Configurations.
 | `Enter` | Apply | Apply the text as the filter. |
 | `Esc` | Cancel | Drop the draft and keep the filter already applied. |
 
-## Create a configuration
+### Create a configuration
 
 The form `a` opens.
 
@@ -90,7 +94,7 @@ The form `a` opens.
 | `Enter` | Submit | Create the configuration. Only the name is required. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Edit the active context
+### Edit the active context
 
 The form `e` opens.
 
@@ -106,7 +110,7 @@ The form `e` opens.
 | `Enter` | Submit | Save. A blank field unsets that gcloud property. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Context picker
+### Context picker
 
 The list `Ctrl-Space` opens on the Project, Region or Zone field.
 
@@ -120,7 +124,7 @@ The list `Ctrl-Space` opens on the Project, Region or Zone field.
 | `Enter` | Select | Copy the selected value into the field. |
 | `Esc` | Cancel | Close the picker and go back to the form. |
 
-## Context picker filter
+### Context picker filter
 
 While typing a filter in the context picker.
 
@@ -133,7 +137,12 @@ While typing a filter in the context picker.
 | `Enter` | Apply | Apply the text as the filter. |
 | `Esc` | Cancel | Drop the draft and keep the filter already applied. |
 
-## Resource list
+## Resources
+
+The Resources workspace: a service's list, the service sidebar, the detail
+pane and the BigQuery levels.
+
+### Resource list
 
 A service's list in Resources.
 
@@ -163,7 +172,7 @@ A service's list in Resources.
 | `Backspace/-` | Up one level | Go up one level: one prefix in the Cloud Storage object browser, one level in BigQuery. |
 | `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
-## Service sidebar
+### Service sidebar
 
 The service navigator on the left of Resources, when it has focus.
 
@@ -178,7 +187,7 @@ The service navigator on the left of Resources, when it has focus.
 | `Enter` | Open service | Open the selected service. |
 | `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
-## Resource detail
+### Resource detail
 
 The tabbed detail pane `Enter` opens.
 
@@ -201,7 +210,7 @@ The tabbed detail pane `Enter` opens.
 | `,` | Run plugin | Arm the plugin prefix: the next key runs the [plugin](../plugins/overview.md) bound to it. |
 | `q/Esc/Alt-←` | Back | Close the detail pane and return to the list. `q` follows a `quit` rebinding. |
 
-## BigQuery drill-down
+### BigQuery drill-down
 
 The tables of a dataset. `Enter` opens a table's column schema. Both BigQuery
 levels take the resource list's keys, so the mark keys, `t`, `i`, `y` and `n`
@@ -232,7 +241,7 @@ services the [Resource list](#resource-list) table names.
 | `Backspace/-` | Up one level | Go up one level: one prefix in the Cloud Storage object browser, one level in BigQuery. |
 | `Esc` | Leave drill-down | Go up one BigQuery level: from a table's schema to the tables, from the tables to the datasets. |
 
-## BigQuery column schema
+### BigQuery column schema
 
 The bottom BigQuery level, where `Enter` opens nothing. As one level up, the
 mark keys, `t`, `i`, `y` and `n` are bound but do nothing here.
@@ -260,7 +269,7 @@ mark keys, `t`, `i`, `y` and `n` are bound but do nothing here.
 | `Backspace/-` | Up one level | Go up one level: one prefix in the Cloud Storage object browser, one level in BigQuery. |
 | `Esc` | Leave drill-down | Go up one BigQuery level: from a table's schema to the tables, from the tables to the datasets. |
 
-## Filters
+### Filters
 
 While typing a filter: a resource filter, a sidebar service search, or a Logging search.
 
@@ -273,7 +282,11 @@ While typing a filter: a resource filter, a sidebar service search, or a Logging
 | `Enter` | Apply | Apply the text as the filter. |
 | `Esc` | Cancel | Drop the draft and keep the filter already applied. |
 
-## Logging list
+## Logging, Tunnels and FinOps
+
+The other three workspaces.
+
+### Logging list
 
 The list of log entries. See [Cloud Logging](../guides/cloud-logging.md).
 
@@ -295,7 +308,7 @@ The list of log entries. See [Cloud Logging](../guides/cloud-logging.md).
 | `Ctrl-S` | Save visible logs | Save the visible entries to a file beside nuvem's log. |
 | `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
-## Log entry
+### Log entry
 
 An open log entry.
 
@@ -309,7 +322,7 @@ An open log entry.
 | `y` | Copy entry | Copy the selected entry. |
 | `i` | Copy insert ID | Copy the selected entry's insert ID. |
 
-## Tunnels
+### Tunnels
 
 The tunnel list. See [Tunnels](../guides/tunnels.md).
 
@@ -322,7 +335,7 @@ The tunnel list. See [Tunnels](../guides/tunnels.md).
 | `d` | Dismiss finished | Remove a stopped or failed tunnel from the list. |
 | `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
-## FinOps
+### FinOps
 
 See [FinOps](../guides/finops.md).
 
@@ -332,7 +345,12 @@ See [FinOps](../guides/finops.md).
 | --- | --- | --- |
 | `Esc/Alt-←` | Back | Go back to the previous view in navigation history. |
 
-## Command palette
+## Palette, dialogs and help
+
+The command palette, the confirmations and previews, the plugin prompts, the
+jump picker and help.
+
+### Command palette
 
 While the palette is open. Printable keys type into the search.
 
@@ -346,7 +364,7 @@ While the palette is open. Printable keys type into the search.
 | `Enter` | Run | Run the selected command. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Resource action confirmation
+### Resource action confirmation
 
 The confirmation before a lifecycle action, single or batch. A batch that stops, resets, suspends, restarts or fails over instances asks you to type the number of targets first.
 
@@ -357,7 +375,7 @@ The confirmation before a lifecycle action, single or batch. A batch that stops,
 | `Enter` | Confirm | Confirm and make the API call shown. |
 | `Esc` | Cancel | Cancel. Nothing runs. |
 
-## Configuration activation
+### Configuration activation
 
 The confirmation before nuvem activates a gcloud configuration.
 
@@ -370,7 +388,7 @@ The confirmation before nuvem activates a gcloud configuration.
 | `n` | Cancel | Cancel the activation. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Command preview
+### Command preview
 
 A preview that copies a command, such as **Show SSH command**.
 
@@ -381,7 +399,7 @@ A preview that copies a command, such as **Show SSH command**.
 | `Enter` | Copy | Copy the command to the clipboard without running it. |
 | `Esc` | Cancel | Close the preview. |
 
-## SSH and tunnel launch
+### SSH and tunnel launch
 
 The preview before an SSH session or a tunnel starts.
 
@@ -392,7 +410,7 @@ The preview before an SSH session or a tunnel starts.
 | `Enter` | Launch | Run the command. An SSH session takes over the terminal. A tunnel starts in the background. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Plugin confirmation
+### Plugin confirmation
 
 The confirmation before a plugin runs.
 
@@ -405,7 +423,7 @@ The confirmation before a plugin runs.
 | `Backspace` | Delete char | Delete the last character. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Plugin prefix
+### Plugin prefix
 
 After `,`, while nuvem waits for a plugin key. Any key a plugin in this service declares runs that plugin.
 
@@ -415,7 +433,7 @@ After `,`, while nuvem waits for a plugin key. Any key a plugin in this service 
 | --- | --- | --- |
 | `Esc` | Cancel | Disarm the plugin prefix. |
 
-## Plugin input
+### Plugin input
 
 The prompt for a plugin's [typed inputs](../plugins/typed-inputs.md).
 
@@ -431,7 +449,7 @@ The prompt for a plugin's [typed inputs](../plugins/typed-inputs.md).
 | `Enter` | Continue to the confirmation | Go on to the confirmation. Works only when every field holds a valid value. |
 | `Esc` | Cancel | Close the prompt. Nothing runs and nothing is logged. |
 
-## Jump picker
+### Jump picker
 
 The picker `J` opens.
 
@@ -443,7 +461,7 @@ The picker `J` opens.
 | `Enter` | Jump to selected | Jump to the selected destination. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
-## Help
+### Help
 
 The help overlay `?` opens.
 
