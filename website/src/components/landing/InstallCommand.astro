@@ -1,29 +1,31 @@
 ---
-// A shell command on a captioned plate, with a Copy button. The `$` prompt is
-// drawn by CSS, so selecting the text gives the command alone. Without
-// JavaScript the button stays hidden and the command is plain selectable text.
+// A shell command on a plate, with a Copy button on the same line. The `$`
+// prompt is drawn by CSS, so selecting the text gives the command alone.
+// When the command is wider than the plate (on a phone), it wraps after a
+// `/` or at a space, so the whole command stays visible; the prompt hangs
+// and the button stays beside the wrapped block. Without JavaScript the
+// button stays hidden and the command is plain selectable text.
 interface Props {
 	command: string;
-	caption: string;
 	/** Unique on the page: the button finds its command by this id. */
 	id: string;
 }
 
-const { command, caption, id } = Astro.props;
+const { command, id } = Astro.props;
+// A break opportunity after every `/`; <wbr> adds no text, so copying and
+// selecting still give the command exactly.
+const parts = command.split('/');
 ---
 
 <div class="install">
-	<div class="bar">
-		<span class="caption" id={`${id}-caption`}>{caption}</span>
-		<button type="button" class="copy" data-copy={id} aria-describedby={`${id}-caption`} hidden>
-			<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-				<rect x="5.5" y="5.5" width="8" height="8" rx="1"></rect>
-				<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"></path>
-			</svg>
-			<span data-copy-label>Copy</span><span class="sr-only"> the command</span>
-		</button>
-	</div>
-	<pre class="command"><code id={id}>{command}</code></pre>
+	<pre class="command"><code id={id}>{parts.map((part, i) => (i < parts.length - 1 ? <>{part}/<wbr /></> : part))}</code></pre>
+	<button type="button" class="copy" data-copy={id} hidden>
+		<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+			<rect x="5.5" y="5.5" width="8" height="8" rx="1"></rect>
+			<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"></path>
+		</svg>
+		<span data-copy-label>Copy</span><span class="sr-only"> the command</span>
+	</button>
 	<span class="sr-only" role="status" data-copy-status={id}></span>
 </div>
 
@@ -73,62 +75,36 @@ const { command, caption, id } = Astro.props;
 
 <style>
 	.install {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--nv-space-2);
+		width: 100%;
 		max-width: 40rem;
+		padding: 0.375rem;
 		border: 1px solid var(--nv-rule);
 		border-radius: var(--nv-radius);
 		background-color: var(--nv-plate);
-	}
-
-	.bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--nv-space-4);
-		min-height: 2.75rem;
-		padding: var(--nv-space-1) var(--nv-space-2) var(--nv-space-1) var(--nv-space-4);
-		border-bottom: 1px solid var(--nv-rule);
-		color: var(--nv-text-muted);
-		font-size: var(--nv-text-small);
-	}
-
-	.copy {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--nv-space-2);
-		min-height: 2rem;
-		padding: 0 var(--nv-space-3);
-		border: 1px solid var(--nv-rule-strong);
-		border-radius: var(--nv-radius);
-		background-color: var(--nv-plate);
-		color: var(--nv-coral);
-		font: inherit;
-		font-weight: 650;
-		cursor: pointer;
-	}
-
-	.copy:hover {
-		border-color: var(--nv-coral);
-	}
-
-	.copy[data-copied] {
-		color: var(--nv-naples);
-	}
-
-	.copy[hidden] {
-		display: none;
+		text-align: start;
 	}
 
 	.command {
+		/* Takes almost all free space, so the button grows only when it is
+		   alone on its own line. */
+		flex: 1000 1 12rem;
+		min-width: 0;
 		margin: 0;
-		/* The prompt hangs: a wrapped command continues under the command, not the prompt. */
-		padding: var(--nv-space-3) var(--nv-space-4) var(--nv-space-3) calc(var(--nv-space-4) + 2ch);
+		/* The prompt hangs: a wrapped command continues under the command. */
+		padding: var(--nv-space-2) var(--nv-space-2) var(--nv-space-2) calc(var(--nv-space-2) + 2ch);
 		text-indent: -2ch;
+		border: 0;
 		background: none;
 		color: var(--nv-text);
 		font-family: var(--nv-font-mono);
 		font-size: var(--nv-text-command);
 		line-height: 1.6;
 		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 
 	.command code {
@@ -143,5 +119,39 @@ const { command, caption, id } = Astro.props;
 		color: var(--nv-naples);
 		user-select: none;
 		-webkit-user-select: none;
+	}
+
+	/* If the plate is too narrow for the button beside the wrapped command,
+	   the button drops under it at full width. */
+	.copy {
+		flex: 1 0 auto;
+		justify-content: center;
+		max-width: 100%;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--nv-space-2);
+		min-width: 2.75rem;
+		min-height: 2.75rem;
+		padding: 0 var(--nv-space-3);
+		border: 1px solid var(--nv-rule-strong);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+		color: var(--nv-coral);
+		font: inherit;
+		font-size: var(--nv-text-small);
+		font-weight: 650;
+		cursor: pointer;
+	}
+
+	.copy:hover {
+		border-color: var(--nv-coral);
+	}
+
+	.copy[data-copied] {
+		color: var(--nv-naples);
+	}
+
+	.copy[hidden] {
+		display: none;
 	}
 </style>

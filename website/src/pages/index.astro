@@ -112,8 +112,8 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 >
 	<div class="nv-landing not-content">
 		<section class="get-it">
-			<InstallCommand id="install-top" command={INSTALL} caption="Homebrew, macOS and Linux" />
-			<p class="also">Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
+			<InstallCommand id="install-top" command={INSTALL} />
+			<p class="also">Homebrew on macOS and Linux. Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
 			<p class="next">Try it first with <code>nuvem --demo</code>: built-in sample data, no Google Cloud account. On your own projects nuvem needs the gcloud CLI, signed in; <a href={docs.firstRun}>First run</a> shows how.</p>
 		</section>
 
@@ -161,14 +161,14 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 
 		<section aria-labelledby="install">
 			<h2 id="install">Install</h2>
-			<InstallCommand id="install-bottom" command={INSTALL} caption="Homebrew, macOS and Linux" />
+			<InstallCommand id="install-bottom" command={INSTALL} />
 			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page.</p>
 		</section>
 	</div>
 </StarlightPage>
 
 <style is:global>
-	/* The hero is Starlight's; here it hangs from the page's one left edge. */
+	/* The hero is Starlight's; here it is centred, with the install block under it. */
 	main:has(.nv-landing) .hero {
 		display: block;
 		padding-block: var(--nv-space-5) var(--nv-space-3);
@@ -176,11 +176,11 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 
 	main:has(.nv-landing) .hero .stack {
 		gap: 0;
-		text-align: start;
+		text-align: center;
 	}
 
 	main:has(.nv-landing) .hero .copy {
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--nv-space-3);
 	}
 
@@ -245,8 +245,11 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 	/* Install, alternatives and the first-run step, then the recording. */
 	.get-it {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: center;
 		gap: var(--nv-space-2);
 		margin-bottom: var(--nv-space-4);
+		text-align: center;
 	}
 
 	.also,
