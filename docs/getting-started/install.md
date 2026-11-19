@@ -1,34 +1,13 @@
 ---
 title: Install
-description: What nuvem needs, and how to install it with Homebrew, Cargo, a release archive, or from source.
+description: How to install nuvem with Homebrew, Cargo, a release archive, or from source, and what it needs to run.
 sidebar:
   order: 1
 ---
 
 Install nuvem with Homebrew, with Cargo, from a release archive, or from source.
-
-## Requirements
-
-- The [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`),
-  installed and signed in with `gcloud auth login`. nuvem reads your gcloud
-  configurations and asks `gcloud` for an access token, so it stores no
-  credentials of its own.
-- A terminal at least 60 columns wide and 12 rows tall.
-- Linux or macOS. Process control uses POSIX APIs, so Windows works only
-  inside WSL.
-- Outbound HTTPS to `*.googleapis.com`.
-
-Some features need one more program on your `PATH`. nuvem runs without these
-programs. If one is missing, nuvem tells you when you use the feature that
-needs it:
-
-| Program | Used for | Flag to point at it |
-| --- | --- | --- |
-| `bq` | Browsing BigQuery datasets. It ships with the Google Cloud CLI. | `--bq-binary` |
-| `k9s` | Opening a GKE cluster in k9s | `--k9s-binary` |
-| `kubectl` | Checking whether your kubeconfig already has a kube context (the entry `kubectl` and k9s use to reach a cluster) for the GKE cluster before k9s opens | `--kubectl-binary` |
-| `cloud-sql-proxy` | Cloud SQL tunnels | `--cloud-sql-proxy-binary` |
-| `wl-copy`, `xclip` or `xsel` | Copying to the clipboard on Linux. macOS uses `pbcopy`. | none |
+However you install it, nuvem needs the Google Cloud CLI, signed in. See
+[Requirements](#requirements).
 
 ## Install with Homebrew
 
@@ -115,6 +94,29 @@ git clone https://github.com/filipeaaoliveira/nuvem
 cd nuvem
 cargo install --path . --locked
 ```
+
+## Requirements
+
+- The [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`),
+  installed and signed in with `gcloud auth login`. nuvem reads your gcloud
+  configurations and asks `gcloud` for an access token, so it stores no
+  credentials of its own.
+- A terminal at least 60 columns wide and 12 rows tall.
+- Linux or macOS. Process control uses POSIX APIs, so Windows works only
+  inside WSL.
+- Outbound HTTPS to `*.googleapis.com`.
+
+Some features need one more program on your `PATH`. nuvem runs without these
+programs. If one is missing, nuvem tells you when you use the feature that
+needs it:
+
+| Program | Used for | Flag to point at it |
+| --- | --- | --- |
+| `bq` | Browsing BigQuery datasets. It ships with the Google Cloud CLI. | `--bq-binary` |
+| `k9s` | Opening a GKE cluster in k9s | `--k9s-binary` |
+| `kubectl` | Checking whether your kubeconfig already has a kube context (the entry `kubectl` and k9s use to reach a cluster) for the GKE cluster before k9s opens | `--kubectl-binary` |
+| `cloud-sql-proxy` | Cloud SQL tunnels | `--cloud-sql-proxy-binary` |
+| `wl-copy`, `xclip` or `xsel` | Copying to the clipboard on Linux. macOS uses `pbcopy`. | none |
 
 ## Check the install
 
