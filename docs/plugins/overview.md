@@ -7,7 +7,7 @@ sidebar:
 
 A plugin is a `gcloud` command of your own that nuvem offers against the
 selected row. Each plugin says: when this service's list is in view, offer
-this labelled command against the selected row. Plugins run `gcloud` and
+this labeled command against the selected row. Plugins run `gcloud` and
 nothing else. See [Why plugins run only gcloud](#why-plugins-run-only-gcloud).
 [Write a plugin](write-a-plugin.md) walks through a first one.
 
@@ -39,22 +39,24 @@ ordinary file, or a file over 1 MiB.
    [Typed inputs](typed-inputs.md).
 4. Choosing it opens a confirmation showing the exact command. `Enter` runs it
    and `Esc` cancels. A plugin declared `dangerous = true` will not offer
-   `Enter` until you have typed `1`.
+   `Enter` until you have typed `1`. The `1` is the number of resources the
+   command acts on, which for a plugin is always one. A destructive batch
+   asks for its count the same way.
 
 If the file is well formed, it loads, and `nuvem info` says how many entries
 it accepted. If it is malformed, nuvem says exactly what is wrong with it.
 
 ## Follow a run
 
-Every run is recorded in Home's *Recent operations* log, pending from the
+Every run is recorded in Home's Recent operations list, pending from the
 moment you confirm and settled when the command exits. To read what the run
 printed, use [Plugin output](plugin-output.md).
 
 ## Stop a run
 
-A plugin runs your argv, which can be a command that never exits. `Ctrl-x`
+A plugin runs your command, which can be one that never exits. `Ctrl-x`
 cancels every plugin currently running, from anywhere. Like `Ctrl-C`, it works
-while a modal, the command palette, help, a filter or an armed plugin prefix
+while a dialog, the command palette, help, a filter or an armed plugin prefix
 has the keyboard, because a plugin outlives the view it was launched from.
 
 If the command had not been issued yet, the entry settles as `Cancelled`, and
@@ -78,26 +80,27 @@ switch itself already reloaded the table.
 
 `--read-only` runs a plugin only when nuvem can prove from its declaration that
 it reads. The first elements of `args` must spell out a gcloud command that
-nuvem recognises as read-only, such as `["compute", "instances", "describe", ...]`.
-nuvem refuses everything else, including a command it does not recognise. A
+nuvem recognizes as read-only, such as `["compute", "instances", "describe", ...]`.
+nuvem refuses everything else, including a command it does not recognize. A
 plugin that names a reading command that is not on the list is refused too.
 To run it, start nuvem without `--read-only`. A plugin whose verb comes from an
 input is always refused, because what it runs is not known until you type it.
 
 ## No shell
 
-Nothing in the schema can run a shell command: `args` is an argv rather than a
-command line, the program is always `gcloud`, and there is no shell anywhere on
-this path.
+Nothing in the schema can run a shell command. `args` is a list of separate
+arguments rather than a command line, the program is always `gcloud`, and
+there is no shell anywhere on this path.
 
 ## Run a plugin by key
 
 A plugin also has a key of its own, reached through the **plugin prefix key**
 `,`. Press `,` with a resource list in view, and the status line names the keys
 this service declares, in the order your file declares them. `,` also works
-with a detail pane open, where the palette lists no plugins: a palette entry
-is a row of a list, and the pane is not that list. With the file in the
-[plugin file reference](plugin-file-reference.md#example) and the Compute Engine
+with a detail pane open, where the palette lists no plugins. The palette
+offers a plugin only for a row of a list, but a key pressed in the pane can
+only mean the resource on screen. With the file in the
+[plugin file reference](plugin-file-reference.md#example) and the GCE instances
 list in view, the status line shows one key:
 
 ```text
@@ -110,7 +113,7 @@ entry is. nuvem builds the line at the moment you press `,`, because the keys
 that apply depend on your file and on the service in view.
 
 The next key you press runs that plugin through the same confirmation, the
-same `dangerous` acknowledgement, the same *Recent operations* entry, the same
+same `dangerous` acknowledgement, the same Recent operations entry, the same
 `Ctrl-x` and the same reload as the palette. The key is a shortcut into that
 path, not a second way to run a command. `Esc` disarms the prefix without a
 message, because that is not an error.
@@ -141,9 +144,9 @@ letter can name *describe* in one service and *delete* in another.
 ## What you see, end to end
 
 Take the `describe` plugin from the
-[plugin file reference](plugin-file-reference.md#example), with the Compute Engine list in view, the row
+[plugin file reference](plugin-file-reference.md#example), with the GCE instances list in view, the row
 `web-01` (zone `europe-west1-b`) selected, and the `dev` gcloud configuration
-active. The command palette (`:`) offers an entry labelled **Describe web-01**,
+active. The command palette (`:`) offers an entry labeled **Describe web-01**,
 which is your `label` rendered against that row. Choosing it opens a
 confirmation:
 
@@ -156,21 +159,23 @@ If the plugin is declared `dangerous = true`, the confirmation asks you to type
 `1` first, and does not offer `Enter` until you have.
 
 The run happens in the background, so nuvem stays usable while gcloud works.
-Its outcome lands in Home's *Recent operations*. An entry appears as `pending`
-the moment you confirm. It settles as succeeded or failed once the command
-exits, with a short excerpt of what gcloud printed. The status line reports
-the outcome too, unless you have since switched gcloud configuration or
-started something else nuvem reports on, such as a refresh. In those cases the
-run settles in the log only, and the status line keeps to what you are looking
-at now.
+Its outcome lands in Home's Recent operations list. An entry appears as
+`pending` the moment you confirm. It settles as succeeded or failed once the
+command exits, with a short excerpt of what gcloud printed.
+
+The status line reports the outcome too, unless you have since switched
+gcloud configuration or started something else nuvem reports on, such as a
+refresh. In those cases the run settles in Recent operations only, and the
+status line keeps to what you are looking at now.
 
 nuvem prepends `--configuration dev`. You do not write it. Every command nuvem
 builds carries it, so a plugin always names the configuration you are looking
-at, never whatever configuration your shell has active. Each `args` element is
-rendered on its own and stays one argument. The confirmation shows a value
-that contains a space in quotes, so you can see it is one argument. That
-quoting is for display only. gcloud receives the unquoted argv, and there is
-no shell on this path.
+at, never whatever configuration your shell has active.
+
+Each `args` element is rendered on its own and stays one argument. The
+confirmation shows a value that contains a space in quotes, so you can see it
+is one argument. That quoting is for display only. gcloud receives the
+unquoted arguments, and there is no shell on this path.
 
 ## When a plugin is not offered
 
@@ -180,16 +185,17 @@ withholds it, the palette does not list it.
 The case you are most likely to meet is an open detail pane. Select a GCE
 instance, open its detail pane, press `:`, and every plugin is gone from the
 palette. A plugin is scoped to a row in a list, and the pane is not that list.
-Close the detail pane and they are all back. This is the one case where the two
-ways in differ. `,` and the plugin's key still reach the plugin from the pane,
-because a key pressed against the resource on screen can only mean that
-resource.
+Close the detail pane and they are all back.
+
+This is the one case where the key reaches a plugin that the palette does not
+offer. `,` and the plugin's key still reach the plugin from the pane, because
+a key pressed against the resource on screen can only mean that resource.
 
 A plugin also needs a resolved gcloud configuration. Every plugin command
 carries `--configuration <active>`. If no configuration resolves, there is
 nothing to name, and no plugin is offered, even with a row selected and a list
-in view. Plugins are also offered only from the resources workspace (not from
-tunnels or logs), only when `plugins.toml` declares at least one, and only
+in view. Plugins are also offered only from the Resources workspace (not from
+Tunnels or Logging), only when `plugins.toml` declares at least one, and only
 when a row is selected.
 
 Three more things withhold a single plugin once its command is being rendered
@@ -211,10 +217,11 @@ them.
 There is deliberately no limit on how long a rendered value may be. An
 over-long command line hits the confirmation's fit check, which asks for a
 larger terminal. nuvem never truncates it into a line that reads as a
-different command from the one you approve. That check also gates
-`Enter`: a confirmation the terminal is too small to render cannot be
-confirmed, only cancelled with `Esc`. The input prompt has the same check on
-its own modal, one step earlier, so you cannot submit values you cannot read.
+different command from the one you approve.
+
+That check also controls `Enter`. A confirmation the terminal is too small to
+show cannot be confirmed, only cancelled with `Esc`. The input prompt has the
+same check, one step earlier, so you cannot submit values you cannot read.
 
 `--read-only` is the one case that does not withhold. A plugin it refuses stays
 in the palette, dimmed and marked `— read-only`. Choosing it reports the
@@ -230,25 +237,23 @@ palette or a confirmation that already points into it.
 
 ## Why plugins run only gcloud
 
-`args` is the argv `gcloud` receives. There is no field for the program, by
-design. A plugin cannot run `bq`, `gsutil`, `kubectl`, or anything else, and
+`args` is the list of arguments `gcloud` receives. There is no field for the
+program, by design. A plugin cannot run `bq`, `gsutil`, `kubectl`, or anything else, and
 no program field is planned.
 
-There are two reasons. The first is the main one:
+There are two reasons, and the first matters more:
 
 - `--read-only` cannot vouch for another program. A plugin is allowed under
-  `--read-only` only when its declared argv matches a fixed positional prefix
-  in nuvem's allowlist of reading `gcloud` command paths. That allowlist keeps
-  the refusal honest: an unmatched path means "nuvem never vouched for this",
-  never "nuvem checked and it is safe". Nothing a `bq` or `gsutil` plugin
-  declares can match it, so `--read-only` refuses every such plugin, however
-  plainly it only reads. To make those work, nuvem needs a second allowlist
-  per program, and each one goes stale silently as that program's commands
-  change.
-- A program field widens what a config file can run. This feature rests on
-  one guarantee: a `plugins.toml` names arguments to one binary that nuvem
-  already runs. A program field changes that to "any binary on your `PATH`",
-  which is a different promise.
+  `--read-only` only when its first arguments match a `gcloud` command on
+  nuvem's list of commands that only read. A command missing from that list
+  means "nuvem never vouched for this", never "nuvem checked and it is safe".
+  Nothing a `bq` or `gsutil` plugin declares can match the list, so
+  `--read-only` refuses every such plugin, even one that plainly only reads.
+  Making those work would take a second list for each program, and each
+  would go stale silently as that program's commands change.
+- A program field widens what a config file can run. Today a `plugins.toml`
+  can only name arguments to `gcloud`, a binary nuvem already runs. A program
+  field would let it run any binary on your `PATH`.
 
 If you need another tool, point a plugin at a `gcloud` command that does the
 job, or run the other tool outside nuvem.
