@@ -271,26 +271,27 @@ pub fn drilled_list_name(resources: &ResourcesState) -> Option<String> {
 /// Projects the status area's phase and text, which is the operation's own
 /// status except while a transient prompt owns the line.
 fn frame_operation(root: &RootState) -> FrameOperationProjection {
+    // What the line is drawn from: the live operation and message, except
+    // while a background poll is the only thing to have touched them, which
+    // leaves the line as it was (see `SystemState::begin_background_operation`).
+    let line = root.system.status_line();
     let Some(prompt) = plugin_prefix_prompt(root) else {
-        let phase = root
-            .system
-            .status_phase
-            .unwrap_or(root.system.operation.phase);
+        let phase = line.status_phase.unwrap_or(line.operation.phase);
         // A settled, healthy line names the view on screen rather than the
         // last operation that settled, which is often a background load of
         // a view the operator has left (`[OK] Cloud Run services` over the
         // GCE list). Loading, a failure and a status message still speak
         // for themselves: each is news about something that was asked for.
-        let label = if phase == OperationPhase::Healthy && root.system.status_message.is_none() {
+        let label = if phase == OperationPhase::Healthy && line.status_message.is_none() {
             view_status_label(root)
         } else {
-            root.system.operation.label.clone()
+            line.operation.label.clone()
         };
         return FrameOperationProjection {
             phase,
             label,
-            message: root.system.status_message.clone(),
-            message_label: root.system.status_operation_label.clone(),
+            message: line.status_message.clone(),
+            message_label: line.status_operation_label.clone(),
             last_refresh_at: root.system.last_refresh_at,
         };
     };
@@ -314,7 +315,7 @@ fn frame_operation(root: &RootState) -> FrameOperationProjection {
     // it would repaint a `[STALE]` line as `[OK]` for exactly as long as the
     // prefix stays armed.
     FrameOperationProjection {
-        phase: match root.system.operation.phase {
+        phase: match line.operation.phase {
             phase @ (OperationPhase::Loading
             | OperationPhase::Refreshing
             | OperationPhase::Degraded) => phase,
