@@ -5,14 +5,14 @@ sidebar:
   order: 1
 ---
 
-nuvem is driven entirely from the keyboard: it has no mouse support. Every key, grouped by the
-view it works in. The **Footer label** column is the
-text nuvem shows in the footer and in help (`?`), so you can match a row to
-what is on screen. Keys written as an uppercase letter need `Shift`: `L` is
+nuvem has no mouse support. You drive it entirely from the keyboard. This page
+lists every key, grouped by the view it works in. The **Footer label** column
+is the text nuvem shows in the footer and in help (`?`), so you can match a row
+to what is on screen. Keys written as an uppercase letter need `Shift`: `L` is
 `Shift-L`. A key shown as `type` means any printable character, and `j/k` also
 works with the arrow keys.
 
-Seven keys can be rebound in the config file; see
+You can rebind seven keys in the config file. See
 [Hotkeys](../configuration/hotkeys.md). The tables show the default keys.
 
 ## Global keys
@@ -383,7 +383,7 @@ The preview before an SSH session or a tunnel starts.
 
 | Key | Footer label | What it does |
 | --- | --- | --- |
-| `Enter` | Launch | Run the command: an SSH session takes over the terminal; a tunnel starts in the background. |
+| `Enter` | Launch | Run the command. An SSH session takes over the terminal. A tunnel starts in the background. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |
 
 ## Plugin confirmation

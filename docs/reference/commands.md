@@ -35,8 +35,9 @@ label changes to say so, for example `Stop 3 marked GCE instances`. See
 ## Services
 
 One command per service opens it in Resources. Each answers to the same
-aliases as the Resources sidebar search, listed in [All services](services/overview.md);
-your own `[aliases]` also match these commands.
+aliases as the Resources sidebar search, listed in
+[All services](services/overview.md). Your own `[aliases]` also match these
+commands.
 
 | Command | Aliases | Offered | Mutating |
 | --- | --- | --- | --- |
