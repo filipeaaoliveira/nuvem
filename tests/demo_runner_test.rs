@@ -1820,3 +1820,36 @@ async fn no_demo_table_cuts_a_short_column_at_any_width() {
         }
     }
 }
+
+/// `nuvem --demo` opens on a populated Home: every service counted and gcloud
+/// probed, before any key is pressed.
+///
+/// Home never loads anything on its own, which is right against a live
+/// project. A demo's lists are embedded fixtures, though, and a first screen of
+/// sixteen `Not loaded` rows under `gcloud: unknown` showed a visitor nothing
+/// about the tool. Walks every service in `ResourceServiceKind::ALL`.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_demo_session_opens_on_a_populated_home() {
+    let cli = nuvem::Cli::parse_from(["nuvem", "--demo", "--config", "/nonexistent/nuvem.toml"]);
+    let config = nuvem::Config::resolve(&cli).config;
+    let state_path = nuvem::config::state::state_path_for(&config.config_path);
+    let mut session = RuntimeSession::new(config, cli, AppState::new(), state_path);
+    session.initialize().await;
+    drain(&mut session).await;
+
+    let frame = screen(&session, 121, 34);
+    assert!(
+        frame.contains("gcloud: available (dev@example.com)"),
+        "the demo's gcloud is probed on the first screen:\n{frame}"
+    );
+    for kind in ResourceServiceKind::ALL {
+        let row = frame
+            .lines()
+            .find(|line| line.contains(&format!("│{} ", kind.label())))
+            .unwrap_or_else(|| panic!("no Home row for {kind:?}:\n{frame}"));
+        assert!(
+            row.contains(" loaded") && !row.contains("Not loaded"),
+            "{kind:?} is counted on the first screen: {row:?}"
+        );
+    }
+}
