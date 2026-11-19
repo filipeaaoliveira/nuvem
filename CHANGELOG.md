@@ -6,6 +6,8 @@ All notable changes to nuvem are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-19
+
 ### Added
 
 - A terminal UI for Google Cloud covering Compute Engine, GKE, Cloud Run,
@@ -43,3 +45,6 @@ All notable changes to nuvem are documented here. The format follows
 - Release archives for Linux (x86_64 and arm64, glibc 2.28 or newer) and macOS
   (Apple silicon and Intel), each with a `.sha256` file and a build-provenance
   attestation, and a Homebrew formula: `brew install filipeaaoliveira/tap/nuvem`.
+
+[Unreleased]: https://github.com/filipeaaoliveira/nuvem/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/filipeaaoliveira/nuvem/releases/tag/v0.1.0
