@@ -191,10 +191,11 @@ jobs:
 
       # The flag is not the guarantee. A --target suffix that was ignored, or
       # a dependency that pulls in a newer symbol anyway, would ship a 2.39
-      # binary behind a 2.28 promise in the README — and the failure lands on
-      # whoever downloads it, at exec time, as "GLIBC_2.39 not found". So the
-      # floor is read back off the binary itself. `grep -a` rather than
-      # `strings`, which is binutils and not guaranteed on this image.
+      # binary behind the 2.28 floor that docs/getting-started/install.md
+      # states — and the failure lands on whoever downloads it, at exec time,
+      # as "GLIBC_2.39 not found". So the floor is read back off the binary
+      # itself. `grep -a` rather than `strings`, which is binutils and not
+      # guaranteed on this image.
       - name: Check the glibc floor of the built binary
         if: runner.os == 'Linux'
         run: |

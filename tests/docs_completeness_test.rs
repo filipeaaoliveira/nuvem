@@ -206,7 +206,7 @@ fn cli_reference_documents_every_subcommand() {
 }
 
 /// The exit codes `src/exit.rs` defines, plus `0`, are exactly the codes the
-/// command-line reference and the README tabulate.
+/// command-line reference tabulates.
 ///
 /// The codes are read from the source rather than from the constants by name,
 /// so a code added to `exit.rs` is expected here the moment it exists. The
@@ -235,17 +235,14 @@ fn exit_codes_are_all_documented() {
     real.insert("0".to_string());
 
     let cli = page(CLI_PAGE);
-    let readme = std::fs::read_to_string("README.md").expect("README.md is readable");
-    for (name, table) in [
-        (CLI_PAGE, first_table(section(&cli, "## Exit codes"))),
-        ("README.md", first_table(section(&readme, "## Exit status"))),
-    ] {
-        let documented: BTreeSet<String> = table.iter().map(|row| first_ticked(&row[0])).collect();
-        assert_eq!(
-            documented, real,
-            "{name} tabulates every exit code nuvem can return"
-        );
-    }
+    let documented: BTreeSet<String> = first_table(section(&cli, "## Exit codes"))
+        .iter()
+        .map(|row| first_ticked(&row[0]))
+        .collect();
+    assert_eq!(
+        documented, real,
+        "{CLI_PAGE} tabulates every exit code nuvem can return"
+    );
 }
 
 // ---------------------------------------------------------------------------
