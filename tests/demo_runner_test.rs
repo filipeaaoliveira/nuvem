@@ -1938,3 +1938,23 @@ async fn enter_opens_a_row_exactly_where_the_capability_says() {
         }
     }
 }
+
+/// A settled status line names the view on screen, not the last background
+/// load to settle. A demo session lists every service as it opens, so before
+/// this the line read `[OK] Cloud Run services` over the GCE list, and in any
+/// session it kept naming a view the operator had left. Walks every service.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_settled_status_line_names_the_view_on_screen() {
+    use nuvem::app::projection::project_app_frame;
+    use nuvem::app::state::system::OperationPhase;
+    for kind in ResourceServiceKind::ALL {
+        let mut session = demo_session_showing(kind).await;
+        drain(&mut session).await;
+        let frame = project_app_frame(&session.app().root);
+        assert_eq!(
+            (frame.operation.phase, frame.operation.label.as_str()),
+            (OperationPhase::Healthy, kind.label()),
+            "{kind:?}: the status line names another view"
+        );
+    }
+}

@@ -204,16 +204,47 @@ fn a_mode_owns_the_keyboard(root: &RootState) -> bool {
         || root.logging.filter_active
 }
 
+/// What a settled status line calls the view on screen: the service, or its
+/// detail, in Resources, and the workspace anywhere else.
+fn view_status_label(root: &RootState) -> String {
+    match root.workspace {
+        Workspace::Home => "Home".to_string(),
+        Workspace::Configurations => "Configurations".to_string(),
+        Workspace::Logging => "Logging".to_string(),
+        Workspace::Tunnels => "Tunnels".to_string(),
+        Workspace::FinOps => "FinOps".to_string(),
+        Workspace::Resources => {
+            let service = root.resources.active_service().label();
+            if root.resources.is_showing_detail() {
+                format!("{service} detail")
+            } else {
+                service.to_string()
+            }
+        }
+    }
+}
+
 /// Projects the status area's phase and text, which is the operation's own
 /// status except while a transient prompt owns the line.
 fn frame_operation(root: &RootState) -> FrameOperationProjection {
     let Some(prompt) = plugin_prefix_prompt(root) else {
+        let phase = root
+            .system
+            .status_phase
+            .unwrap_or(root.system.operation.phase);
+        // A settled, healthy line names the view on screen rather than the
+        // last operation that settled, which is often a background load of
+        // a view the operator has left (`[OK] Cloud Run services` over the
+        // GCE list). Loading, a failure and a status message still speak
+        // for themselves: each is news about something that was asked for.
+        let label = if phase == OperationPhase::Healthy && root.system.status_message.is_none() {
+            view_status_label(root)
+        } else {
+            root.system.operation.label.clone()
+        };
         return FrameOperationProjection {
-            phase: root
-                .system
-                .status_phase
-                .unwrap_or(root.system.operation.phase),
-            label: root.system.operation.label.clone(),
+            phase,
+            label,
             message: root.system.status_message.clone(),
             message_label: root.system.status_operation_label.clone(),
             last_refresh_at: root.system.last_refresh_at,
