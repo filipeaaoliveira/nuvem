@@ -1,0 +1,13 @@
+---
+// Starlight's head, plus a preload of the reading face on every page. The
+// face is declared with font-display: optional (src/styles/fonts.css), so
+// it is used only if it is ready at first paint; the preload makes it
+// ready on a first visit to any page, docs and 404 included. The URL is
+// the same hashed file the stylesheet uses, and `as`, `type` and
+// `crossorigin` match the font request, so it is fetched once.
+import Default from '@astrojs/starlight/components/Head.astro';
+import latinFont from '@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2?url';
+---
+
+<Default />
+<link rel="preload" href={latinFont} as="font" type="font/woff2" crossorigin />

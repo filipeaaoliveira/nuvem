@@ -177,7 +177,7 @@ sharp to compress the result).
 | `scripts/og-image.mjs` | Draws `public/og.png` |
 | `src/assets/wordmark.svg` | The header wordmark |
 | `src/styles/code-theme.json` | Syntax colors for code blocks |
-| `src/components/` | Starlight overrides: one theme, `/` opens search, a Docs link in the header and the mobile menu, the site footer |
+| `src/components/` | Starlight overrides: the head (preloads the reading face), one theme, `/` opens search, a Docs link in the header and the mobile menu, the site footer |
 | `src/components/landing/` | The home page's parts: install plate, recording, key tour, service plate, diagram, cloud and wordmark |
 | `src/pages/index.astro` | The home page |
 | `src/pages/404.astro` | The page for an address the site does not have |
