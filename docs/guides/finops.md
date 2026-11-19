@@ -16,12 +16,12 @@ read-only: nuvem never applies a recommendation and never changes a budget.
    them first.
 2. Press `Ctrl-f`, or choose **FinOps** in the command palette (aliases
    `finops`, `cost`, `costs`, `savings`, `budget`, `spend`).
-3. Press `r` to ask again.
+3. To ask again, press `r`.
 
 Until a location is known, the total reads `Potential savings: not probed` and
 each card says `Open Resources and list instances or disks first — FinOps
-queries the locations they are in.` That is not a zero: nuvem never shows
-savings it did not ask about.
+queries the locations they are in.` This does not mean zero savings. nuvem
+never shows savings it did not ask about.
 
 ## What it shows
 
@@ -39,7 +39,7 @@ Below it, one card per recommender:
 
 Each card lists up to five recommendations. It also says which locations
 answered and which refused, for example `covers europe-west1-b; no answer from
-us-central1-a`, because one zone can answer while another is denied.
+us-central1-a`. One zone can answer while another is denied.
 
 A card that could not ask names the reason in the words Home uses (for example
 `permission denied` or `API disabled`) and what to do about it. See
@@ -64,4 +64,4 @@ gcloud --configuration <active-config> billing projects describe <project> --for
 gcloud --configuration <active-config> billing budgets list --billing-account=<account> --format=json --quiet
 ```
 
-In demo mode the same calls are answered from fixtures.
+In demo mode, built-in sample data answers the same calls.

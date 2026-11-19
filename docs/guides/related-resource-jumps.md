@@ -6,21 +6,27 @@ sidebar:
 ---
 
 Press `J` (shifted) in a resource list or a resource detail pane to open the
-related-resource jump picker: a small modal listing the collections you can
-reach from the resource currently on screen. Each row names the destination tab
-and the concrete resource — `Network of web-01`, `Replicas of orders-db` — so
-one key means the same thing in every service without reading as a generic
-"jump". Move with `j`/`k` or the arrows (the cursor clamps at both ends rather
-than wrapping), press `Enter` to jump, or `Esc` to cancel. The offers are
-captured when the picker opens, so a background list reload cannot change what
-the row you are looking at means. Jump rules are uncapped and user-configured,
-so when more are offered than the terminal can show at once, the row list
-scrolls within the modal to keep the selected row visible — every configured
-rule stays reachable with `j`/`k`.
+related-resource jump picker. It is a small dialog that lists the collections
+you can reach from the resource on screen. Each row names the destination tab
+and the resource, such as `Network of web-01` or `Replicas of orders-db`, so a
+row never reads as a generic "jump".
 
-The jumps offered out of the box. The first three land on a detail tab; the
-last two land on the VPC networks table with the cursor on the network the
-subnet or the rule is attached to:
+Move with `j`/`k` or the arrows. The cursor stops at both ends and does not
+wrap. Press `Enter` to jump, or `Esc` to cancel. The picker captures its rows
+when it opens, so a background reload of the list cannot change what a row
+means.
+
+Jump rules come from your configuration, and their number has no limit. If the
+picker has more rows than the terminal can show, the rows scroll inside the
+picker to keep the selected row visible. Every configured rule stays reachable
+with `j`/`k`.
+
+## Default jumps
+
+The table lists the jumps that nuvem offers by default. Of the rows that offer
+jumps, the first three land on a detail tab. The last two land on the VPC
+networks table, with the cursor on the network that the subnet or the rule is
+attached to:
 
 | Selection             | Jumps offered      |
 | --------------------- | ------------------ |
@@ -42,46 +48,61 @@ subnet or the rule is attached to:
 | firewall rule         | VPC networks       |
 | Cloud Run revision    | none               |
 
-That table is the default, not the limit: a `[[jumps]]` array in the config file
-replaces it with rules of your own, including jumps from the services that
-offer none by default and jumps that cross from one service to another's detail
-tab. See [Jump rules](../configuration/jump-rules.md) for the keys and the
-template vocabulary.
+A `[[jumps]]` array in the config file replaces this table with rules of
+your own. Your rules can add jumps from the services that offer none by
+default, and jumps that cross from one service to another's detail tab. See
+[Jump rules](../configuration/jump-rules.md) for the keys and the template
+vocabulary.
 
-Nothing new is fetched to build the picker; the destinations are views the app
-already renders, so a jump costs at most the detail load that opening that
-resource normally costs, and a jump onto a list costs nothing at all. Following
-one opens a pane, or moves a list cursor, only for a resource already in the
-destination service's loaded list, matched on name and location both, and
-reports on the status line when there is no such row — but
-when that list has never been loaded at all, the jump starts its fetch on the
-way past, so the report is a "try again once they arrive" rather than a dead
-end. Only a never-loaded list gets that; one whose load is already in flight,
-or one whose last load failed *in this configuration* and is waiting on the
-retry backoff, is left alone. Every one of those questions is asked of the
-configuration you are in now, so switching configuration and jumping again
-fetches rather than inheriting the old one's verdict. That is worth knowing
-before writing a rule that crosses from one service to another — see
-[Jump rules](../configuration/jump-rules.md).
+## What a jump loads
+
+nuvem fetches nothing new to build the picker. The destinations are views that
+nuvem already renders. A jump costs at most the detail load that opening that
+resource normally costs, and a jump onto a list costs nothing.
+
+A jump opens a pane, or moves a list cursor, only for a resource already in
+the destination service's loaded list. It matches on both name and location.
+If there is no such row, the jump reports it on the status line. If that list
+has never been loaded, the jump starts its fetch on the way past, so the
+report tells you to try again once the rows arrive.
+
+Only a never-loaded list gets that fetch. A list whose load is already in
+flight, or whose last load failed *in this configuration* and is waiting on
+the retry backoff, is left alone. nuvem asks each of these questions of the
+configuration you are in now. So switching configuration and jumping again
+fetches, instead of reusing the old configuration's result.
+
+Keep this in mind before you write a rule that crosses from one service to
+another. See [Jump rules](../configuration/jump-rules.md).
+
+## When there is nothing to jump to
 
 A selection with no applicable jumps never opens an empty picker. `J` reports
-on the status line instead, and says which reason applies: no rule offers
-anything from this service
-(`No related-resource jumps configured for GKE clusters`,
-`No related-resource jumps configured for Cloud Storage buckets`,
-`No related-resource jumps from a Cloud Run revision`), nothing is selected to
-jump from (`No GCE instance selected to jump from`), or a rule that does exist
-cannot be resolved for this row
-(`Jump "compute:network" needs external_ip, which this GCE instance has no value for`).
-The distinction matters because each one is fixed somewhere else: by the config
-file, by selecting a row, or by the row itself.
+on the status line instead, and says which reason applies:
 
-Like `L`, a jump follows the view rather than the raw list cursor: with a
-detail pane open the pane's resource is the origin, and the nested Cloud Run
-revision view is neither an origin nor a destination. Landing is a tab change
-when the pane already shows that resource — exactly what `[`/`]` would do —
-and a detail open otherwise. A jump that moves is recorded in navigation
-history, so `Alt-←` returns to where you jumped from and `Alt-→` returns to
-the jump. Picking the tab you are already on does nothing at all beyond closing
-the picker: it records no history, and it leaves the pane's scroll position,
-field cursor, and revision cursor exactly where you left them.
+- No rule offers anything from this service:
+  `No related-resource jumps configured for GKE clusters`,
+  `No related-resource jumps configured for Cloud Storage buckets`, or
+  `No related-resource jumps from a Cloud Run revision`.
+- Nothing is selected to jump from:
+  `No GCE instance selected to jump from`.
+- A rule exists but cannot be resolved for this row:
+  `Jump "compute:network" needs external_ip, which this GCE instance has no value for`.
+
+Each reason is fixed in a different place: in the config file, by selecting a
+row, or in the row itself.
+
+## Where a jump lands
+
+Like `L`, a jump follows the view, not the raw list cursor. With a detail pane
+open, the pane's resource is the origin. The nested Cloud Run revision view is
+neither an origin nor a destination.
+
+If the pane already shows the destination resource, the jump changes the tab,
+as `[`/`]` does. Otherwise it opens the detail. A jump that moves is recorded
+in navigation history, so `Alt-←` returns to where you jumped from and
+`Alt-→` returns to the jump.
+
+If you pick the tab you are already on, the picker closes and nothing else
+happens. No history is recorded, and the pane's scroll position, field
+cursor, and revision cursor stay where you left them.

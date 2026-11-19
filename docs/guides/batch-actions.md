@@ -5,47 +5,53 @@ sidebar:
   order: 7
 ---
 
-The GCE instances and Cloud SQL instances lists support marking multiple rows
-so a mutation targets all of them at once, alongside the single-instance actions on the
+Mark several GCE instances or Cloud SQL instances, then run one lifecycle
+action on all of them at once. The actions on a single instance are on the
 [GCE instances](../reference/services/gce-instances.md) and
-[Cloud SQL](../reference/services/cloud-sql.md) pages. Marking is offered only on services that have lifecycle actions to
-apply; every other service is read-only here, so the mark keys do nothing
-there.
+[Cloud SQL](../reference/services/cloud-sql.md) pages. Only services with
+lifecycle actions offer marks. In every other service, the mark keys do
+nothing.
 
-- Press `Space` to mark or unmark the selected instance; the toggled instance
-  becomes the mark anchor.
+## Mark instances
+
+- Press `Space` to mark or unmark the selected instance. That instance becomes
+  the mark anchor.
 - Press `Shift-V` to range-mark every instance between the anchor and the
-  current cursor, inclusive, in the visible (filtered/sorted) order.
+  cursor, inclusive. The range follows the list as you see it, filtered and
+  sorted.
 - Press `\` to clear every mark.
-- Press `Shift-U` to unmark only the currently visible (filter-matching)
-  marks, leaving marks on rows hidden by the active filter untouched.
+- Press `Shift-U` to unmark only the currently visible marks, the ones that
+  match the filter. Marks on rows that the active filter hides stay.
 
-Marks are per service: marking GCE instances and then switching to Cloud SQL
-shows Cloud SQL's own (initially empty) marks, and a batch never mixes the two.
+Marks belong to one service. If you mark GCE instances and then switch to
+Cloud SQL, you see Cloud SQL's own marks, which start empty. A batch never
+mixes the two services.
 
-Whenever at least one instance is marked, the resource list title shows a
-`Marked: <n>` indicator; if the active filter hides some marked instances it
-shows `Marked: <n> (<hidden> hidden)` so the total never silently drops out of
-view.
+While at least one instance is marked, the resource list title shows
+`Marked: <n>`. If the active filter hides some marked instances, the title
+shows `Marked: <n> (<hidden> hidden)`, so the total stays in view.
 
-With one or more instances marked, opening the command palette (`:`) turns that
-service's lifecycle commands into batch commands: instead of the single
-selected row, the action targets the whole marked set. That is
-`Start`/`Stop`/`Reset`/`Suspend`/`Resume selected GCE instance` in the GCE
-workspace, and `Start`/`Stop`/`Restart`/`Fail over selected Cloud SQL instance`
-in the Cloud SQL workspace. Marked instances that are not eligible for the
-chosen action (for example a stopped instance targeted by Stop, or a zonal
-non-HA instance targeted by Fail over) are skipped rather than silently
-dropped.
+## Run an action on the marked instances
 
-The batch confirmation names the service it targets, and lists every eligible
-target by name together with the API call it will make for that target, such
-as `compute.instances.stop zones/europe-west1-b/instances/web-01`, followed by
-any skipped targets and their reason (`ineligible (<status>)`, or
-`ineligible (requires an HA (regional) instance)` for a Cloud SQL failover on a
-zonal instance), so the operator can verify the complete target set before
-committing — it is never summarized or truncated (the modal scrolls when it
-overflows). Destructive batch actions (GCE Stop, Reset, and Suspend; Cloud SQL
+With at least one instance marked, open the command palette (`:`). The
+service's lifecycle commands then act on the whole marked set instead of the
+selected row. In GCE these are
+`Start`/`Stop`/`Reset`/`Suspend`/`Resume selected GCE instance`. In Cloud SQL
+they are `Start`/`Stop`/`Restart`/`Fail over selected Cloud SQL instance`. A
+marked instance that is not eligible for the action is skipped, and the
+confirmation lists it as skipped. For example, Stop skips a stopped instance,
+and Fail over skips a zonal instance without HA.
+
+The batch confirmation names the service it targets. It lists every eligible
+target by name with the API call it makes for that target, such as
+`compute.instances.stop zones/europe-west1-b/instances/web-01`. The skipped
+targets follow with their reason: `ineligible (<status>)`, or
+`ineligible (requires an HA (regional) instance)` for a Cloud SQL failover on
+a zonal instance. The list is never summarized or truncated, so you can read
+the complete target set before you confirm. If it does not fit, the
+confirmation scrolls.
+
+Destructive batch actions (GCE Stop, Reset, and Suspend; Cloud SQL
 Stop, Restart, and Fail over) prompt `Type <n> to confirm` and require typing
 that exact number of eligible targets, a stronger acknowledgement than the
 single-resource confirmation. Non-destructive batch actions (GCE Start and
@@ -53,37 +59,37 @@ Resume; Cloud SQL Start) prompt `Enter to confirm` like the single-resource
 flow.
 Press `Esc` to cancel a batch confirmation.
 
-Once confirmed, targets run with bounded concurrency — at most
-`--batch-concurrency` (default `4`) actions in flight at a time — so a large
-marked set never spawns unbounded concurrent `gcloud` processes. While the
-batch runs, a progress panel shows an aggregate line
+## Follow a running batch
+
+After you confirm, at most `--batch-concurrency` (default `4`) targets run at
+a time, so a large marked set never sends every call at once. While the batch
+runs, a progress panel shows a summary line
 (`<ok>/<total> done · <fail> failed · <pending> pending`) and one line per
-target with its current status (`PENDING`, `OK`, or `FAIL: <reason>`); a very
-long target list is capped with a `+N more` line. This panel is read-only —
-the keyboard keeps working normally while a batch is in flight. Once every
-target resolves, the app issues a single follow-up instance-list refresh, and
-the progress panel is dismissed once that refresh applies fresh rows.
+target with its current status (`PENDING`, `OK`, or `FAIL: <reason>`). After
+the first 20 targets, a `+N more` line stands in for the rest. The summary
+line counts every target, whatever the size of the batch.
 
-The live batch progress panel tracks every target regardless of batch size, so
-batch **monitoring** is never limited by any cap. The Home overview's "Recent
-operations" list is a separate, intentionally bounded **history** log (it keeps
-only the most recent entries); for a batch larger than that capacity only the
-most recent targets remain in that historical list. This cap is history-only —
-it never affects live batch monitoring, which the per-target progress panel
-above renders in full.
+The panel does not take the keyboard, so you can keep working while the batch
+runs. When every target has finished, nuvem refreshes the instance list once.
+The panel closes when that refresh shows the new rows.
 
-Switching gcloud configuration or context while a batch is running safely
-detaches it: the progress panel disappears immediately, any targets already
-running are left to finish but their results are discarded, and any
-not-yet-started targets are cancelled and never run. No target is left showing
-as still in progress afterwards: each one's "Recent operations" entry is
-settled at what is actually known — `cancelled` for a target that never issued
-its command, `unknown` for one whose command was already in flight when the
-switch happened and whose real outcome is therefore unobserved.
+The Home overview's "Recent operations" list is a separate history, and it
+keeps only the most recent entries. After a batch larger than that history,
+only its most recent targets remain in the list.
 
-Confirming a new batch while one is still running detaches the running batch
-the same way — its remaining targets are settled as `cancelled` or `unknown` as
-above — and the progress panel then tracks the newly confirmed batch. Those
-entries say the batch was superseded by a newer one rather than cancelled: the
-outcome is the same because it is what is provable about each target, but you
-cancelled nothing here, you confirmed a replacement.
+## Switch context during a batch
+
+If you switch gcloud configuration or context while a batch runs, nuvem
+detaches the batch. The progress panel closes at once. Targets that already
+started run to the end, but nuvem discards their results. Targets that had not
+started are cancelled and never run. Each target's "Recent operations"
+entry records what nuvem knows about it, so none stays in progress. A target
+that never sent its call shows `cancelled`. A target whose call was already in
+flight shows `unknown`, because nuvem never saw its outcome.
+
+If you confirm a new batch while one is still running, nuvem detaches the
+running batch the same way. Its remaining targets settle as `cancelled` or
+`unknown`, and the progress panel tracks the new batch. Those entries say the
+batch was superseded by a newer one, because you confirmed a replacement and
+cancelled nothing. The statuses are the same as after a context switch,
+because they are all nuvem can prove about each target.
