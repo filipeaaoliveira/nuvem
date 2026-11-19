@@ -5,6 +5,8 @@ sidebar:
   order: 1
 ---
 
+Install nuvem with Homebrew, from a release archive, or from source.
+
 ## Requirements
 
 - The [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`),
@@ -16,8 +18,9 @@ sidebar:
   inside WSL.
 - Outbound HTTPS to `*.googleapis.com`.
 
-Some features need one more program on your `PATH`. nuvem works without them
-and reports a missing one when you use the feature:
+Some features need one more program on your `PATH`. nuvem runs without these
+programs. If one is missing, nuvem tells you when you use the feature that
+needs it:
 
 | Program | Used for | Flag to point at it |
 | --- | --- | --- |
@@ -36,7 +39,7 @@ brew install filipeaaoliveira/tap/nuvem
 ```
 
 To upgrade later, run `brew upgrade nuvem`. Homebrew does not install the
-Google Cloud CLI for you; if you do not have it, run
+Google Cloud CLI for you. If you do not have it, run
 `brew install --cask gcloud-cli` and then `gcloud auth login`.
 
 ## Download a release
@@ -55,7 +58,7 @@ CI builds every archive on a runner of its own platform, runs the test suite
 there, and smoke-tests the binary before packaging it.
 
 1. Download the archive for your platform and its `.sha256` file.
-2. Check the archive:
+2. Verify the archive against its checksum:
 
    ```bash
    shasum -a 256 -c nuvem-<target>.tar.gz.sha256
@@ -67,13 +70,14 @@ there, and smoke-tests the binary before packaging it.
    tar xzf nuvem-<target>.tar.gz && install nuvem-<target>/nuvem ~/.local/bin/
    ```
 
-The Linux binaries need glibc 2.28 or newer: Ubuntu 20.04, Debian 10, RHEL 8
-and later all qualify. Run `ldd --version` to check. A glibc that is too old
-fails at startup with `GLIBC_2.xx not found`.
+The Linux binaries need glibc 2.28 or newer. Ubuntu 20.04, Debian 10, RHEL 8
+and later releases have it. To see your version, run `ldd --version`. With an
+older glibc, nuvem fails at startup with `GLIBC_2.xx not found`.
 
-Every archive also carries a signed build-provenance attestation, which
-records the workflow, commit and run that built it. A checksum shows that a
-download is intact; the attestation shows where it came from:
+Every archive also carries a signed build-provenance attestation. It records
+the workflow, commit and run that built the archive. The checksum shows that
+the download is intact, and the attestation shows where it came from. To
+verify the attestation with the GitHub CLI, run:
 
 ```bash
 gh attestation verify nuvem-x86_64-unknown-linux-gnu.tar.gz --repo filipeaaoliveira/nuvem
@@ -82,8 +86,9 @@ gh attestation verify nuvem-x86_64-unknown-linux-gnu.tar.gz --repo filipeaaolive
 ## Build from source
 
 You need a recent stable Rust toolchain, a C toolchain and `cmake` on your
-`PATH`. The TLS library behind the Google Cloud client libraries compiles
-native code at build time. `rustup` installs the pinned Rust version for you.
+`PATH`. The C toolchain and `cmake` are for the TLS library that the Google
+Cloud client libraries use, which compiles native code at build time. If you
+use `rustup`, it installs the pinned Rust version for you.
 
 ```bash
 git clone https://github.com/filipeaaoliveira/nuvem

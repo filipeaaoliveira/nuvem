@@ -12,8 +12,8 @@ Every view draws inside the same frame:
 | Header (two rows) | The active gcloud configuration and project first. The account, service, region and zone follow when the terminal has room. |
 | Breadcrumb | Where you are: the workspace, then the service, then the open resource. |
 | Body | The workspace itself: a list, a detail pane, a dashboard. |
-| Status line | A status marker and the time of the last refresh. While something loads, or after a warning or an error, it names that operation; once all is well it names the view on screen. |
-| Footer | The keys that do something in the current view, most useful first. On a narrow terminal the least useful ones are left out whole; a key is never shown without its label. Press `?` for all of them. |
+| Status line | A status marker and the time of the last refresh. While something loads, or after a warning or an error, it names that operation. Otherwise it names the view on screen. |
+| Footer | The keys that do something in the current view, most useful first. On a narrow terminal, the least useful keys are left out whole, so a key never shows without its label. Press `?` for all of them. |
 
 ## Status markers
 
@@ -24,8 +24,8 @@ color, including under the `no-color` theme:
 | --- | --- |
 | `[OK]` | Idle, or the last operation succeeded |
 | `[LOAD]` | A first load is in flight |
-| `[SYNC]` | A refresh is in flight; the rows on screen are the previous ones |
-| `[STALE]` | A load or refresh failed; what is on screen may be out of date |
+| `[SYNC]` | A refresh is in flight. The rows on screen are still the previous ones |
+| `[STALE]` | A load or refresh failed. What is on screen can be out of date |
 | `[ERR]` | The operation failed |
 
 ## Workspaces
@@ -41,8 +41,9 @@ color, including under the `no-color` theme:
 
 ## Terminal size
 
-nuvem needs a terminal at least `60x12` (columns by rows). Below that it shows
-a message asking for a larger terminal instead of the interface. Modals that
+nuvem needs a terminal at least `60x12` (columns by rows). In a smaller
+terminal, it shows a message that asks for a larger one instead of the
+interface. Modals that
 show a command check that the whole command fits. When it does not, they ask
 for a larger terminal and refuse `Enter`, so you never confirm a command you
 cannot read.
@@ -52,15 +53,15 @@ pane sit side by side. See [Browse resources](../guides/browse-resources.md).
 
 ## Keyboard only
 
-nuvem reads only the keyboard. It has no mouse support: it does not capture
-the mouse, and clicking in the interface does nothing. Because the mouse is
-not captured, your terminal's own text selection and copy still work.
+nuvem reads only the keyboard. It does not capture the mouse, and clicking in
+the interface does nothing. Because nuvem leaves the mouse alone, your
+terminal's own text selection and copy still work.
 
 ## Help
 
 `?` opens the help overlay for the view you are in. It covers everything below
 the header, so the configuration and project stay in view. It lists the keys in
-groups, with your rebound keys shown as rebound. Scroll it with `j`/`k` or the
+groups. A key you rebound appears as the key you chose. Scroll it with `j`/`k` or the
 arrows, page with `PgUp`/`PgDn`, jump to the top or bottom with `g`/`G`, and
-close it with `Esc` or `?`. When your config file has problems, help lists
+close it with `Esc` or `?`. If your config file has problems, help lists
 every one of them under `Config problems`.
