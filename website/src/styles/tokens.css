@@ -3,7 +3,7 @@
  * customCss) and by custom pages such as the landing page.
  *
  * Palette: Wada Sanzo, A Dictionary of Color Combinations, combination 47.
- * The five named colours are used as given. Every other value below is the
+ * The five named colors are used as given. Every other value below is the
  * background mixed toward the off-white text or the darker code ground, so
  * no new hue enters the page. Contrast ratios are against --nv-bg unless
  * stated.
@@ -11,6 +11,18 @@
 
 @import '@fontsource-variable/schibsted-grotesk/wght.css';
 @import '@fontsource-variable/schibsted-grotesk/wght-italic.css';
+
+/* Arial scaled to Schibsted Grotesk's width and line metrics. Text set in
+   the fallback while the web font loads wraps where the web font will, so
+   the swap moves nothing on the page. */
+@font-face {
+	font-family: 'Schibsted Grotesk Fallback';
+	src: local('Arial'), local('ArialMT'), local('Liberation Sans');
+	size-adjust: 104.2%;
+	ascent-override: 94%;
+	descent-override: 25%;
+	line-gap-override: 0%;
+}
 
 :root {
 	/* Combination 47 */
@@ -29,8 +41,13 @@
 	--nv-rule-strong: #9a8f84; /* control outlines, 3.47:1 (5.58:1 on the plate) */
 	--nv-on-accent: #1b1816; /* text on Naples, Coral, Methyl or Eugenia fills (5.17:1 or better) */
 
+	/* Ink: text on the home page's blue and yellow grounds and on filled
+	   tiles, and the near-black of its close. */
+	--nv-ink: #1b1816; /* Naples 14.24:1, Coral 7.64:1, Methyl 6.87:1, Eugenia 5.17:1 */
+	--nv-ink-soft: #423b36; /* secondary text on Naples (8.86:1) and Coral (4.76:1) only */
+
 	/* Type: one grotesk for everything that is read, system mono for code */
-	--nv-font-sans: 'Schibsted Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+	--nv-font-sans: 'Schibsted Grotesk Variable', 'Schibsted Grotesk Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
 		'Helvetica Neue', Arial, sans-serif;
 	--nv-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
@@ -46,6 +63,8 @@
 	--nv-text-lead: clamp(1.0625rem, 1rem + 0.2vw, 1.125rem); /* 17px to 18px: the home page's pitch */
 	--nv-text-display: clamp(2.125rem, 1.5rem + 2.4vw, 3.25rem); /* 34px to 52px: the home page's title */
 	--nv-text-command: clamp(0.8125rem, 0.75rem + 0.4vw, 1rem); /* 13px to 16px: the home page's install command */
+	--nv-text-hero: clamp(2.25rem, 1.5rem + 3.4vw, 4.25rem); /* 36px to 68px: the home page's title */
+	--nv-text-section: clamp(2rem, 1.3rem + 2.6vw, 3.5rem); /* 32px to 56px: home page section titles */
 	--nv-leading-body: 1.65;
 	--nv-leading-tight: 1.2;
 	--nv-measure: 38rem; /* about 70 characters of body text */
