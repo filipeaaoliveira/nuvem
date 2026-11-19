@@ -31,12 +31,12 @@ default = 200                 # optional
 | `choices` | for `dropdown` | non-empty list of strings; only a dropdown takes it |
 | `default` | no | must match `type`, and be one of `choices` for a dropdown |
 
-`integer` is a type of its own, not a flag on `number`, because the value
-reaches gcloud verbatim. `number` accepts `0.5`. `integer` accepts `200` and
+`integer` is a separate type from `number`, because the value reaches gcloud
+verbatim. `number` accepts `0.5`. `integer` accepts `200` and
 rejects `1.5` at load. Only a value of the type you declared can be sent.
 
 An input cannot be named after one of its scope's own fields, and those names
-depend on the scope. On Compute Engine, `{zone}` and `{machine_type}` are the
+depend on the scope. On GCE instances, `{zone}` and `{machine_type}` are the
 row's own. An input called `zone` is thus rejected at load, so neither of the
 two silently wins. An input for the machine type to resize *to* needs another
 name, such as `target_type`. On persistent disks neither name is taken, so a
@@ -62,33 +62,34 @@ input the plugin's own templates name, in declaration order:
 You type into a `string`, `number` or `integer` field. You step through a
 `dropdown` or a `bool` with `Left` and `Right`. `Tab` and `Shift-Tab` move
 between fields, and the `>` marks the one your keystrokes reach. `Enter` does
-nothing until every field holds something it can send. The modal names only
+nothing until every field holds something it can send. The prompt names only
 the keys that do something right now, so it does not offer `Enter` until
 `Enter` works. `Esc` closes the prompt and runs nothing. There is no log
 entry, because nothing was issued.
 
 A field that is not ready says what it wants, next to what you typed. An empty
 `string` reads `(needs a value)`. A `number` or an `integer` reads
-`(needs a number)` or `(needs a whole number)` until it parses. The rule is the
-one your `default` is validated against, not Rust's number parser. Rust parses
-`inf` and `NaN` as floats. The prompt refuses them, for the same reason
-`default = inf` is refused at load: `--share inf` is not a number, and the
-text reaches gcloud verbatim. A refusal takes nothing away. You correct the
-one field, and everything else you typed stays in place.
+`(needs a number)` or `(needs a whole number)` until it parses. The prompt
+checks a value by the same rule as a `default` at load, so it refuses `inf`
+and `NaN`, as a load refuses `default = inf`. `--share inf` is not a number,
+and the text reaches gcloud verbatim.
+
+A refusal takes nothing away. You correct the one field, and everything else
+you typed stays in place.
 
 What you type is what is sent. A declared `default = 0.50` is stored as `0.5`,
 but a `0.50` you type stays `0.50` all the way to the confirmation. That line
 shows the exact characters that will run, so nuvem never rewrites a value you
-entered. An `integer` accepts a negative. A negative in a leading position is
-refused, for the same reason as any substituted value that begins with `-`:
-gcloud reads it as a flag.
+entered. An `integer` accepts a negative number. A negative number that
+starts a whole argument is refused, for the same reason as any substituted
+value that begins with `-`: gcloud reads it as a flag.
 
 `Enter` on the prompt does not run the command either. It closes the prompt
-and opens the ordinary confirmation. The confirmation shows the exact argv
-with your values substituted, under your `label` rendered with them. The line
-you approve is the line that runs, and the confirmation is still the only
+and opens the ordinary confirmation. The confirmation shows the exact command
+line with your values substituted, under your `label` rendered with them. The
+line you approve is the line that runs, and the confirmation is still the only
 thing that starts a process. A `dangerous` plugin still asks you to type `1`
-there. If `--read-only` refuses a plugin, it refuses as you choose it, before
+there, the number of resources the command acts on. If `--read-only` refuses a plugin, it refuses as you choose it, before
 the prompt opens. You are never asked to type values for a command that
 cannot run.
 

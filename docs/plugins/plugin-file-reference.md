@@ -5,6 +5,10 @@ sidebar:
   order: 5
 ---
 
+This page lists where nuvem looks for `plugins.toml`, every key the file
+accepts, the input types, and the template fields each service offers.
+[Write a plugin](write-a-plugin.md) walks through a first plugin.
+
 ## Where it lives
 
 | Platform | Path |
@@ -59,13 +63,13 @@ Any other top-level key, such as `[[plugin]]`, is reported as a typo.
 | `scope` | yes | one service, from the same vocabulary `[aliases]` uses |
 | `key` | yes | a single printable, non-space character, pressed after `,` to run this plugin; unique within a scope |
 | `label` | yes | palette entry and confirmation heading; templated |
-| `args` | yes | one string per argv element, each templated independently. These are the elements gcloud receives. The program is not one of them. |
+| `args` | yes | one string per argument, each templated independently. These are the arguments gcloud receives. The program is not one of them. |
 | `dangerous` | no (`false`) | adds a typed acknowledgement to the confirmation |
 | `inputs` | no (none) | values you supply when the plugin runs; see [Typed inputs](typed-inputs.md) |
 
 `args` is an array of strings, never one string. Splitting a string needs a
 shell parser, and there is no shell anywhere on this path. Each element is
-templated independently and becomes exactly one argv element. The program is
+templated independently and becomes exactly one argument. The program is
 not part of `args`: it is always `gcloud`. nuvem adds
 `--configuration <active-config>` in front of your `args`.
 

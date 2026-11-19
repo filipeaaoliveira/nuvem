@@ -34,10 +34,17 @@ This adds a **Describe** command to the GCE instances list. It runs
    selected row. [Plugin file reference](plugin-file-reference.md) lists every
    field and the template fields each service has.
 
-3. Make sure only you can write it:
+3. Make sure that other users cannot write it. Use the path from step 1. On
+   Linux, unless you set `XDG_CONFIG_HOME`, that is:
 
    ```bash
    chmod o-w ~/.config/nuvem/plugins.toml
+   ```
+
+   On macOS:
+
+   ```bash
+   chmod o-w ~/Library/Application\ Support/nuvem/plugins.toml
    ```
 
 4. Run `nuvem info` again. The line now reads `(1 loaded)`. If it reads
@@ -60,7 +67,7 @@ This adds a **Describe** command to the GCE instances list. It runs
 7. To read what it printed, press `:` and choose **Plugin output**. See
    [Plugin output](plugin-output.md).
 
-The run appears in Home's **Recent operations**. To stop a run that does not
+The run appears in Home's Recent operations list. To stop a run that does not
 end, press `Ctrl-x`.
 
 ## Ask for a value
@@ -88,6 +95,8 @@ See [Typed inputs](typed-inputs.md).
 
 Add `dangerous = true` to a plugin that deletes or changes something you
 cannot undo. Its confirmation then asks you to type `1` before `Enter` runs it.
+The `1` is the number of resources the command acts on, which for a plugin is
+always one.
 
 ## Changes need a restart
 
