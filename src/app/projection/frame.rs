@@ -603,19 +603,21 @@ fn resource_metadata(
         // the row is too narrow for all of them, so what a list is *for* —
         // opening, filtering, sorting and widening its rows — comes first,
         // and the sidebar keys, which the sidebar itself shows, come last.
-        from_bindings_with(
-            &[
-                RES_OPEN,
-                RES_FILTER,
-                RES_SORT,
-                RES_WIDE,
-                RES_COLUMN,
-                GLOBAL_REFRESH,
-                RES_TOGGLE_SIDEBAR,
-                RES_TOGGLE_FOCUS,
-            ],
-            overrides,
-        )
+        // `Enter` is offered only where it opens something.
+        let mut bindings = Vec::new();
+        if crate::app::service_capabilities::opens_on_enter(resources.active_service()) {
+            bindings.push(RES_OPEN);
+        }
+        bindings.extend([
+            RES_FILTER,
+            RES_SORT,
+            RES_WIDE,
+            RES_COLUMN,
+            GLOBAL_REFRESH,
+            RES_TOGGLE_SIDEBAR,
+            RES_TOGGLE_FOCUS,
+        ]);
+        from_bindings_with(&bindings, overrides)
     };
     footer_hints.extend(history_hints(root));
     footer_hints = with_copy_diagnostic_hint(footer_hints, root);

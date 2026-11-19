@@ -113,7 +113,9 @@ fn every_service_keeps_the_bindings_no_service_scopes() {
 /// `service_capability_parity_test`.
 #[test]
 fn every_service_is_taught_a_scoped_key_exactly_when_it_answers_it() {
-    use nuvem::app::service_capabilities::{browses_objects, supports_marks, supports_tunnel};
+    use nuvem::app::service_capabilities::{
+        browses_objects, opens_on_enter, supports_marks, supports_tunnel,
+    };
 
     for kind in ResourceServiceKind::ALL {
         let labels = current_view_labels(kind);
@@ -134,6 +136,13 @@ fn every_service_is_taught_a_scoped_key_exactly_when_it_answers_it() {
             "{kind:?}: taught \"Start tunnel\" = {}, supports_tunnel = {}",
             taught("Start tunnel"),
             supports_tunnel(kind)
+        );
+        assert_eq!(
+            taught("Open"),
+            opens_on_enter(kind),
+            "{kind:?}: taught \"Open\" = {}, opens_on_enter = {}",
+            taught("Open"),
+            opens_on_enter(kind)
         );
         for label in ["Bucket metadata", "Copy gs:// URI", "Next page"] {
             assert_eq!(

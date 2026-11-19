@@ -514,5 +514,5 @@ fn the_jump_picker_context_teaches_only_its_own_keys() {
     assert!(labels.contains(&"Cancel"), "{labels:?}");
     // Nothing from the list behind it: `Enter` in the picker jumps, it does
     // not open the row the resource list has selected.
-    assert!(!labels.contains(&"Open / enter"), "{labels:?}");
+    assert!(!labels.contains(&"Open"), "{labels:?}");
 }

@@ -240,7 +240,7 @@ pub const LIST_SELECT: Binding = Binding {
 pub const RES_OPEN: Binding = Binding {
     triggers: &[KeyTrigger::Enter],
     key: "Enter",
-    label: "Open / enter",
+    label: "Open",
     rebindable: None,
 };
 pub const RES_OPEN_REVISION: Binding = Binding {
@@ -1050,7 +1050,7 @@ pub fn context_bindings(ctx: HelpContext) -> Vec<Binding> {
         // carried onto the keymap `Context` as
         // `resources_drilldown_opens_another_level`. Until it was, the context
         // held one drill-down flag and no depth, so this arm served two levels
-        // that differ in what `Enter` does and taught `Open / enter` on a
+        // that differ in what `Enter` does and taught `Open` on a
         // column row. The frame footer never had the problem: it reads live
         // state rather than a context.
         //
@@ -1663,19 +1663,21 @@ pub fn help_model(root: &RootState) -> HelpModel {
 /// Override-aware variant of [`help_model`]: the same grouped model, but with
 /// rebindable bindings' displayed keys reflecting the active overrides, so
 /// the help view shows rebound keys.
-/// Whether `service` answers `binding`, for the five bindings the catalogue
-/// offers on every service and the reducer answers on two or three.
+/// Whether `service` answers `binding`, for the bindings the catalogue offers
+/// on every service and the reducer answers on only some.
 ///
 /// The catalogue is one flat list per [`HelpContext`], and `HelpContext` has no
 /// service dimension, so this is where the service is folded in rather than
 /// splitting the arm sixteen ways. Every other binding passes through: the
-/// filter can only ever remove one of these five, which is what
+/// filter can only ever remove one of these, which is what
 /// `every_service_keeps_the_bindings_no_service_scopes` pins.
 ///
 /// The predicates live in [`crate::app::service_capabilities`] beside the
 /// argument for why they are exhaustive matches.
 fn answered_by(binding: &Binding, service: ResourceServiceKind) -> bool {
-    use crate::app::service_capabilities::{browses_objects, supports_marks, supports_tunnel};
+    use crate::app::service_capabilities::{
+        browses_objects, opens_on_enter, supports_marks, supports_tunnel,
+    };
 
     if *binding == MARK_TOGGLE
         || *binding == MARK_RANGE
@@ -1686,6 +1688,9 @@ fn answered_by(binding: &Binding, service: ResourceServiceKind) -> bool {
     }
     if *binding == RES_START_TUNNEL {
         return supports_tunnel(service);
+    }
+    if *binding == RES_OPEN {
+        return opens_on_enter(service);
     }
     if *binding == RES_BUCKET_METADATA || *binding == RES_COPY_URI || *binding == RES_NEXT_PAGE {
         return browses_objects(service);

@@ -115,3 +115,29 @@ pub fn supports_selection_logs(kind: ResourceServiceKind) -> bool {
         | ResourceServiceKind::FirewallRules => false,
     }
 }
+
+/// Whether `Enter` on a row of this service opens something: a detail pane,
+/// the Cloud Storage object browser, or BigQuery's next level.
+///
+/// Mirrors `reducer::resources::open_selected`, whose other arms leave the
+/// view as it was. The footer and help teach `Enter` only where this holds.
+pub fn opens_on_enter(kind: ResourceServiceKind) -> bool {
+    match kind {
+        ResourceServiceKind::ComputeInstances
+        | ResourceServiceKind::GkeClusters
+        | ResourceServiceKind::CloudSql
+        | ResourceServiceKind::CloudRunServices
+        | ResourceServiceKind::CloudStorage
+        | ResourceServiceKind::SecretManagerSecrets
+        | ResourceServiceKind::BigQueryDatasets => true,
+        ResourceServiceKind::CloudFunctions
+        | ResourceServiceKind::PersistentDisks
+        | ResourceServiceKind::PubSubTopics
+        | ResourceServiceKind::PubSubSubscriptions
+        | ResourceServiceKind::IamServiceAccounts
+        | ResourceServiceKind::IamPolicy
+        | ResourceServiceKind::VpcNetworks
+        | ResourceServiceKind::VpcSubnets
+        | ResourceServiceKind::FirewallRules => false,
+    }
+}

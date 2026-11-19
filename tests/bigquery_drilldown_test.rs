@@ -892,7 +892,7 @@ fn the_help_view_teaches_the_key_that_leaves_the_drilldown() {
     // and opens the selected table's schema, so dropping it from this
     // catalogue would hide the only key that reaches the third level.
     assert!(
-        labels.iter().any(|(_, label)| *label == "Open / enter"),
+        labels.iter().any(|(_, label)| *label == "Open"),
         "the key that descends into a table's columns must be discoverable: \
          {labels:?}"
     );

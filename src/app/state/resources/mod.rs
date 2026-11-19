@@ -5209,7 +5209,7 @@ impl ResourcesState {
     ///
     /// False on BigQuery's schema view, which is the bottom of that hierarchy:
     /// `Enter` on a column dispatches, finds neither opener claiming it, and
-    /// does nothing. The frame footer asks this before hinting `Open / enter`,
+    /// does nothing. The frame footer asks this before hinting `Open`,
     /// because a hint is a promise about the key it names.
     ///
     /// The help catalogue cannot ask it. `HelpContext` is derived from the

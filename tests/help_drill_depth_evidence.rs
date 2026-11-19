@@ -1,6 +1,6 @@
 //! Evidence — the help overlay tells the two drilled levels apart.
 //!
-//! The overlay taught `Open / enter` in BigQuery's schema view, where `Enter`
+//! The overlay taught `Open` in BigQuery's schema view, where `Enter`
 //! does nothing. `HelpContext::ResourceDrilldown` is built from
 //! `ResourceList`'s bindings with `RES_SORT` and `RES_COLUMN` filtered out and
 //! `RES_ESC_BACK` swapped for `RES_LEAVE_DRILLDOWN`; `RES_OPEN` survived,

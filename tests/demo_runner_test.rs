@@ -1883,3 +1883,44 @@ async fn a_demo_session_opens_on_a_populated_home() {
         );
     }
 }
+
+/// `Enter` opens something exactly on the services `opens_on_enter` names,
+/// read off the reducer through a demo session: the breadcrumb, the title or
+/// the table changes when a row opens, and none of them does when `Enter`
+/// does nothing. The footer and
+/// help teach `Enter` by that predicate, so a wrong answer would teach a key
+/// that does nothing, or hide one that works.
+#[tokio::test(flavor = "multi_thread")]
+async fn enter_opens_a_row_exactly_where_the_capability_says() {
+    use nuvem::app::projection::project_app_frame;
+    use nuvem::app::service_capabilities::opens_on_enter;
+    for kind in ResourceServiceKind::ALL {
+        let mut session = demo_session_showing(kind).await;
+        let view = |session: &RuntimeSession| {
+            let frame = project_app_frame(&session.app().root);
+            let headers: Vec<&str> = project_resource_list(&session.app().root.resources)
+                .table
+                .map(|table| table.columns.iter().map(|column| column.header).collect())
+                .unwrap_or_default();
+            (frame.breadcrumbs, frame.view_title, headers)
+        };
+        let before = view(&session);
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+            .await;
+        drain(&mut session).await;
+        let after = view(&session);
+        assert_eq!(
+            after != before,
+            opens_on_enter(kind),
+            "{kind:?}: Enter moved the view from {before:?} to {after:?}"
+        );
+        let footer = project_app_frame(&session.app().root);
+        if !opens_on_enter(kind) {
+            assert!(
+                !footer.footer_hints.iter().any(|hint| hint.key == "Enter"),
+                "{kind:?}: the footer teaches Enter where it does nothing"
+            );
+        }
+    }
+}
