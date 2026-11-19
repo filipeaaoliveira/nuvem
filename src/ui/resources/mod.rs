@@ -1122,9 +1122,12 @@ fn list_tools_line(projection: &ResourceWorkspaceProjection<'_>) -> Option<Strin
         projection.filter.applied.as_str()
     };
     let suffix = applied_filter_mode_suffix(projection);
+    // Rows before Sort: this line rides in the border title, which cuts it
+    // at the pane's width, and a cut should take the sort rather than leave
+    // `Rows: 0/` with its total gone.
     let mut line = format!(
-        "Filter: {filter}{suffix}   Sort: {}   Rows: {}/{}",
-        projection.sort_label, projection.visible_rows, projection.total_rows
+        "Filter: {filter}{suffix}   Rows: {}/{}   Sort: {}",
+        projection.visible_rows, projection.total_rows, projection.sort_label
     );
     if let Some(page_hint) = page_indicator(projection) {
         line.push_str("   ");

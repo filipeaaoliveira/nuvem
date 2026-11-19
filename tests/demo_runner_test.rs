@@ -2643,3 +2643,36 @@ async fn the_cloud_sql_preview_names_the_engine_as_the_row_does() {
             .await;
     }
 }
+
+/// A filter that matches nothing keeps its row count whole at 80 columns.
+///
+/// The no-match line rides in the list's border title, which is cut at the
+/// pane's width; it used to end `Rows: 0/` with the total gone. Every service,
+/// with the sidebar open, which is the narrowest the title gets.
+#[tokio::test(flavor = "multi_thread")]
+async fn an_empty_filter_result_keeps_its_row_count_at_80_columns() {
+    for kind in ResourceServiceKind::ALL {
+        let mut session = demo_session_showing(kind).await;
+        let total = project_resource_list(&session.app().root.resources)
+            .table
+            .map(|table| table.counts.total)
+            .unwrap_or_default();
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::StartFilter))
+            .await;
+        for ch in "nomatchxyz".chars() {
+            session
+                .dispatch_action(Action::Resources(ResourcesAction::AppendFilterChar(ch)))
+                .await;
+        }
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::ApplyFilter))
+            .await;
+        drain(&mut session).await;
+        let painted = screen(&session, 80, 24);
+        assert!(
+            painted.contains(&format!("Rows: 0/{total}")),
+            "{kind:?}: the row count is cut:\n{painted}"
+        );
+    }
+}

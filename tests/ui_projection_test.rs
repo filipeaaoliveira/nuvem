@@ -3629,7 +3629,7 @@ async fn resources_view_shows_the_mode_chip_on_the_no_match_tools_line() {
     // `contains` while rendering something nobody designed.
     assert_eq!(
         storage_tools_line(&lines),
-        "Filter: zzzz  [regex]   Sort: Name   Rows: 0/2",
+        "Filter: zzzz  [regex]   Rows: 0/2   Sort: Name",
         "expected the chip on the no-match tools line, got: {lines:?}"
     );
 

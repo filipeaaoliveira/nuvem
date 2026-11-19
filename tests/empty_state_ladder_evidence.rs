@@ -336,16 +336,26 @@ fn a_cloud_run_filter_that_matches_nothing_says_so() {
 #[test]
 fn the_cloud_run_tools_line_is_spent_only_on_a_wide_enough_terminal() {
     assert!(
-        rendered_at(cloud_run_with_everything_filtered_out(), 120).contains("Rows: 0/1"),
+        has_a_tools_row(&rendered_at(cloud_run_with_everything_filtered_out(), 120)),
         "a wide terminal shows the tools line"
     );
     assert!(
-        !rendered_at(cloud_run_with_everything_filtered_out(), 70).contains("Rows: 0/1"),
+        !has_a_tools_row(&rendered_at(cloud_run_with_everything_filtered_out(), 70)),
         "a narrow one spends those columns on the message instead"
     );
 }
 
-/// The tools line — `Filter: … Sort: … Rows: n/n` — is spent only where there
+/// Whether the screen spends a row of its own on the tools line, rather than
+/// carrying it in the list's border title. The narrow layout keeps the line
+/// in the title, row count first, so the count alone cannot tell the two
+/// layouts apart.
+fn has_a_tools_row(screen: &str) -> bool {
+    screen
+        .lines()
+        .any(|line| line.contains("Filter: zzz-nothing") && !line.contains("┌Resources /"))
+}
+
+/// The tools line — `Filter: … Rows: n/n Sort: …` — is spent only where there
 /// are columns for it. `(!compact)` is what decides that, and compact is the
 /// narrow layout the sidebar collapses into at 80 columns or fewer.
 ///
@@ -360,11 +370,16 @@ fn the_cloud_run_tools_line_is_spent_only_on_a_wide_enough_terminal() {
 #[test]
 fn the_list_tools_line_is_spent_only_on_a_wide_enough_terminal() {
     assert!(
-        rendered_at(gke_with_everything_filtered_out(), 120).contains("Rows: 0/1"),
+        has_a_tools_row(&rendered_at(gke_with_everything_filtered_out(), 120)),
         "a wide terminal shows the tools line"
     );
+    let narrow = rendered_at(gke_with_everything_filtered_out(), 70);
     assert!(
-        !rendered_at(gke_with_everything_filtered_out(), 70).contains("Rows: 0/1"),
+        !has_a_tools_row(&narrow),
         "a narrow one spends those columns on the message instead"
+    );
+    assert!(
+        narrow.contains("Rows: 0/1"),
+        "and its border title still carries the whole count:\n{narrow}"
     );
 }
