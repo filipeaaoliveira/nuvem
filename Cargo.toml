@@ -111,7 +111,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt", "tracing-log"] }
 toml = "1.1"
 arc-swap = "1"
-unicode-truncate = "2"
+unicode-truncate = "3"
 unicode-width = "0.2"
 unicode-general-category = "1.1.0"
 
