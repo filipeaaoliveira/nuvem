@@ -795,7 +795,17 @@ fn configuration_picker_keeps_full_chrome_at_normal_and_narrow_sizes() {
     );
 
     let normal_lines = render_lines(&RuntimeSession::new_for_test(app.clone()), 100, 24);
-    let narrow_lines = render_lines(&RuntimeSession::new_for_test(app), 60, 12);
+    let narrow_lines = render_lines(&RuntimeSession::new_for_test(app.clone()), 60, 12);
+    // At 60x12 the picker fills the body between the frame's own rows, which
+    // leaves room for one row at a time: the rest are reached by moving.
+    let mut moved = app;
+    for _ in 0..2 {
+        reduce(
+            &mut moved,
+            &Action::Configurations(ConfigurationsAction::SelectNextContextPickerItem),
+        );
+    }
+    let moved_lines = render_lines(&RuntimeSession::new_for_test(moved), 60, 12);
 
     for lines in [&normal_lines, &narrow_lines] {
         assert!(lines.iter().any(|line| line.contains("pick project")));
@@ -805,10 +815,13 @@ fn configuration_picker_keeps_full_chrome_at_normal_and_narrow_sizes() {
         assert!(lines.iter().any(|line| line.contains("Enter choose")));
         assert!(lines.iter().any(|line| line.contains("Esc back")));
     }
-    assert!(narrow_lines.iter().any(|line| line.contains(&format!(
+    assert!(moved_lines.iter().any(|line| line.contains(&format!(
+        "{CONTEXT_PICKER_SELECTED_UNMARKED_ROW_PREFIX}project-02"
+    ))));
+    assert!(!moved_lines.iter().any(|line| line.contains(&format!(
         "{CONTEXT_PICKER_UNSELECTED_UNMARKED_ROW_PREFIX}project-02"
     ))));
-    assert_eq!(line_index(&normal_lines, "pick project"), 4);
+    assert_eq!(line_index(&normal_lines, "pick project"), 3);
 }
 
 #[test]
@@ -990,11 +1003,17 @@ fn context_picker_is_rendered_above_shared_frame_chrome() {
     );
     let session = RuntimeSession::new_for_test(app);
     let terminal = render_terminal(&session, 60, 12);
-    let line = terminal_lines(&terminal)[9].clone();
+    // The picker fills the body, so its lower border is the body's last row,
+    // above the status line, with nothing of the panes left beside it.
+    let line = terminal_lines(&terminal)[8].clone();
 
     assert!(
         line.contains("└"),
         "picker lower border was overwritten: {line:?}"
+    );
+    assert!(
+        !line.contains("[OK]"),
+        "a status fragment beside the box: {line:?}"
     );
 }
 
