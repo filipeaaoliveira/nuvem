@@ -26,8 +26,11 @@ view. Use `[` and `]` to move across the service's detail tabs. `Esc` goes back
 to the prior view — from a resource detail view that returns to the resource
 list; from a resource list it steps back through navigation history (for
 example, to the previous service or workspace) when there is history to go
-back to. While a resource detail view is open, `q` also returns to the
-resource list. `Alt-Left` and `Alt-Right` move back and forward through
+back to. In Cloud Storage, `Esc` from the object browser or a bucket's
+metadata returns to the bucket list, and from an object's detail to the object
+browser; in BigQuery it climbs from a table's schema to the tables, and from
+the tables to the datasets. While a resource detail view is open, `q` also
+returns to the resource list. `Alt-Left` and `Alt-Right` move back and forward through
 navigation history from anywhere in the Resources workspace; the footer shows
 these hints only when there is somewhere to go. Where `Esc` and `Alt-Left` do
 the same thing, the footer and help list them as one entry, `Esc/Alt-←`. Navigation history is reset

@@ -11,6 +11,9 @@ use nuvem_domain::gcp::resource::{
 };
 
 pub(super) fn reduce(root: &mut RootState, action: &NavAction) -> Vec<Effect> {
+    if matches!(action, NavAction::Back) && leave_storage_view(root) {
+        return Vec::new();
+    }
     let current = NavLocation::capture(root);
     let target = match action {
         NavAction::Back => root.navigation.go_back(current),
@@ -23,6 +26,35 @@ pub(super) fn reduce(root: &mut RootState, action: &NavAction) -> Vec<Effect> {
                 root.resources.close_detail();
             }
             Vec::new()
+        }
+    }
+}
+
+/// Back inside Cloud Storage steps out of the view it is in rather than
+/// through history: an object's detail returns to the object browser, and the
+/// browser or a bucket's metadata returns to the bucket list.
+///
+/// None of those views is a history entry, because entering them pushes none,
+/// so `Back` from them used to leave Cloud Storage altogether, for whatever
+/// came before it in history. BigQuery's drill answers the same need through
+/// `LeaveDrillDown`. Returns whether it handled the key.
+fn leave_storage_view(root: &mut RootState) -> bool {
+    use crate::app::state::resources::StorageView;
+    if root.workspace != Workspace::Resources
+        || root.resources.active_service() != ResourceServiceKind::CloudStorage
+    {
+        return false;
+    }
+    match root.resources.storage().view() {
+        StorageView::Buckets => false,
+        StorageView::ObjectDetail | StorageView::BucketDetail => {
+            root.resources.close_detail();
+            true
+        }
+        StorageView::ObjectBrowser => {
+            root.resources.clear_detail_field_index();
+            root.resources.storage_mut().show_service_list();
+            true
         }
     }
 }

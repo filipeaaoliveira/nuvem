@@ -1958,3 +1958,84 @@ async fn the_settled_status_line_names_the_view_on_screen() {
         );
     }
 }
+
+/// `Back` out of a drilled-into view returns to the list it came from, not to
+/// whatever came before in history.
+///
+/// Cloud Storage's object browser and bucket metadata, and BigQuery's tables
+/// and schema views, are entered without a history entry. Each walk starts on
+/// another service, so a `Back` that fell through to history would land there.
+#[tokio::test(flavor = "multi_thread")]
+async fn back_from_a_drilled_view_returns_to_the_list_it_came_from() {
+    use nuvem::app::NavAction;
+    use nuvem::app::projection::project_app_frame;
+
+    let breadcrumbs = |session: &RuntimeSession| project_app_frame(&session.app().root).breadcrumbs;
+    let title = |session: &RuntimeSession| {
+        project_resource_list(&session.app().root.resources)
+            .table
+            .map(|table| {
+                table
+                    .columns
+                    .iter()
+                    .map(|column| column.header)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default()
+    };
+    let walks: [(ResourceServiceKind, Vec<ResourcesAction>); 4] = [
+        (
+            ResourceServiceKind::CloudStorage,
+            vec![ResourcesAction::OpenSelected],
+        ),
+        (
+            ResourceServiceKind::CloudStorage,
+            vec![ResourcesAction::OpenBucketMetadata],
+        ),
+        (
+            ResourceServiceKind::BigQueryDatasets,
+            vec![ResourcesAction::OpenSelected],
+        ),
+        (
+            ResourceServiceKind::BigQueryDatasets,
+            vec![ResourcesAction::OpenSelected, ResourcesAction::OpenSelected],
+        ),
+    ];
+    for (kind, into) in walks {
+        let mut session = demo_session_showing(ResourceServiceKind::ComputeInstances).await;
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::SelectService(kind)))
+            .await;
+        drain(&mut session).await;
+        let mut levels = vec![(breadcrumbs(&session), title(&session))];
+        for action in &into {
+            session
+                .dispatch_action(Action::Resources(action.clone()))
+                .await;
+            drain(&mut session).await;
+            levels.push((breadcrumbs(&session), title(&session)));
+        }
+        assert_ne!(levels[0], levels[1], "{kind:?}: {into:?} opened nothing");
+        levels.pop();
+        while let Some(expected) = levels.pop() {
+            // `Esc` from a drill-down is `LeaveDrillDown`; everywhere else in
+            // Resources it is `Back`. Both are what the key sends.
+            let context = nuvem::services::runtime::input_context_for_test(
+                &session,
+                ratatui::layout::Rect::new(0, 0, 121, 34),
+            );
+            let back = if context.resources_drilldown_open {
+                Action::Resources(ResourcesAction::LeaveDrillDown)
+            } else {
+                Action::Navigation(NavAction::Back)
+            };
+            session.dispatch_action(back).await;
+            drain(&mut session).await;
+            assert_eq!(
+                (breadcrumbs(&session), title(&session)),
+                expected,
+                "{kind:?} after {into:?}: Esc did not return to the level it came from"
+            );
+        }
+    }
+}
