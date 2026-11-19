@@ -113,34 +113,36 @@ label = "Network of {name}"     # picker wording; default "<tab> of <name>"
 
 ## Keys
 
-The table lists every key the file accepts. `<service>` is a service ID from
-[Services](../reference/services/overview.md). `<action>` is a hotkey action.
+The table lists every key the file accepts. Each key links to the page that
+explains it, except `version`, which this page covers. `<service>` is a
+service ID from [Services](../reference/services/overview.md). `<action>` is
+a hotkey action.
 
-| Key | Type | Default | Allowed values | Details |
-| --- | --- | --- | --- | --- |
-| `version` | integer | `1` | `1`. Any other value makes nuvem ignore the whole file. | this page |
-| `general.poll_interval_secs` | integer | `5` | seconds; `0` turns background refresh off | [First run](../getting-started/first-run.md#background-refresh) |
-| `general.default_service` | string | `"gce"` | `gce`, `compute`, `compute_instances`, `gke`, `clusters`, `gke_clusters` | [Remembered last view](remembered-view.md) |
-| `general.sidebar_visible` | boolean | `true` | `true`, `false` | [Browse resources](../guides/browse-resources.md) |
-| `general.theme` | string | `"default"` | `default`, `no-color`, `high-contrast` | [Themes](themes.md) |
-| `general.read_only` | boolean | `false` | `true`, `false` | [Read-only mode](../guides/read-only-mode.md) |
-| `aliases.<alias>` | string | none | a service id, alias or label | [Service aliases](aliases.md) |
-| `hotkeys.<action>` | string | see [Hotkeys](hotkeys.md) | one character, or `ctrl-<character>` | [Hotkeys](hotkeys.md) |
-| `favorites.projects` | list of strings | `[]` | project ids | [Favorites](favorites.md) |
-| `favorites.regions` | list of strings | `[]` | region names | [Favorites](favorites.md) |
-| `favorites.zones` | list of strings | `[]` | zone names | [Favorites](favorites.md) |
-| `theme.overrides.<configuration>` | string | none | a color | [Themes](themes.md#frame-overrides) |
-| `theme.project_overrides.<project>` | string | none | a color | [Themes](themes.md#frame-overrides) |
-| `columns.<service>.columns` | list of strings | the service's built-in columns | column ids; must include `name` | [Columns and sort](columns-and-sort.md) |
-| `columns.<service>.sort` | string | `"name"` | a sortable column id | [Columns and sort](columns-and-sort.md) |
-| `columns.<service>.sort_direction` | string | `"asc"` | `asc`, `desc` | [Columns and sort](columns-and-sort.md) |
-| `jumps[].from` | string | required | a service id | [Jump rules](jump-rules.md) |
-| `jumps[].to` | string | required | `"<service>"` or `"<service>:<tab>"` | [Jump rules](jump-rules.md) |
-| `jumps[].name` | string | `"{name}"` | a template | [Jump rules](jump-rules.md) |
-| `jumps[].location` | string | the source row's location | a template | [Jump rules](jump-rules.md) |
-| `jumps[].label` | string | `"<tab> of <name>"` | a template | [Jump rules](jump-rules.md) |
-| `jumps[].select` | string | none | `targets-this-instance` | [Jump rules](jump-rules.md) |
-| `plugins` | none | none | Not allowed here. Plugins belong in `plugins.toml`; nuvem warns and ignores them. | [Plugins](../plugins/overview.md) |
+| Key | Type | Default | Allowed values |
+| --- | --- | --- | --- |
+| `version` | integer | `1` | `1`. Any other value makes nuvem ignore the whole file. |
+| [`general.poll_interval_secs`](../getting-started/first-run.md#background-refresh) | integer | `5` | seconds; `0` turns background refresh off |
+| [`general.default_service`](remembered-view.md) | string | `"gce"` | `gce`, `compute`, `compute_instances`, `gke`, `clusters`, `gke_clusters` |
+| [`general.sidebar_visible`](../guides/browse-resources.md) | boolean | `true` | `true`, `false` |
+| [`general.theme`](themes.md) | string | `"default"` | `default`, `no-color`, `high-contrast` |
+| [`general.read_only`](../guides/read-only-mode.md) | boolean | `false` | `true`, `false` |
+| [`aliases.<alias>`](aliases.md) | string | none | a service id, alias or label |
+| [`hotkeys.<action>`](hotkeys.md) | string | each action's own key | one character, or `ctrl-<character>` |
+| [`favorites.projects`](favorites.md) | list of strings | `[]` | project ids |
+| [`favorites.regions`](favorites.md) | list of strings | `[]` | region names |
+| [`favorites.zones`](favorites.md) | list of strings | `[]` | zone names |
+| [`theme.overrides.<configuration>`](themes.md#frame-overrides) | string | none | a color |
+| [`theme.project_overrides.<project>`](themes.md#frame-overrides) | string | none | a color |
+| [`columns.<service>.columns`](columns-and-sort.md) | list of strings | the service's built-in columns | column ids; must include `name` |
+| [`columns.<service>.sort`](columns-and-sort.md) | string | `"name"` | a sortable column id |
+| [`columns.<service>.sort_direction`](columns-and-sort.md) | string | `"asc"` | `asc`, `desc` |
+| [`jumps[].from`](jump-rules.md) | string | required | a service id |
+| [`jumps[].to`](jump-rules.md) | string | required | `"<service>"` or `"<service>:<tab>"` |
+| [`jumps[].name`](jump-rules.md) | string | `"{name}"` | a template |
+| [`jumps[].location`](jump-rules.md) | string | the source row's location | a template |
+| [`jumps[].label`](jump-rules.md) | string | `"<tab> of <name>"` | a template |
+| [`jumps[].select`](jump-rules.md) | string | none | `targets-this-instance` |
+| [`plugins`](../plugins/overview.md) | none | none | Not allowed here. Plugins belong in `plugins.toml`; nuvem warns and ignores them. |
 
 nuvem reports any other key as unknown and ignores it. The rest of the file
 still applies. A misspelled key such as `poll_interval_sec` is reported the

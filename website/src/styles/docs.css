@@ -301,8 +301,7 @@ mobile-starlight-toc nav {
 	color: var(--nv-text-muted);
 }
 
-.sl-markdown-content a:not(:where(.not-content *)),
-.sl-markdown-content a:not(:where(.not-content *)) code {
+.sl-markdown-content a:not(:where(.not-content *)) {
 	color: var(--nv-coral);
 }
 
@@ -337,6 +336,11 @@ mobile-starlight-toc nav {
 
 .sl-markdown-content code .nv-token {
 	white-space: nowrap;
+}
+
+/* Code inside a link takes the link colour, so a linked key name reads as a link. */
+.sl-markdown-content a:not(:where(.not-content *)) > code {
+	color: var(--nv-coral);
 }
 
 /* Scroll cues: a Methyl edge shows on the side that has more to see. The
