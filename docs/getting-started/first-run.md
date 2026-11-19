@@ -5,6 +5,9 @@ sidebar:
   order: 2
 ---
 
+You can start nuvem against your own gcloud configuration, or try it first
+with no account at all.
+
 ## Try it without a project
 
 To see the whole interface with no Google Cloud account, run:
@@ -13,12 +16,13 @@ To see the whole interface with no Google Cloud account, run:
 nuvem --demo
 ```
 
-Demo mode serves built-in fixtures. Every command that would change something
-succeeds without doing anything. See [Demo mode](../guides/demo-mode.md).
+Demo mode shows built-in sample data. A command that changes a resource,
+such as stopping an instance, reports success but does nothing. See
+[Demo mode](../guides/demo-mode.md).
 
 ## Run it against your project
 
-1. Check that gcloud has a configuration and an account:
+1. Make sure that gcloud has a configuration and an account:
 
    ```bash
    gcloud config configurations list
@@ -32,14 +36,14 @@ succeeds without doing anything. See [Demo mode](../guides/demo-mode.md).
 
    nuvem loads your gcloud configurations and opens on the active one.
 
-3. To start on a different configuration, name it. nuvem asks gcloud to
-   activate it first, then reloads the configuration list:
+3. To start on a different configuration, pass its name. nuvem asks gcloud to
+   activate it, then reloads the configuration list:
 
    ```bash
    nuvem --configuration dev
    ```
 
-4. To make sure nothing you press can change a cloud resource, add
+4. To make sure that no key you press can change a cloud resource, add
    `--read-only`. See [Read-only mode](../guides/read-only-mode.md).
 
 ## Find your way around
@@ -59,8 +63,8 @@ nuvem is keyboard-only: it has no mouse support.
 | `q` | Quit from Home or a list. In a detail view, `q` goes back to the list. |
 | `Ctrl-C` | Quit from anywhere |
 
-The footer shows the most useful keys for the current view, and `?` lists all
-of them. [Keys](../reference/keys.md) lists every key in every view.
+The footer shows the most useful keys for the current view. `?` lists all of
+them. [Keys](../reference/keys.md) lists every key in every view.
 
 ## Background refresh
 
@@ -68,7 +72,8 @@ While Resources is open, nuvem refreshes the active service every 5 seconds.
 The same tick drives the Cloud Logging tail. To change the interval, pass
 `--poll-interval <seconds>` or set `poll_interval_secs` in the
 [config file](../configuration/config-file.md). `0` turns background refresh
-off; `r` still refreshes by hand, and a service still loads when you open it.
+off. You can still press `r` to refresh, and a service still loads when you
+open it.
 
 ## Next
 
