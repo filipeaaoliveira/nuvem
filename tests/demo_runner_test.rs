@@ -2321,3 +2321,56 @@ async fn every_demo_configuration_can_be_activated_and_settles() {
         );
     }
 }
+
+/// At 120 columns, a list's footer keeps the keys the view is for.
+///
+/// The footer drops hints from the end when a row is too narrow, so the order
+/// a view lists its hints in is its priority. Every service's list, and both
+/// BigQuery drill-down levels (a dataset's tables, a table's schema), must
+/// paint `Enter Open` where `Enter` opens something, and the drill-downs must
+/// paint `Esc Leave drill-down`, the one key they have that the list above
+/// them does not. Before, the drill-down listed the sidebar keys first and
+/// lost both at this width.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_footer_keeps_open_and_leave_at_120_columns() {
+    use nuvem::app::projection::project_app_frame;
+
+    let footer = |session: &RuntimeSession| {
+        let painted = screen(session, 120, 35);
+        painted.lines().last().unwrap_or_default().to_string()
+    };
+    let check = |what: &str, session: &RuntimeSession, leaves: bool| {
+        let line = footer(session);
+        let hints = project_app_frame(&session.app().root).footer_hints;
+        if hints.iter().any(|hint| hint.key == "Enter") {
+            assert!(
+                line.contains("Enter Open"),
+                "{what}: lost `Enter Open`: {line:?}"
+            );
+        }
+        if leaves {
+            assert!(
+                line.contains("Esc Leave drill-down"),
+                "{what}: lost `Esc Leave drill-down`: {line:?}"
+            );
+        }
+    };
+
+    for kind in ResourceServiceKind::ALL {
+        let session = demo_session_showing(kind).await;
+        check(&format!("{kind:?}"), &session, false);
+    }
+
+    let mut session = demo_session_showing(ResourceServiceKind::BigQueryDatasets).await;
+    for level in ["tables", "schema"] {
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+            .await;
+        drain(&mut session).await;
+        assert!(
+            session.app().root.resources.is_showing_drilldown(),
+            "the walk reached the BigQuery {level} view"
+        );
+        check(&format!("BigQuery {level}"), &session, true);
+    }
+}
