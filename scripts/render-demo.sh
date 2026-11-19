@@ -4,7 +4,7 @@
 #   nuvem-demo.gif         README recording
 #   nuvem-demo.webm        site hero video (VP9, no audio)
 #   nuvem-demo.mp4         site hero video (H.264, no audio)
-#   nuvem-demo-poster.png  still frame for the video's poster and for
+#   nuvem-demo-poster.png  the video's first frame, for its poster and for
 #                          reduced-motion readers
 #
 # The terminal's colours come from scripts/ansi2html.py, the same palette the
@@ -57,7 +57,10 @@ ffmpeg -loglevel error -y -i "$work/tour.mp4" -an -c copy -movflags +faststart \
   "$work/nuvem-demo.mp4"
 ffmpeg -loglevel error -y -i "$work/tour.webm" -an -c copy "$work/nuvem-demo.webm"
 mv "$work/tour.gif" "$work/nuvem-demo.gif"
-mv "$work/poster.png" "$work/nuvem-demo-poster.png"
+
+# The poster is the video's first frame, so nothing changes on screen when
+# playback starts.
+ffmpeg -loglevel error -y -i "$work/nuvem-demo.mp4" -frames:v 1 "$work/nuvem-demo-poster.png"
 
 # The README and the site's landing page load these on first view; keep them
 # small. Lengthening the tour or raising the size or frame rate shows up here.

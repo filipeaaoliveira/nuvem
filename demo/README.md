@@ -55,8 +55,9 @@ characters long on the BigQuery screens, and narrower terminals end it with
 some cells with `…`, so the tour does not visit them. 34 rows fit every line
 of Home.
 
-The poster is a screenshot the tape takes on the GCE instances list, not the
-first frame.
+The poster is the video's first frame, Home, which the script takes from the
+MP4 with `ffmpeg`. A reader who starts the video sees the same screen the
+poster showed.
 
 ### Off camera
 
