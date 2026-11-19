@@ -65,6 +65,31 @@ pub struct SystemState {
     plugin_output: Option<PluginOutputViewer>,
     last_diagnostic: Option<GcloudDiagnostic>,
     config_problems: Vec<String>,
+    /// What the status line showed when a background operation began, while
+    /// that operation is the only thing to have changed it. See
+    /// [`Self::begin_background_operation`].
+    background: Option<BackgroundStatus>,
+}
+
+/// The fields the status line is drawn from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StatusLineState {
+    pub operation: OperationState,
+    pub status_message: Option<String>,
+    pub status_operation_label: Option<String>,
+    pub status_phase: Option<OperationPhase>,
+}
+
+/// A background operation in flight, and the status line it is not to touch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct BackgroundStatus {
+    /// The line as it stood before the operation began.
+    shown: StatusLineState,
+    /// The operation as it was begun, and the status generation after it: the
+    /// line stays `shown` only while both still hold, so anything else that
+    /// writes the line — a key, a result, another operation — is seen.
+    operation: OperationState,
+    status_generation: u64,
 }
 
 impl SystemState {
@@ -162,6 +187,56 @@ impl SystemState {
         }
     }
 
+    /// The fields the status line shows: the live ones, except while a
+    /// background operation is the only thing to have changed them since it
+    /// began, when they are the ones from before it began.
+    pub fn status_line(&self) -> StatusLineState {
+        match self.holding_background() {
+            Some(background) => background.shown.clone(),
+            None => StatusLineState {
+                operation: self.operation.clone(),
+                status_message: self.status_message.clone(),
+                status_operation_label: self.status_operation_label.clone(),
+                status_phase: self.status_phase,
+            },
+        }
+    }
+
+    fn holding_background(&self) -> Option<&BackgroundStatus> {
+        self.background.as_ref().filter(|background| {
+            background.operation == self.operation
+                && background.status_generation == self.status_generation
+        })
+    }
+
+    /// Starts an operation nobody asked for — a poll of the list on screen —
+    /// exactly as [`Self::begin_operation`] (or, with `preserve_status`,
+    /// [`Self::begin_follow_up_operation`]) would, but leaves the status line
+    /// showing what it showed before.
+    ///
+    /// A poll that changes nothing is not news, and flashing `[SYNC]` over a
+    /// list the operator is reading, every few seconds, says otherwise. The
+    /// line moves again as soon as anything else writes it: the poll's own
+    /// result (a failure is news), a key, or another operation starting.
+    pub fn begin_background_operation(
+        &mut self,
+        phase: OperationPhase,
+        label: impl Into<String>,
+        preserve_status: bool,
+    ) {
+        let shown = self.status_line();
+        if preserve_status {
+            self.begin_follow_up_operation(phase, label);
+        } else {
+            self.begin_operation(phase, label);
+        }
+        self.background = Some(BackgroundStatus {
+            shown,
+            operation: self.operation.clone(),
+            status_generation: self.status_generation,
+        });
+    }
+
     /// Starts an operation and clears any previous detailed status message.
     pub fn begin_operation(&mut self, phase: OperationPhase, label: impl Into<String>) {
         self.clear_status_message();
@@ -170,6 +245,11 @@ impl SystemState {
 
     /// Starts a follow-up operation while preserving an associated status message.
     pub fn begin_follow_up_operation(&mut self, phase: OperationPhase, label: impl Into<String>) {
+        // Forgotten outright rather than left to the check in
+        // `holding_background`: with no message to re-label this writes
+        // nothing that check can see when the operation it begins has the
+        // phase and label the background one had.
+        self.background = None;
         let label = label.into();
         self.set_operation(phase, label.clone());
         if self.status_message.is_some() && self.status_operation_label.is_some() {
@@ -209,6 +289,58 @@ impl SystemState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn shown(state: &SystemState) -> (OperationPhase, String, Option<String>) {
+        let line = state.status_line();
+        (
+            line.status_phase.unwrap_or(line.operation.phase),
+            line.operation.label,
+            line.status_message,
+        )
+    }
+
+    /// A background operation leaves the line as it stood, and the line moves
+    /// again with the first thing that writes it: here, the operation's own
+    /// completion.
+    #[test]
+    fn a_background_operation_leaves_the_line_until_it_completes() {
+        let mut state = SystemState::default();
+        state.begin_operation(OperationPhase::Refreshing, "GCE instances");
+        state.complete_operation(OperationPhase::Healthy, "GCE instances");
+        let settled = shown(&state);
+
+        state.begin_background_operation(OperationPhase::Refreshing, "GCE instances", false);
+        assert_eq!(shown(&state), settled);
+
+        state.complete_operation(OperationPhase::Degraded, "GCE instances");
+        assert_eq!(shown(&state).0, OperationPhase::Degraded);
+    }
+
+    /// A message written while it runs is shown, and so is an operation the
+    /// operator starts.
+    #[test]
+    fn anything_else_that_writes_the_line_is_shown() {
+        let mut state = SystemState::default();
+        state.begin_background_operation(OperationPhase::Refreshing, "GCE instances", false);
+        state.set_status_message("Copied");
+        assert_eq!(shown(&state).2.as_deref(), Some("Copied"));
+
+        state.begin_background_operation(OperationPhase::Refreshing, "GCE instances", false);
+        state.begin_operation(OperationPhase::Refreshing, "GCE instances");
+        assert_eq!(shown(&state).0, OperationPhase::Refreshing);
+    }
+
+    /// A follow-up with the background operation's own phase and label, after
+    /// it completed, is shown too, though it writes nothing else.
+    #[test]
+    fn a_follow_up_after_a_background_operation_is_shown() {
+        let mut state = SystemState::default();
+        state.complete_operation(OperationPhase::Healthy, "GCE instances");
+        state.begin_background_operation(OperationPhase::Refreshing, "GCE instances", false);
+        state.complete_operation(OperationPhase::Healthy, "GCE instances");
+        state.begin_follow_up_operation(OperationPhase::Refreshing, "GCE instances");
+        assert_eq!(shown(&state).0, OperationPhase::Refreshing);
+    }
 
     #[test]
     fn config_problems_start_empty() {

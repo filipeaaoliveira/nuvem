@@ -1245,6 +1245,20 @@ impl RuntimeSession {
     }
 
     async fn dispatch_effects(&mut self, effects: Vec<Effect>, preserve_status: bool) {
+        self.dispatch_effects_as(effects, preserve_status, false)
+            .await;
+    }
+
+    /// [`Self::dispatch_effects`], with `background` saying whether nobody
+    /// asked for these effects: a poll of the view on screen. Their
+    /// operations begin as any other's do, but leave the status line as it
+    /// stood (`SystemState::begin_background_operation`).
+    async fn dispatch_effects_as(
+        &mut self,
+        effects: Vec<Effect>,
+        preserve_status: bool,
+        background: bool,
+    ) {
         let mut pending = effects
             .into_iter()
             .map(|effect| (effect, preserve_status))
@@ -1291,7 +1305,12 @@ impl RuntimeSession {
                     self.operation_generation = self.operation_generation.wrapping_add(1);
                     operation_generation_bumped = true;
                 }
-                if preserve_status {
+                if background {
+                    self.app
+                        .root
+                        .system
+                        .begin_background_operation(phase, label, preserve_status);
+                } else if preserve_status {
                     self.app.root.system.begin_follow_up_operation(phase, label);
                 } else {
                     self.app.root.system.begin_operation(phase, label);
@@ -4891,7 +4910,11 @@ impl RuntimeSession {
     /// (`CompiledFilter::Label` keeps every row), so an unfiltered poll would
     /// swap a `-l k=v` table for the whole project while the tools line still
     /// shows the filter.
-    async fn schedule_active_refresh(&mut self) {
+    ///
+    /// `background` is true for a poll tick, which nobody asked for and which
+    /// leaves the status line alone; a list being loaded because the operator
+    /// opened it is not, and still shows `[LOAD]` or `[SYNC]`.
+    async fn schedule_active_refresh(&mut self, background: bool) {
         let Some(context) = self.app.root.current_context() else {
             return;
         };
@@ -4927,7 +4950,7 @@ impl RuntimeSession {
         };
         // A held message survives the refresh starting, as it survives its
         // result in `apply_background_effect_result`.
-        self.dispatch_effects(vec![effect], self.status_held_until_key)
+        self.dispatch_effects_as(vec![effect], self.status_held_until_key, background)
             .await;
         if first_load {
             self.app.root.system.operation.phase = OperationPhase::Loading;
@@ -4958,7 +4981,7 @@ impl RuntimeSession {
         if !should_auto_retry(last_retryability) {
             return;
         }
-        self.schedule_active_refresh().await;
+        self.schedule_active_refresh(true).await;
     }
 
     /// Schedules one bounded Cloud Logging tail request per poll tick, when
@@ -5028,7 +5051,7 @@ impl RuntimeSession {
         }
         self.auto_loaded_scope = Some(scope);
         if self.app.root.resources.needs_refresh(&context) {
-            self.schedule_active_refresh().await;
+            self.schedule_active_refresh(false).await;
         }
     }
 

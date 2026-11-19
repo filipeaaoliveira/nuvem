@@ -2774,6 +2774,134 @@ async fn the_footer_keeps_open_and_leave_at_120_columns() {
     }
 }
 
+/// A poll of the view on screen leaves the status line as it stood: no
+/// `[SYNC]` while it runs, and the same line when it lands.
+///
+/// Every poll tick began a refresh like any other, so the line flashed
+/// `[SYNC] GCE instances` over a list nobody had asked to reload, under the
+/// command palette too, every five seconds and for as long as the call took.
+/// A poll that changes nothing is not news. Walked for every service, at every
+/// view `Enter` reaches from the first row, with the palette closed and open,
+/// on the frame's status projection and on the painted status row at 80, 120
+/// and 138 columns, after the poll starts and after each result it brings
+/// back. `r` is still announced: the operator asked for it.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_poll_leaves_the_status_line_alone() {
+    use nuvem::app::CommandAction;
+    use nuvem::app::projection::project_app_frame;
+    use nuvem::app::state::system::OperationPhase;
+    const MAX_DEPTH: usize = 3;
+
+    // The status projection, and the painted status row at each width.
+    fn line(
+        session: &RuntimeSession,
+    ) -> (
+        OperationPhase,
+        String,
+        Option<String>,
+        Option<String>,
+        Vec<String>,
+    ) {
+        let operation = project_app_frame(&session.app().root).operation;
+        let painted = [(80u16, 24u16), (120, 35), (138, 34)]
+            .into_iter()
+            .map(|(width, height)| {
+                screen(session, width, height)
+                    .lines()
+                    .rev()
+                    .nth(2)
+                    .unwrap_or_default()
+                    .trim_end()
+                    .to_string()
+            })
+            .collect();
+        (
+            operation.phase,
+            operation.label,
+            operation.message,
+            operation.message_label,
+            painted,
+        )
+    }
+    // Polls, then drains the poll one result at a time, checking the line
+    // after the poll starts and after every result.
+    async fn poll_quietly(session: &mut RuntimeSession, at: &str) {
+        let before = line(session);
+        session.poll_active_resource().await;
+        assert!(
+            session.effect_tasks_in_flight() > 0,
+            "{at}: the poll started nothing, so it proves nothing"
+        );
+        assert_eq!(
+            line(session),
+            before,
+            "{at}: the poll's start rewrote the line"
+        );
+        let deadline = Instant::now() + SETTLE_TIMEOUT;
+        loop {
+            let in_flight = session.effect_tasks_in_flight();
+            let progressed = matches!(
+                tokio::time::timeout(SETTLE_PROBE, session.process_next_effect_result()).await,
+                Ok(true)
+            );
+            if progressed {
+                assert_eq!(
+                    line(session),
+                    before,
+                    "{at}: a poll result rewrote the line"
+                );
+            } else if in_flight == 0 {
+                break;
+            }
+            assert!(Instant::now() < deadline, "{at}: the poll did not settle");
+        }
+    }
+
+    for kind in ResourceServiceKind::ALL {
+        let mut session = demo_session_showing(kind).await;
+        for depth in 0..=MAX_DEPTH {
+            if depth > 0 {
+                let before = project_app_frame(&session.app().root).breadcrumbs;
+                session
+                    .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+                    .await;
+                drain(&mut session).await;
+                if project_app_frame(&session.app().root).breadcrumbs == before {
+                    break;
+                }
+            }
+            poll_quietly(&mut session, &format!("{kind:?} level {depth}")).await;
+            session
+                .dispatch_action(Action::Command(CommandAction::Open))
+                .await;
+            poll_quietly(
+                &mut session,
+                &format!("{kind:?} level {depth} under the palette"),
+            )
+            .await;
+            session
+                .dispatch_action(Action::Command(CommandAction::Cancel))
+                .await;
+            drain(&mut session).await;
+            if session.app().root.resources.is_showing_detail() {
+                break;
+            }
+        }
+
+        // The operator's own refresh is still announced.
+        let mut session = demo_session_showing(kind).await;
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::Refresh))
+            .await;
+        let phase = project_app_frame(&session.app().root).operation.phase;
+        assert!(
+            matches!(phase, OperationPhase::Refreshing | OperationPhase::Loading),
+            "{kind:?}: r is not announced, the line is {phase:?}"
+        );
+        drain(&mut session).await;
+    }
+}
+
 /// A message the operator's own key put on the status line stays until their
 /// next key, through any number of polls.
 ///
