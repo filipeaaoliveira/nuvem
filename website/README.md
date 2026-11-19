@@ -5,8 +5,8 @@ The project site: a home page and the user documentation, built with
 
 ## Commands
 
-Run these from this directory. You need Node.js 22.23.4 or newer;
-`.node-version` pins the exact release the hosted build uses.
+Run these from this directory. You need Node.js 22.23.4 or newer.
+`.node-version` pins the exact release that the hosted build uses.
 
 ```sh
 npm ci           # install the exact dependencies in package-lock.json
@@ -14,41 +14,41 @@ npm run dev      # serve the site at http://localhost:4321 and reload on change
 npm run build    # write the static site to dist/
 ```
 
-`npm run preview` serves the built `dist/` locally. Search only works in a
+`npm run preview` serves the built `dist/` locally. Search works only in a
 build, not in `npm run dev`.
 
-Astro caches rendered pages and only re-renders a page when its Markdown
-changes. After you edit a Markdown or code-block plugin in `src/lib/`, delete
+Astro caches rendered pages and re-renders a page only when its Markdown
+changes. If you edit a Markdown or code-block plugin in `src/lib/`, delete
 the cache with `rm -rf .astro node_modules/.astro` before you build.
 
 ## Where the docs come from
 
 The docs pages are the Markdown files in the repository's `docs/` directory.
-The site reads them in place; there are no copies under `website/`. Edit a
-file in `docs/` and the page changes.
+The site reads them in place, and there are no copies under `website/`. When
+you edit a file in `docs/`, the page changes.
 
-- **Title:** the page's frontmatter `title`, or else its first `# ` heading.
+- Title: the page's frontmatter `title`, or else its first `# ` heading.
   The heading is not repeated in the page body.
-- **Address:** `docs/keys.md` is served at `/docs/keys/`, and
+- Address: `docs/keys.md` is served at `/docs/keys/`, and
   `docs/guides/first-run.md` at `/docs/guides/first-run/`. A frontmatter
   `slug` overrides this.
-- **Sidebar:** each top-level file is a link and each directory is a group;
-  a directory inside a directory is a group inside a group. Groups are
+- Sidebar: each top-level file is a link and each directory is a group. A
+  directory inside a directory is a group inside a group. Groups are
   collapsed, except the one holding the page you are on. A directory with
   only one page shows as a plain link, not a group of one.
-- **Group labels:** the `sidebar.label` or `title` of the directory's
+- Group labels: the `sidebar.label` or `title` of the directory's
   `index.md`, or else the directory name in sentence case
   (`getting-started` becomes "Getting started").
-- **Order:** inside a group, pages follow their `sidebar.order` frontmatter,
-  then their title; `index.md` comes first. Top-level entries follow
-  `INTENT_ORDER` in `src/lib/docs-source.mjs`; anything not listed there goes
+- Order: inside a group, pages follow their `sidebar.order` frontmatter,
+  then their title, and `index.md` comes first. Top-level entries follow
+  `INTENT_ORDER` in `src/lib/docs-source.mjs`. Anything not listed there goes
   last, alphabetically.
-- **Links:** write links between docs as relative file links, such as
+- Links: write links between docs as relative file links, such as
   `[keys](reference/keys.md#global-keys)`, so they also work on GitHub. The
   site rewrites them to page addresses. A relative link to any other file in
   the repository (`../ARCHITECTURE.md`, `decisions/`) points to that file on
   GitHub.
-- **Not published:** `docs/decisions/` and `docs/performance-read-paths.md`
+- Not published: `docs/decisions/` and `docs/performance-read-paths.md`
   are contributor documentation. The list is `EXCLUDED` in
   `src/lib/docs-source.mjs`.
 
@@ -58,12 +58,13 @@ directory with at least two pages.
 ## Link check
 
 `npm run build` fails when a relative link in a published docs page is
-broken, and lists every broken link with the file it is in:
+broken. It lists every broken link with the file it is in. A link is broken
+in these cases:
 
-- a link to a docs page that does not exist;
-- an anchor (`#section`) that the target page has no heading or `id` for,
-  including anchors on the same page;
-- a link to a repository file or directory that does not exist.
+- It points to a docs page that does not exist.
+- It has an anchor (`#section`) that the target page has no heading or `id`
+  for, including anchors on the same page.
+- It points to a repository file or directory that does not exist.
 
 `npm run dev` prints the same list as a warning and keeps serving. The check
 is `src/lib/doc-links.mjs`. It reads the Markdown directly, so it does not
@@ -83,9 +84,9 @@ from the repository's `demo/` directory in place:
   just its command palette box, found by the box's title. If a re-captured
   frame has no such box, the build says so.
 
-Re-render either with the scripts in `scripts/` (see `demo/README.md`) and
-rebuild; nothing under `website/` changes. The build stops with the command
-to run when one of these files is missing (`src/lib/demo-assets.mjs`).
+To re-render either, run the scripts in `scripts/` (see `demo/README.md`) and
+rebuild. Nothing under `website/` changes. If one of these files is missing,
+the build stops and names the command to run (`src/lib/demo-assets.mjs`).
 
 A frame is accepted only as the single `<pre>` of coloured `<span>` runs that
 `scripts/ansi2html.py` writes. Two terminal colours are shown lighter than in
@@ -102,8 +103,8 @@ broken link inside the docs does.
 caching for the hashed files in `/_astro/`, and a Content-Security-Policy
 that allows only the site's own files. The build replaces the placeholder in
 its `script-src` with a hash of every inline script it emitted
-(`src/lib/security-headers.mjs`), so a new inline script needs nothing more
-than a rebuild. The site loads nothing from other origins; keep it that way.
+(`src/lib/security-headers.mjs`), so a new inline script needs only a
+rebuild. The site loads nothing from other origins. Keep it that way.
 
 `public/og.png` is the 1200 by 630 card that link previews show.
 
