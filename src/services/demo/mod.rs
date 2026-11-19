@@ -88,6 +88,13 @@ use crate::services::gcloud::cli::{
 #[derive(Debug, Clone, Default)]
 pub struct DemoCommandRunner {
     corpus: Corpus,
+    /// The showcase's gcloud configurations as this session has changed them:
+    /// which one is active, and the properties set or unset on each. Held in
+    /// memory for the life of the runner and never written anywhere, so a
+    /// demo session can switch and edit configurations without touching the
+    /// operator's own. `None` until the first change; the fixture answers
+    /// until then.
+    configurations: std::sync::Arc<std::sync::Mutex<Option<Vec<serde_json::Value>>>>,
 }
 
 impl DemoCommandRunner {
@@ -98,7 +105,106 @@ impl DemoCommandRunner {
 
     /// A runner answering from `corpus`.
     pub fn over(corpus: Corpus) -> Self {
-        Self { corpus }
+        Self {
+            corpus,
+            ..Self::default()
+        }
+    }
+
+    /// The showcase answers for gcloud's own configuration state, kept in
+    /// memory: listing, activating, creating, setting and unsetting, and the
+    /// account `auth list` reports for a configuration. `None` hands the argv
+    /// on.
+    fn configuration_state(&self, args: &[String]) -> Option<CommandOutput> {
+        let named = args
+            .windows(2)
+            .find(|pair| pair[0] == "--configuration")
+            .map(|pair| pair[1].clone());
+        let positional = |after: &str| {
+            args.iter()
+                .skip_while(|arg| arg.as_str() != after)
+                .skip(1)
+                .find(|arg| !arg.starts_with('-'))
+                .cloned()
+        };
+        let mut state = self
+            .configurations
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let rows = state.get_or_insert_with(|| {
+            serde_json::from_str(include_str!(
+                "../../../tests/fixtures/gcloud_configurations.json"
+            ))
+            .unwrap_or_default()
+        });
+        let name_of = |row: &serde_json::Value| {
+            row.get("name")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string)
+        };
+        if matches(args, &["config", "configurations", "list"]) {
+            return Some(fixture(&serde_json::Value::Array(rows.clone()).to_string()));
+        }
+        if matches(args, &["config", "configurations", "activate"]) {
+            let wanted = positional("activate")?;
+            for row in rows.iter_mut() {
+                let active = name_of(row).as_deref() == Some(wanted.as_str());
+                row["is_active"] = serde_json::Value::Bool(active);
+            }
+            return Some(ok_noop());
+        }
+        if matches(args, &["config", "configurations", "create"]) {
+            let name = positional("create")?;
+            rows.push(serde_json::json!({ "name": name, "is_active": false, "properties": {} }));
+            return Some(ok_noop());
+        }
+        let property_path = |property: &str| match property.split_once('/') {
+            Some((section, key)) => (section.to_string(), key.to_string()),
+            None => ("core".to_string(), property.to_string()),
+        };
+        let target = |rows: &mut Vec<serde_json::Value>| -> Option<usize> {
+            match &named {
+                Some(name) => rows
+                    .iter()
+                    .position(|row| name_of(row).as_deref() == Some(name)),
+                None => rows
+                    .iter()
+                    .position(|row| row["is_active"] == serde_json::Value::Bool(true)),
+            }
+        };
+        if matches(args, &["config", "set"]) {
+            let property = positional("set")?;
+            let value = args
+                .iter()
+                .skip_while(|arg| **arg != property)
+                .nth(1)?
+                .clone();
+            let index = target(rows)?;
+            let (section, key) = property_path(&property);
+            rows[index]["properties"][section.as_str()][key.as_str()] =
+                serde_json::Value::String(value);
+            return Some(ok_noop());
+        }
+        if matches(args, &["config", "unset"]) {
+            let property = positional("unset")?;
+            let index = target(rows)?;
+            let (section, key) = property_path(&property);
+            if let Some(section) = rows[index]["properties"]
+                .get_mut(section.as_str())
+                .and_then(serde_json::Value::as_object_mut)
+            {
+                section.remove(key.as_str());
+            }
+            return Some(ok_noop());
+        }
+        if matches(args, &["auth", "list"]) {
+            let index = target(rows)?;
+            let account = rows[index]["properties"]["core"]["account"].clone();
+            return Some(fixture(
+                &serde_json::json!([{ "account": account, "status": "ACTIVE" }]).to_string(),
+            ));
+        }
+        None
     }
 }
 
@@ -116,7 +222,14 @@ impl CommandRunner for DemoCommandRunner {
         let args = &command.args;
 
         match command.program {
-            CommandProgram::Gcloud => gcloud_fixture(args, self.corpus),
+            CommandProgram::Gcloud => {
+                if self.corpus == Corpus::Showcase
+                    && let Some(answer) = self.configuration_state(args)
+                {
+                    return Ok(answer);
+                }
+                gcloud_fixture(args, self.corpus)
+            }
             CommandProgram::Bq => match self.corpus {
                 Corpus::Captures => bq_fixture(args),
                 Corpus::Showcase => showcase_bq(args),
