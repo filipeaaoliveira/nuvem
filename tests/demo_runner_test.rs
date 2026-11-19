@@ -1728,6 +1728,50 @@ fn screen(session: &RuntimeSession, width: u16, height: u16) -> String {
         .join("\n")
 }
 
+/// The detail tabs a service's pane cycles through, in order, read off each
+/// service's own tab enumeration. An exhaustive match: a new service does not
+/// compile until it says what tabs it has.
+fn detail_tab_labels(kind: ResourceServiceKind) -> Vec<&'static str> {
+    use nuvem::app::state::resources::{
+        CloudRunDetailTab, CloudSqlDetailTab, ComputeDetailTab, GkeDetailTab, SecretDetailTab,
+        StorageDetailTab,
+    };
+    match kind {
+        ResourceServiceKind::ComputeInstances => ComputeDetailTab::ALL
+            .iter()
+            .map(|tab| tab.label())
+            .collect(),
+        ResourceServiceKind::GkeClusters => {
+            GkeDetailTab::ALL.iter().map(|tab| tab.label()).collect()
+        }
+        ResourceServiceKind::CloudSql => CloudSqlDetailTab::ALL
+            .iter()
+            .map(|tab| tab.label())
+            .collect(),
+        ResourceServiceKind::CloudRunServices => CloudRunDetailTab::ALL
+            .iter()
+            .map(|tab| tab.label())
+            .collect(),
+        ResourceServiceKind::SecretManagerSecrets => {
+            SecretDetailTab::ALL.iter().map(|tab| tab.label()).collect()
+        }
+        ResourceServiceKind::CloudStorage => StorageDetailTab::ALL
+            .iter()
+            .map(|tab| tab.label())
+            .collect(),
+        ResourceServiceKind::CloudFunctions
+        | ResourceServiceKind::PersistentDisks
+        | ResourceServiceKind::PubSubTopics
+        | ResourceServiceKind::PubSubSubscriptions
+        | ResourceServiceKind::VpcNetworks
+        | ResourceServiceKind::VpcSubnets
+        | ResourceServiceKind::FirewallRules
+        | ResourceServiceKind::BigQueryDatasets
+        | ResourceServiceKind::IamServiceAccounts
+        | ResourceServiceKind::IamPolicy => vec![""],
+    }
+}
+
 /// Every row a demo user can open settles into its own detail. None of them
 /// may still be loading once the session has nothing left in flight, and none
 /// may fail: the demo corpus answers every row it lists.
@@ -1782,9 +1826,16 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
             .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
             .await;
         drain(&mut session).await;
-        // A pass over the tabs, so a tab that loads lazily (Cloud SQL users,
-        // Cloud Run revisions) is walked too.
-        for tab in 0..6 {
+        // A pass over the service's own tabs, so a tab that loads lazily
+        // (Cloud SQL users, Cloud Run revisions) is walked too. The label on
+        // screen is checked at each step, so the walk proves it reached every
+        // tab rather than counting presses.
+        for tab in detail_tab_labels(kind) {
+            assert_eq!(
+                session.app().root.resources.active_detail_tab_label(),
+                tab,
+                "{kind:?} row {row}: the walk is not on the {tab:?} tab"
+            );
             let frame = screen(&session, 160, 40);
             assert!(
                 !frame.contains("load failed"),
@@ -1968,22 +2019,21 @@ async fn a_demo_session_opens_on_a_populated_home() {
 /// `gcloud compute ssh ... --configuration dev` or k9s against their own
 /// kubeconfig. Each `InteractiveCommand` kind is reached the way an operator
 /// reaches it, through the palette and its confirmation, and must end in the
-/// demo's refusal rather than in a pending launch. `kinds_walked` is an
-/// exhaustive match, so a new kind does not compile until it has a walk here.
+/// demo's refusal rather than in a pending launch.
+///
+/// The walks are written by hand, one per `InteractiveCommand` variant, and
+/// nothing makes a new variant fail to compile here: a command value carries a
+/// resolved target, which only a walk produces, so there is no value to match
+/// on before walking. A new variant needs a walk added beside these. The
+/// session's refusal is not per variant, though: every launch in a demo
+/// session is intercepted before it is handed to the run loop.
 /// The gcloud runner and the client cache are `DemoCommandRunner`s and
 /// tunnels use `DemoTunnelLauncher`, which other tests pin; kubectl is the
 /// remaining runner, and a demo session holds none.
 #[tokio::test(flavor = "multi_thread")]
 async fn a_demo_session_starts_no_interactive_process() {
     use nuvem::app::CommandAction;
-    use nuvem::app::effect::InteractiveCommand;
 
-    fn kinds_walked(command: &InteractiveCommand) -> &'static str {
-        match command {
-            InteractiveCommand::GceSsh { .. } => "ssh",
-            InteractiveCommand::K9s { .. } => "k9s",
-        }
-    }
     let walks: [(ResourceServiceKind, &str, ResourcesAction, &str); 2] = [
         (
             ResourceServiceKind::ComputeInstances,
@@ -1998,8 +2048,6 @@ async fn a_demo_session_starts_no_interactive_process() {
             "k9s (",
         ),
     ];
-    // The walks below are named by `kinds_walked`, one per kind.
-    let _ = kinds_walked;
 
     for (kind, query, confirm, description) in walks {
         let mut session = demo_session_showing(kind).await;
