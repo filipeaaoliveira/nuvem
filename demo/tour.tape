@@ -42,14 +42,11 @@ Show
 Sleep 2.2s
 
 # Resources opens on GCE instances, with the service navigator beside them.
-# The poster frame: a whole list, nothing cut.
 Hide
 Type "g"
 Sleep 0.2s
 Show
-Sleep 0.3s
-Screenshot poster.png
-Sleep 1.9s
+Sleep 2.2s
 
 # Hide the navigator to give the columns room, and filter the list.
 Hide
