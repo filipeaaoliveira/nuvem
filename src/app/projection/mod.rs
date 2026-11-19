@@ -22,7 +22,7 @@ pub use binding::{
 pub use configurations::project_configurations_table;
 pub use frame::{
     AppFrameProjection, FrameContextProjection, FrameHint, FrameOperationProjection,
-    format_last_refresh, project_app_frame, project_app_frame_with,
+    drilled_list_name, format_last_refresh, project_app_frame, project_app_frame_with,
 };
 pub use home::{
     DELTA_HIGHLIGHT_WINDOW, GcloudHealthProjection, HomeOverviewProjection,

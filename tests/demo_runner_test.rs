@@ -2134,10 +2134,20 @@ async fn enter_opens_a_row_exactly_where_the_capability_says() {
 /// load to settle. A demo session lists every service as it opens, so before
 /// this the line read `[OK] Cloud Run services` over the GCE list, and in any
 /// session it kept naming a view the operator had left. Walks every service.
+///
+/// And every view below it: `Enter` is pressed on the first row until it
+/// opens nothing more, which walks a Cloud Storage bucket, its folder and an
+/// object's detail, a BigQuery dataset's tables and a table's columns, and
+/// every other service's detail. At each level the line names the list the
+/// pane title names (or the detail), and the breadcrumb extends the level
+/// above it, on screen at 80, 120 and 138 columns. The line said `BigQuery
+/// datasets` over a table's columns, and an object's breadcrumb dropped the
+/// bucket and folder it was opened from.
 #[tokio::test(flavor = "multi_thread")]
 async fn the_settled_status_line_names_the_view_on_screen() {
     use nuvem::app::projection::project_app_frame;
     use nuvem::app::state::system::OperationPhase;
+    const MAX_DEPTH: usize = 4;
     for kind in ResourceServiceKind::ALL {
         let mut session = demo_session_showing(kind).await;
         drain(&mut session).await;
@@ -2147,6 +2157,87 @@ async fn the_settled_status_line_names_the_view_on_screen() {
             (OperationPhase::Healthy, kind.label()),
             "{kind:?}: the status line names another view"
         );
+
+        // What `Enter` changes when it opens something, read without the
+        // breadcrumb, which is what is under test: the frame's title, the
+        // list's headers and the list pane's title on screen.
+        let view = |session: &RuntimeSession| {
+            let headers: Vec<&str> = project_resource_list(&session.app().root.resources)
+                .table
+                .map(|table| table.columns.iter().map(|column| column.header).collect())
+                .unwrap_or_default();
+            let title = screen(session, 138, 34)
+                .lines()
+                .find_map(|line| {
+                    let start = line.find("┌Resources / ")? + "┌".len();
+                    let title = &line[start..];
+                    Some(title[..title.find('─').unwrap_or(title.len())].to_string())
+                })
+                .unwrap_or_default();
+            (
+                project_app_frame(&session.app().root).view_title,
+                headers,
+                title,
+            )
+        };
+        let mut above = frame.breadcrumbs;
+        let mut above_view = view(&session);
+        for depth in 1..=MAX_DEPTH {
+            session
+                .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+                .await;
+            drain(&mut session).await;
+            let frame = project_app_frame(&session.app().root);
+            let here = view(&session);
+            if here == above_view {
+                break;
+            }
+            assert!(
+                frame.breadcrumbs.len() > above.len() && frame.breadcrumbs.starts_with(&above),
+                "{kind:?} level {depth}: the breadcrumb {:?} does not extend {above:?}",
+                frame.breadcrumbs
+            );
+            let detail = session.app().root.resources.is_showing_detail();
+            let wanted = if detail {
+                format!("{} detail", kind.label())
+            } else {
+                let screen = screen(&session, 138, 34);
+                let title = screen
+                    .lines()
+                    .find_map(|line| {
+                        let start = line.find("┌Resources / ")? + "┌".len();
+                        let title = &line[start..];
+                        Some(title[..title.find('─').unwrap_or(title.len())].to_string())
+                    })
+                    .unwrap_or_else(|| panic!("{kind:?} level {depth}: no list title\n{screen}"));
+                title["Resources / ".len()..].to_string()
+            };
+            assert_eq!(
+                (frame.operation.phase, frame.operation.label.as_str()),
+                (OperationPhase::Healthy, wanted.as_str()),
+                "{kind:?} level {depth}: the status line names another view"
+            );
+            let path = frame.breadcrumbs.join(" > ");
+            for (width, height) in [(80, 24), (120, 35), (138, 34)] {
+                let screen = screen(&session, width, height);
+                assert!(
+                    screen.lines().any(|line| line.trim_end() == path),
+                    "{kind:?} level {depth} at {width}x{height}: the breadcrumb is not \
+                     {path:?} on screen\n{screen}"
+                );
+                let status = format!("[OK] {wanted}");
+                assert!(
+                    screen.lines().any(|line| line.trim_end() == status),
+                    "{kind:?} level {depth} at {width}x{height}: the status line is not \
+                     {status:?}\n{screen}"
+                );
+            }
+            if detail {
+                break;
+            }
+            above = frame.breadcrumbs;
+            above_view = here;
+        }
     }
 }
 
