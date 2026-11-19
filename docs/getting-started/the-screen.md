@@ -12,7 +12,7 @@ Every view draws inside the same frame:
 | Header (two rows) | The active gcloud configuration and project first. The account, service, region and zone follow when the terminal has room. |
 | Breadcrumb | Where you are: the workspace, then the service, then the open resource. |
 | Body | The workspace itself: a list, a detail pane, a dashboard. |
-| Status line | The last operation, its status marker, and the time of the last refresh. Warnings and errors appear here. |
+| Status line | A status marker and the time of the last refresh. While something loads, or after a warning or an error, it names that operation; once all is well it names the view on screen. |
 | Footer | The keys that do something in the current view, most useful first. On a narrow terminal the least useful ones are left out whole; a key is never shown without its label. Press `?` for all of them. |
 
 ## Status markers
