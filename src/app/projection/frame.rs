@@ -617,17 +617,21 @@ fn resource_metadata(
         // promises something the key delivers; `Enter` on a *column* row opens
         // nothing, because a column is the bottom of this hierarchy. So the
         // hint is offered only where the row on screen has a level under it.
-        let mut bindings = vec![
-            RES_TOGGLE_SIDEBAR,
-            RES_TOGGLE_FOCUS,
-            RES_FILTER,
-            GLOBAL_REFRESH,
-            RES_WIDE,
-        ];
+        //
+        // The order is the list's priority order: the footer drops hints from
+        // the end, so opening and leaving come first and the sidebar keys last.
+        let mut bindings = Vec::new();
         if resources.drilldown_opens_another_level() {
             bindings.push(RES_OPEN);
         }
-        bindings.push(RES_LEAVE_DRILLDOWN);
+        bindings.extend([
+            RES_LEAVE_DRILLDOWN,
+            RES_FILTER,
+            RES_WIDE,
+            GLOBAL_REFRESH,
+            RES_TOGGLE_SIDEBAR,
+            RES_TOGGLE_FOCUS,
+        ]);
         from_bindings_with(&bindings, overrides)
     } else {
         // In priority order: the footer drops hints whole from the end when
