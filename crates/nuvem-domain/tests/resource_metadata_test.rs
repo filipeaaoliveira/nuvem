@@ -472,6 +472,9 @@ fn readable_api_value_respells_constants_and_keeps_prose() {
         ("  RUNNING  ", "Running"),
         ("", "Unknown"),
         ("   ", "Unknown"),
+        // Nothing visible once respelled: still not a blank cell.
+        ("_", "Unknown"),
+        ("-_-", "Unknown"),
         // Already prose: the API's own words, kept as they came.
         ("Unknown", "Unknown"),
         ("Waiting for quota", "Waiting for quota"),

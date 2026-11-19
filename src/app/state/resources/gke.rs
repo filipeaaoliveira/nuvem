@@ -412,14 +412,10 @@ impl ResourcesState {
     }
 }
 
+/// The status as the table paints it, for the Home counts and the filter
+/// alike, so what is counted and searched is what is on screen.
 fn gke_status_label(status: &GkeClusterStatus) -> String {
-    match status {
-        GkeClusterStatus::Running => "Running".to_string(),
-        GkeClusterStatus::Reconciling => "Reconciling".to_string(),
-        GkeClusterStatus::Stopping => "Stopping".to_string(),
-        GkeClusterStatus::Error => "Error".to_string(),
-        GkeClusterStatus::Unknown(_) => "Unknown".to_string(),
-    }
+    nuvem_domain::gcp::text::sanitize_display_text(&status.label())
 }
 
 fn gke_cluster_matches_filter(cluster: &GkeCluster, filter: &CompiledFilter) -> bool {
@@ -428,15 +424,17 @@ fn gke_cluster_matches_filter(cluster: &GkeCluster, filter: &CompiledFilter) -> 
 
 /// The values the `/` filter searches for one row.
 ///
-/// Status contributes its *display label* plus, for
-/// [`GkeClusterStatus::Unknown`], the raw status string it carries — never the
-/// `{:?}` rendering. The Debug shell (`Unknown("DEGRADED")`) appears in no raw
-/// gcloud field and in no entry of the GKE service's `OPAQUE_LABELS`, so a
-/// filter matching the shell alone would slip through the server-side pushdown
-/// gate and drop the row. The label is enumerated in `OPAQUE_LABELS`, and the
-/// raw string is stored verbatim from the JSON `status` field (see
-/// `parse_cluster_status` in `crate::services::resources::gke`) which is itself
-/// pushed, so both satisfy the never-drop-a-row premise documented in
+/// Status contributes its *display label* plus, for an unrecognised status,
+/// the raw string it carries. The label of a known status is enumerated in
+/// `OPAQUE_LABELS`. The label of an unrecognised one is that raw string with
+/// its case changed and `_` and `-` read as spaces (see
+/// `nuvem_domain::gcp::resource::readable_api_value`), and the raw string is
+/// stored verbatim from the JSON `status` field (see `parse_cluster_status` in
+/// `crate::services::resources::gke`), which is itself pushed. A term the
+/// pushdown admits holds only ASCII letters, digits and `.` `_` `-`, matches
+/// case-insensitively, and has `.` as its one wildcard; so any such term that
+/// matches the label matches the raw string at the same offset, which keeps
+/// the never-drop-a-row premise documented in
 /// `crate::services::resources::list_filter`.
 fn gke_searchable_fields(cluster: &GkeCluster) -> Vec<String> {
     let mut fields = vec![

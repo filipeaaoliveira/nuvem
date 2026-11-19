@@ -612,16 +612,18 @@ fn cloud_sql_matches_filter(instance: &CloudSqlInstance, filter: &CompiledFilter
 
 /// The values the `/` filter searches for one row.
 ///
-/// Status contributes its *display label* plus, for
-/// [`CloudSqlStatus::Unknown`], the raw status string it carries — never the
-/// `{:?}` rendering. The Debug shell (`Unknown("SUSPENDED_BY_BILLING")`)
-/// appears in no raw gcloud field and in no entry of the Cloud SQL service's
-/// `OPAQUE_LABELS`, so a filter matching the shell alone would slip through
-/// the server-side pushdown gate and drop the row. The label is enumerated in
-/// `OPAQUE_LABELS`, and the raw string is stored verbatim from the JSON
-/// `state` field (see `parse_status` in `crate::services::resources::cloudsql`)
-/// which is itself pushed, so both satisfy the never-drop-a-row premise
-/// documented in `crate::services::resources::list_filter`.
+/// Status contributes its *display label* plus, for an unrecognised status,
+/// the raw string it carries. The label of a known status is enumerated in
+/// `OPAQUE_LABELS`. The label of an unrecognised one is that raw string with
+/// its case changed and `_` and `-` read as spaces (see
+/// `nuvem_domain::gcp::resource::readable_api_value`), and the raw string is
+/// stored verbatim from the JSON `state` field (see `parse_status` in
+/// `crate::services::resources::cloudsql`), which is itself pushed. A term the
+/// pushdown admits holds only ASCII letters, digits and `.` `_` `-`, matches
+/// case-insensitively, and has `.` as its one wildcard; so any such term that
+/// matches the label matches the raw string at the same offset, which keeps
+/// the never-drop-a-row premise documented in
+/// `crate::services::resources::list_filter`.
 fn cloud_sql_searchable_fields(instance: &CloudSqlInstance) -> Vec<String> {
     let mut fields = vec![
         instance.name.clone(),
@@ -668,19 +670,8 @@ fn compare_cloud_sql_instances(
     }
 }
 
-/// Status label used for the Cloud SQL status-count summary (and the row
-/// filter's searchable text): `Unknown` collapses to a bare label so every
-/// unrecognised status groups into one bucket. Kept distinct from
-/// `batch::cloud_sql_status_label`, which preserves the raw value for per-row
-/// display.
+/// The status as the table paints it, for the Home counts, so a count names
+/// what the rows say.
 fn cloud_sql_status_count_label(status: &CloudSqlStatus) -> String {
-    match status {
-        CloudSqlStatus::Runnable => "Runnable".to_string(),
-        CloudSqlStatus::Stopped => "Stopped".to_string(),
-        CloudSqlStatus::PendingCreate => "Pending create".to_string(),
-        CloudSqlStatus::Maintenance => "Maintenance".to_string(),
-        CloudSqlStatus::Failed => "Failed".to_string(),
-        CloudSqlStatus::Suspended => "Suspended".to_string(),
-        CloudSqlStatus::Unknown(_) => "Unknown".to_string(),
-    }
+    nuvem_domain::gcp::text::sanitize_display_text(&status.label())
 }

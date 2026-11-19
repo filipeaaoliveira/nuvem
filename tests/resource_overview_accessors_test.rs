@@ -52,7 +52,8 @@ fn compute_status_counts_group_by_normalized_status() {
     let counts = state.compute_status_counts();
     assert!(counts.contains(&("Running".to_string(), 2)));
     assert!(counts.contains(&("Stopped".to_string(), 1)));
-    assert!(counts.contains(&("Unknown".to_string(), 1)));
+    // An unrecognised status is counted under the label its row paints.
+    assert!(counts.contains(&("Provisioning".to_string(), 1)));
 }
 
 #[test]

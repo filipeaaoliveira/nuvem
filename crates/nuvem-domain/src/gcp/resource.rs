@@ -25,11 +25,13 @@ use serde::{Deserialize, Serialize};
 ///
 /// Only an API constant is respelled: a value with no lowercase letter in it,
 /// such as `SUSPENDED` or `GEN_3`. Anything else is the API's own prose and is
-/// returned as it came. An empty value is `Unknown`, because a blank cell in a
-/// status column reads as "no problem".
+/// returned as it came. A value with no letter or digit in it is `Unknown`,
+/// because a blank cell in a status column reads as "no problem".
 pub fn readable_api_value(raw: &str) -> Cow<'_, str> {
     let trimmed = raw.trim();
-    if trimmed.is_empty() {
+    // A value with no letter or digit in it (`_`, `--`) would respell to
+    // blanks, and a blank status cell reads as "nothing wrong".
+    if !trimmed.chars().any(char::is_alphanumeric) {
         return Cow::Borrowed("Unknown");
     }
     if trimmed.chars().any(char::is_lowercase) {
