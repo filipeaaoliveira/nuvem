@@ -50,6 +50,7 @@ export default defineConfig({
 				Search: './src/components/Search.astro',
 				Header: './src/components/Header.astro',
 				Footer: './src/components/Footer.astro',
+				MobileMenuFooter: './src/components/MobileMenuFooter.astro',
 			},
 			expressiveCode: {
 				themes: [codeTheme],
