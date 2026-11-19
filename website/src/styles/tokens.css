@@ -9,17 +9,51 @@
  * stated.
  */
 
-@import '@fontsource-variable/schibsted-grotesk/wght.css';
-@import '@fontsource-variable/schibsted-grotesk/wght-italic.css';
+@import './fonts.css';
 
 /* Arial scaled to Schibsted Grotesk's width and line metrics. Text set in
    the fallback while the web font loads wraps where the web font will, so
    the swap moves nothing on the page. */
 @font-face {
 	font-family: 'Schibsted Grotesk Fallback';
+	font-weight: 100 549;
 	src: local('Arial'), local('ArialMT'), local('Liberation Sans');
 	size-adjust: 104.2%;
 	ascent-override: 94%;
+	descent-override: 25%;
+	line-gap-override: 0%;
+}
+
+/* Bold text falls back to Arial Bold rather than a faux bold of Arial,
+   which is narrower and wraps text later than the web font will. Each band
+   of weights is scaled to Schibsted Grotesk at that weight: 650 for
+   emphasis, 700 for links and labels, 800 for titles. */
+@font-face {
+	font-family: 'Schibsted Grotesk Fallback';
+	font-weight: 550 674;
+	src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold');
+	size-adjust: 100.8%;
+	ascent-override: 97%;
+	descent-override: 26%;
+	line-gap-override: 0%;
+}
+
+@font-face {
+	font-family: 'Schibsted Grotesk Fallback';
+	font-weight: 675 774;
+	src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold');
+	size-adjust: 101.8%;
+	ascent-override: 96%;
+	descent-override: 25.5%;
+	line-gap-override: 0%;
+}
+
+@font-face {
+	font-family: 'Schibsted Grotesk Fallback';
+	font-weight: 775 900;
+	src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold');
+	size-adjust: 103.7%;
+	ascent-override: 94.5%;
 	descent-override: 25%;
 	line-gap-override: 0%;
 }

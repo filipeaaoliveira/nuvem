@@ -168,6 +168,7 @@ sharp to compress the result).
 | `src/lib/terminal-frame.mjs` | Reads a frame from `demo/frames/`, checks its markup and contrast |
 | `src/routeData.ts` | Hides a one-entry contents list; no canonical on the 404 page |
 | `src/styles/tokens.css` | Colors, type, spacing: shared by every page |
+| `src/styles/fonts.css` | The reading face, loaded with `font-display: optional` |
 | `src/styles/docs.css` | The docs theme, mapped onto Starlight |
 | `src/styles/identity.css` | The color strip, the wordmark and the docs frame details that carry them |
 | `src/lib/services-index.mjs` | Reads the services tables for the home page's service plate |

@@ -24,6 +24,7 @@ import CellCloud from '../components/landing/CellCloud.astro';
 import Wordmark from '../components/landing/Wordmark.astro';
 import { docHref } from '../lib/doc-links.mjs';
 import { REPO_BLOB_URL, buildSidebar, firstPageUrl } from '../lib/docs-source.mjs';
+import latinFont from '@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2?url';
 import { countDetailServices, readServices } from '../lib/services-index.mjs';
 import { COLORS, cloudSvg, cssUrl, edgeSvg, fringeSvg, moonSvg, skyline, starSvg } from '../lib/sky-cells.mjs';
 
@@ -229,6 +230,8 @@ const dot = (color) => starSvg('dot', 4, color);
 			{ tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
 			{ tag: 'meta', attrs: { name: 'theme-color', content: '#54afb4' } },
 			{ tag: 'meta', attrs: { name: 'color-scheme', content: 'dark' } },
+			// The reading face, so it is ready at first paint (see src/styles/fonts.css).
+			{ tag: 'link', attrs: { rel: 'preload', href: latinFont, as: 'font', type: 'font/woff2', crossorigin: '' } },
 		],
 	}}
 >
