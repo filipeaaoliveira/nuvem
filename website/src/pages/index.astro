@@ -24,6 +24,7 @@ const docs = {
 	source: await docHref('getting-started/install.md#build-from-source'),
 	firstRun: await docHref('getting-started/first-run.md'),
 	credentials: await docHref('troubleshooting/faq.md#does-nuvem-store-my-credentials'),
+	beforeChange: await docHref('reference/services/overview.md#before-a-change-runs'),
 };
 
 /**
@@ -54,13 +55,13 @@ const capabilities = [
 		reach: [{ key: 'Space' }, { word: 'then' }, { key: ':' }],
 		name: 'Lifecycle actions',
 		href: 'guides/batch-actions.md',
-		text: 'Start, stop, reset, suspend or resume Compute Engine instances; start, stop, restart or fail over Cloud SQL. Mark rows with Space to act on several at once. A confirmation shows each gcloud command first.',
+		text: 'Start, stop, reset, suspend or resume Compute Engine instances; start, stop, restart or fail over Cloud SQL. Mark rows with Space to act on several at once. A confirmation shows the API call for each one first.',
 	},
 	{
 		reach: [{ key: 'l' }],
 		name: 'Cloud Logging',
 		href: 'guides/cloud-logging.md',
-		text: 'Read, tail and search the project’s logs. L opens them for the selected resource.',
+		text: 'Read, tail and search the project’s logs. In most services, L opens the logs of the selected resource.',
 	},
 	{
 		reach: [{ key: 't' }],
@@ -72,13 +73,13 @@ const capabilities = [
 		reach: [{ flag: '--read-only' }],
 		name: 'Read-only mode',
 		href: 'guides/read-only-mode.md',
-		text: 'Refuses every command that changes a cloud resource.',
+		text: 'Refuses every change to a cloud resource, and the SSH and k9s sessions that could make one.',
 	},
 	{
 		reach: [{ key: ',' }],
 		name: 'Plugins',
 		href: 'plugins/overview.md',
-		text: 'Add your own gcloud commands to a service. They run against the selected row, behind the same confirmation.',
+		text: 'Add your own gcloud commands to a service. They run against the selected row, after a confirmation that shows the whole command line.',
 	},
 ];
 
@@ -99,7 +100,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		hero: {
 			title: 'A terminal UI for Google&nbsp;Cloud',
 			tagline:
-				'In the spirit of k9s: browse and operate your Google Cloud projects from the keyboard. nuvem works with the gcloud configurations you already have, and shows you the exact gcloud command before it changes anything.',
+				'In the spirit of k9s: browse and operate your Google Cloud projects from the keyboard. nuvem works with the gcloud configurations you already have, and shows you what it is about to do before it changes anything.',
 		},
 		head: [
 			{ tag: 'title', content: pageTitle },
@@ -146,7 +147,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 				id="palette-frame"
 				file={demoPath('frame')}
 				focus="commands"
-				description="nuvem's command palette open over the GCE instances list. It offers commands for the selected instance: stop, reset, suspend, SSH, start a tunnel, copy its fields and open its logs."
+				description="nuvem's command palette open over a resource list, offering the commands for the selected row and the views it can open."
 			>
 				The command palette, as nuvem draws it. Open it with <kbd>:</kbd>
 			</TerminalFrame>
@@ -155,8 +156,8 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		<section aria-labelledby="how">
 			<h2 id="how">How it works</h2>
 			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. A few reads, such as BigQuery, budgets and label filters, run the <code>bq</code> or <code>gcloud</code> command instead. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
-			<p>Everything that changes something, from starting an instance to running a plugin, goes through the <code>gcloud</code> CLI you already have, after a confirmation that shows the exact command.</p>
-			<p>More in the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
+			<p>Lifecycle actions on Compute Engine and Cloud SQL go through the same client libraries. SSH, tunnels to Compute Engine, plugins and changes to your gcloud configurations run the <code>gcloud</code> CLI you already have, and Cloud SQL tunnels run <code>cloud-sql-proxy</code>. Before anything changes, a confirmation shows what is about to happen: the API call for a lifecycle action, the command line for the rest.</p>
+			<p>More in <a href={docs.beforeChange}>Before a change runs</a>, the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
 		</section>
 
 		<section aria-labelledby="install">
