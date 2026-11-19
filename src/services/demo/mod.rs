@@ -716,7 +716,10 @@ fn showcase_gcloud(args: &[String]) -> Option<Result<CommandOutput, CommandError
                     .and_then(serde_json::Value::as_str)
                     .is_some_and(|name| name.rsplit('/').next() == Some(wanted.as_str()))
             })
-            .map(|row| fixture(&row.to_string()))
+            // Indented, as `gcloud ... describe --format=json` prints it: a
+            // plugin's output viewer shows this verbatim, and one minified
+            // line read as a fault rather than as a document.
+            .map(|row| fixture(&serde_json::to_string_pretty(&row).unwrap_or_default()))
             .ok_or_else(|| no_fixture(CommandProgram::Gcloud, args))
     };
     Some(if matches(args, &["compute", "instances", "describe"]) {
@@ -902,6 +905,31 @@ mod tests {
 
     fn args(values: &[&str]) -> Vec<String> {
         values.iter().map(|value| value.to_string()).collect()
+    }
+
+    /// A showcase describe answers one indented document, the way gcloud
+    /// prints one, and it is the named resource's.
+    #[test]
+    fn a_showcase_describe_is_indented_like_gclouds() {
+        let rows: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/demo/gce_instances.json"
+        ))
+        .expect("the showcase instances parse");
+        let name = rows[0]["name"].as_str().expect("a name").to_string();
+        let output = showcase_gcloud(&args(&[
+            "compute",
+            "instances",
+            "describe",
+            &name,
+            "--format=json",
+        ]))
+        .expect("answered")
+        .expect("found");
+        assert!(output.stdout.lines().count() > 10, "{}", output.stdout);
+        assert!(output.stdout.contains("\n  \""), "{}", output.stdout);
+        let parsed: serde_json::Value =
+            serde_json::from_str(&output.stdout).expect("still one JSON document");
+        assert_eq!(parsed["name"], rows[0]["name"]);
     }
 
     #[test]

@@ -2599,3 +2599,47 @@ async fn a_message_the_operator_caused_outlives_the_poll() {
         "the next key releases the message, and the poll after it reports again"
     );
 }
+
+/// The Cloud SQL preview names the engine the way its row does.
+///
+/// The table's ENGINE cell reads `MySQL 8.0.31`, and the preview beside it
+/// said `Engine: MySQL`. Walks every demo instance and compares the preview's
+/// `Engine` line with the row's ENGINE cell.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_cloud_sql_preview_names_the_engine_as_the_row_does() {
+    use nuvem::app::projection::project_resource_preview;
+
+    let mut session = demo_session_showing(ResourceServiceKind::CloudSql).await;
+    let rows = project_resource_list(&session.app().root.resources)
+        .table
+        .expect("a table")
+        .rows
+        .len();
+    assert!(rows > 1, "the demo lists several instances");
+    for row in 0..rows {
+        let resources = &session.app().root.resources;
+        let table = project_resource_list(resources).table.expect("a table");
+        let engine = table
+            .columns
+            .iter()
+            .position(|column| column.header == "ENGINE")
+            .expect("an ENGINE column");
+        let selected = table.selected_row.expect("a selected row");
+        assert_eq!(selected, row, "the walk is on row {row}");
+        let cell = table.rows[selected].cells[engine].text.clone();
+        let preview = project_resource_preview(resources).expect("a preview");
+        let line = preview
+            .lines
+            .iter()
+            .find(|(label, _)| label == "Engine")
+            .map(|(_, value)| value.clone());
+        assert_eq!(
+            line,
+            Some(cell),
+            "row {row}: the preview and the row disagree"
+        );
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::SelectNext))
+            .await;
+    }
+}

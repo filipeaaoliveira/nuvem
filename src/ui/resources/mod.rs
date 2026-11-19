@@ -936,6 +936,9 @@ fn table_tools_segments(
         segments.push(fact("[WIDE]".to_string(), 2));
     }
     if !projection.wide_columns && hidden_count > 0 {
+        // This fact names `w` itself, and says what it would show, so the
+        // bare `w wide` hint goes: the line taught the same key twice.
+        segments.retain(|segment| segment.text != "w wide");
         segments.push(fact(format!("+{hidden_count} cols (w)"), 2));
     }
     if projection.wide_columns && overflow {
@@ -2645,6 +2648,12 @@ mod tests {
         assert!(
             line.contains(&format!("+{} cols (w)", plan.hidden_count)),
             "expected hidden-column hint in tools line, got: {line}"
+        );
+        // And `w` is taught once: the fact names it, so the hint goes.
+        assert_eq!(
+            line.matches("(w)").count() + line.matches("w wide").count(),
+            1,
+            "the tools line names `w` more than once: {line}"
         );
     }
 
