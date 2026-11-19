@@ -4436,7 +4436,7 @@ async fn command_palette_renders_navigation_entries_with_aliases() {
     assert!(
         lines
             .iter()
-            .any(|line| line.contains("GKE clusters  (gke, clusters)")),
+            .any(|line| line.contains("GKE clusters  (gke, kubernetes, clusters)")),
         "{lines:#?}"
     );
 }

@@ -8,7 +8,8 @@ sidebar:
 Every service appears in the Resources sidebar and the command palette. The
 **Id** is the name the config file uses for it, in `[columns.<id>]`, in
 `[[jumps]]` and in a plugin's `scope`. Any of the **Aliases** also works there,
-and in the sidebar search. Ids and aliases are case-insensitive.
+in the sidebar search and in the command palette. Ids and aliases are
+case-insensitive.
 
 | Service | Id | Aliases | Category |
 | --- | --- | --- | --- |

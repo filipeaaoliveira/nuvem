@@ -1147,18 +1147,17 @@ fn navigation_descriptors_expose_labels_and_aliases() {
         "Switch project / context"
     );
 
-    assert_eq!(
-        CommandDescriptor::GoToService(ResourceServiceKind::ComputeInstances).aliases(),
-        &["gce", "compute", "instances"]
-    );
-    assert_eq!(
-        CommandDescriptor::GoToService(ResourceServiceKind::GkeClusters).aliases(),
-        &["gke", "clusters"]
-    );
-    assert_eq!(
-        CommandDescriptor::GoToService(ResourceServiceKind::CloudRunServices).aliases(),
-        &["run", "serverless", "cloud run"]
-    );
+    // Every service answers to the names the sidebar search answers to, read
+    // from the one registry table both use.
+    for kind in ResourceServiceKind::ALL {
+        let id = nuvem::app::service_registry::service_id_for_resource(kind)
+            .expect("every resource kind is registered");
+        assert_eq!(
+            CommandDescriptor::GoToService(kind).aliases(),
+            nuvem::app::service_registry::descriptor(id).aliases,
+            "{kind:?}"
+        );
+    }
     assert_eq!(
         CommandDescriptor::GoToConfigurations.aliases(),
         &["configurations", "configs", "config"]

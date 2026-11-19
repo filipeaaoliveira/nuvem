@@ -87,3 +87,31 @@ pub fn browses_objects(kind: ResourceServiceKind) -> bool {
         | ResourceServiceKind::FirewallRules => false,
     }
 }
+
+/// Whether `L` can scope Cloud Logging to a row of this service, and so
+/// whether the palette has an `Open logs for selected ...` command for it.
+///
+/// Mirrors `reducer::resources::selection_log_query`, whose remaining arms
+/// refuse with a message naming the reason (`VPC networks do not produce
+/// logs`). A command for one of those services could only ever refuse, so it
+/// is not offered and not documented.
+pub fn supports_selection_logs(kind: ResourceServiceKind) -> bool {
+    match kind {
+        ResourceServiceKind::ComputeInstances
+        | ResourceServiceKind::GkeClusters
+        | ResourceServiceKind::CloudSql
+        | ResourceServiceKind::CloudRunServices
+        | ResourceServiceKind::CloudStorage
+        | ResourceServiceKind::SecretManagerSecrets
+        | ResourceServiceKind::CloudFunctions
+        | ResourceServiceKind::PubSubTopics
+        | ResourceServiceKind::PubSubSubscriptions
+        | ResourceServiceKind::BigQueryDatasets
+        | ResourceServiceKind::VpcSubnets => true,
+        ResourceServiceKind::PersistentDisks
+        | ResourceServiceKind::IamServiceAccounts
+        | ResourceServiceKind::IamPolicy
+        | ResourceServiceKind::VpcNetworks
+        | ResourceServiceKind::FirewallRules => false,
+    }
+}
