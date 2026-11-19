@@ -47,7 +47,7 @@ Every other flag has no config key. See [Command line](../reference/cli.md).
 ## Check what nuvem read
 
 Run `nuvem info` to see the resolved config, plugin, log, and cache paths and
-the active theme. It does not start the TUI:
+the active theme. It does not start the interface:
 
 ```
 nuvem 0.1.0
@@ -113,7 +113,7 @@ label = "Network of {name}"     # picker wording; default "<tab> of <name>"
 
 ## Keys
 
-The table lists every key the file accepts. `<service>` is a service id from
+The table lists every key the file accepts. `<service>` is a service ID from
 [Services](../reference/services/overview.md). `<action>` is a hotkey action.
 
 | Key | Type | Default | Allowed values | Details |

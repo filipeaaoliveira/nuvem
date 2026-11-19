@@ -32,16 +32,17 @@ the setting it touches falls back to a default:
   A block that names a service that does not exist is skipped without
   affecting any service.
 - If two or more `[columns.*]` keys name the same service (`[columns.gce]` and
-  `[columns.compute]` are both Compute Engine), the alphabetically last key
-  decides on its own. The service reports one warning that names the winner
-  and every key it displaced. If a displaced key is itself invalid, that same
-  warning names its problem, so you learn about the typo before you delete the
-  winning block. If the deciding key's block is invalid, every block that
-  names that service is discarded. The service falls back to its built-in
-  columns and sort, and the one warning names the problem and the blocks
-  discarded with it. Blocks are read in key order, not file order, so the one
-  you wrote second does not necessarily win. This is why nuvem reports the
-  loser instead of silently changing nothing.
+  `[columns.compute]` are both GCE instances), the alphabetically last key
+  decides on its own. Blocks are read in key order, not file order, so the
+  one you wrote second does not necessarily win.
+- The service reports one warning that names the deciding key and every key
+  it displaced. If a displaced key is itself invalid, that same warning names
+  its problem, so you learn about the typo before you delete the deciding
+  block. The warning tells you when the block you edited is not the one in
+  use.
+- If the deciding key's block is invalid, every block that names that service
+  is discarded. The service falls back to its built-in columns and sort, and
+  the one warning names the problem and the blocks discarded with it.
 - If a single `[theme.overrides]` entry is invalid, only that entry is
   dropped, with a warning. Its valid siblings survive. A `[theme]` that is not
   a table, an unknown key inside it (the base theme is `[general].theme`), or
@@ -53,36 +54,36 @@ the setting it touches falls back to a default:
   section is dropped with one warning and no jump is configured. The rest of
   the file still loads.
 
-The separate plugin file fails the same way, on its own. It is a separate
-load, so no problem in the following list costs you your `config.toml`:
+The separate plugin file fails the same way, on its own. nuvem loads it
+separately, so no problem in the following list costs you your
+`config.toml`:
 
 - If the plugin file is absent, there are no plugins and no warning. This is
   the normal case.
 - If the plugin file is unreadable or cannot be parsed, there are no plugins,
-  and one warning names the path and line. Your `config.toml` is unaffected,
-  because the two are separate loads.
+  and one warning names the path and line.
 - If the plugin-file `version` is unknown, there are no plugins, with a
   warning. nuvem rejects every entry whole instead of reading it under rules
-  that may not be its own.
+  written for another version.
 - A `[plugins]` written with single brackets is not an array of plugins, so
   the whole section is dropped with one warning.
 - If there is any problem inside one `[[plugins]]` entry, only that plugin is
   dropped, with a warning that names its index. The other plugins still load.
-  Two plugins in the same scope that share an `id` or a `key` are such a
+- Two plugins in the same scope that share an `id` or a `key` count as such a
   problem. The later one is dropped, and the warning names the plugin it
   clashed with. The same key in two *different* scopes is fine, because the
-  two are never offered at once. A problem inside one of a plugin's
-  `[[plugins.inputs]]` tables is such a problem too: an unknown `type`, a
-  `dropdown` with no `choices`, a `default` that contradicts its own `type` or
-  sits outside its own `choices`, a `name` that is already a field of the
-  plugin's scope, or an unknown key inside the input table. The warning names
-  the input by index and by name, that one plugin is dropped, and the rest
-  still load.
+  two are never offered at once.
+- A problem inside one of a plugin's `[[plugins.inputs]]` tables also drops
+  that plugin. Such a problem is an unknown `type`, a `dropdown` with no
+  `choices`, or a `default` that contradicts its own `type` or sits outside
+  its own `choices`. A `name` that is already a field of the plugin's scope,
+  or an unknown key inside the input table, is one too. The warning names the
+  input by index and by name, and the other plugins still load.
 
 Startup warnings appear on stderr and in `nuvem info`. The one exception is
 the deferred `[theme.overrides]` check. It can only run once the configuration
-list has loaded, so its warnings join the list in the running app, not
-stderr.
+list has loaded, so its warnings join the help list while nuvem runs, and
+never reach stderr.
 
 The help overlay (`?`) lists every warning under `Config problems`, so you see
 all of a misconfigured file's problems, not only the first. The status line

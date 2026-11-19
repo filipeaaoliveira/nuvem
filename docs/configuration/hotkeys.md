@@ -19,7 +19,7 @@ Each value is one key:
 - A single character, case preserved: `"H"` is `Shift-H`, `"h"` is `h`.
 - `ctrl-` and one character: `"ctrl-r"`.
 
-nuvem recognises names such as `"enter"` or `"esc"` only so that validation
+nuvem recognizes names such as `"enter"` or `"esc"` only so that validation
 can refuse them.
 
 | action             | default key |
@@ -38,7 +38,7 @@ Validation refuses these as a hotkey and says why:
 
 | Key | Why |
 | --- | --- |
-| `Esc`, `Enter`, `Tab`, `Shift-Tab`, `Backspace` | Only single characters can be rebound. These keep their meaning in every form, modal and filter. |
+| `Esc`, `Enter`, `Tab`, `Shift-Tab`, `Backspace` | Only single characters can be rebound. These keep their meaning in every form, dialog and filter. |
 | `Ctrl-C`, `Ctrl-X` | nuvem handles them before any hotkey, so a binding would never fire. `Ctrl-C` quits. `Ctrl-X` cancels running plugins. |
 | `Ctrl-F`, `Ctrl-S`, `Ctrl-T` | A binding would take over FinOps, saving logs, or Tunnels with no warning. |
 

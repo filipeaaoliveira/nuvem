@@ -26,7 +26,8 @@ applies a new theme without a restart.
 ## Frame overrides
 
 `[theme.overrides]` and `[theme.project_overrides]` recolor the pane borders
-while a dangerous context is active, so you can see it at a glance. The whole
+while a configuration or project you chose to mark is active, such as
+production, so you can see it at a glance. The whole
 feature is one line, such as `prod = "red"` in the
 [config file example](config-file.md#full-example).
 
@@ -36,14 +37,15 @@ The two tables match different things:
   against what `gcloud` reports. It is only as reliable as your naming
   convention. If the configuration that reaches production is called
   `default`, `work`, or `client`, an override written for `prod` never fires.
-- `[theme.project_overrides]` keys on the project id, the same vocabulary
+- `[theme.project_overrides]` keys on the project ID, the same vocabulary
   `[favorites].projects` uses. Every configuration that points at that project
-  gets the frame, whatever it is called. A project id is the same string for
+  gets the frame, whatever it is called. A project ID is the same string for
   everyone who can reach it. A configuration name is a local, renameable alias
   on one machine.
 
-We recommend the project table for the guardrail itself, and the configuration
-table to color one particular way in. If both match the active context, the
+We recommend `[theme.project_overrides]` to mark a project in every
+configuration that reaches it, and `[theme.overrides]` to color one
+configuration differently. If both match the active context, the
 configuration name wins. Several configurations can point at one project, so
 naming one of them is the more specific statement. The project override
 catches every configuration you never named.
@@ -58,7 +60,7 @@ color. If you write `[theme.overrides.projects]` anyway, nuvem reports it and
 names the table that works.
 
 nuvem does not support patterns such as `*-prod`. A pattern that matches
-nothing is a silent no-op. Unlike an exact id, it cannot be checked against
+nothing is a silent no-op. Unlike an exact ID, it cannot be checked against
 the projects your configurations reach.
 
 The override replaces the *hue* of both border roles, focused and unfocused,
@@ -72,9 +74,10 @@ nuvem reports problems as config warnings, not fatal errors, and drops each
 bad entry on its own:
 
 - A color nuvem cannot parse, a value that is not a string, or a blank
-  configuration name or project id drops that entry and keeps its siblings.
-- An override that names a configuration that does not exist, or a project id
+  configuration name or project ID drops that entry and keeps its siblings.
+- An override that names a configuration that does not exist, or a project ID
   that no configuration targets, is reported once the configuration list
   loads. nuvem cannot check either when it reads the file, because the list
-  comes from `gcloud` later in startup. A silent no-op is the worst failure of
-  this feature: the frame looks ordinary while you believe it is guarded.
+  comes from `gcloud` later in startup. nuvem warns here because an override
+  that matches nothing leaves the frame ordinary while you believe it is
+  marked.
