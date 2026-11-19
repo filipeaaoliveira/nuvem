@@ -1,0 +1,73 @@
+---
+// The page Cloudflare Pages serves at any address the site does not have.
+// It points at the pages most readers come for, and at search.
+//
+// Docs links go through docHref(), so a renamed page fails the build.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { docHref } from '../lib/doc-links.mjs';
+
+const links = [
+	{ href: await docHref('getting-started/install.md'), name: 'Install', text: 'Homebrew, Cargo, a release binary or a build from source.' },
+	{ href: await docHref('getting-started/first-run.md'), name: 'First run', text: 'Start nuvem on your own projects, or on sample data with no account.' },
+	{ href: await docHref('reference/keys.md'), name: 'Keys', text: 'Every key nuvem binds, view by view.' },
+];
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'Page not found',
+		description: 'There is no page at this address.',
+		template: 'splash',
+		pagefind: false,
+		editUrl: false,
+		prev: false,
+		next: false,
+	}}
+>
+	<p>There is no page at this address. The link may be out of date, or the address may have a typo.</p>
+	<p>Most readers are looking for one of these:</p>
+	<ul class="nv-not-found">
+		{
+			links.map((link) => (
+				<li>
+					<a href={link.href}>{link.name}</a>: {link.text}
+				</li>
+			))
+		}
+	</ul>
+	<p data-search-hint hidden>
+		To find anything else, <button type="button" class="nv-search-link">search the docs</button>, or press <kbd>/</kbd> on any page.
+	</p>
+</StarlightPage>
+
+<script>
+	// Search needs JavaScript, so the hint shows only when it can work.
+	const hint = document.querySelector<HTMLElement>('[data-search-hint]');
+	const open = document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]');
+	if (hint && open) {
+		hint.hidden = false;
+		hint.querySelector('button')?.addEventListener('click', (event) => {
+			// Search closes on any click outside it, and this click is one until it stops here.
+			event.stopPropagation();
+			open.click();
+		});
+	}
+</script>
+
+<style>
+	.nv-search-link {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--nv-coral);
+		font: inherit;
+		text-decoration-line: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+		cursor: pointer;
+	}
+
+	.nv-search-link:hover {
+		text-decoration-thickness: 2px;
+	}
+</style>
