@@ -1,0 +1,164 @@
+/*
+ * The site's identity, on every page: the four-color strip of combination
+ * 47, the wordmark set in terminal cells, and the details of the docs
+ * frame that carry them. The docs column itself stays calm: these rules
+ * touch the frame, the headings, the current position and the labels of
+ * notes, never the running text.
+ */
+
+/* The strip: the combination's four colors as flat bands, in the order of
+   Wada's plate. Used in the docs under the header, over each section
+   heading and over the colophon; the home page carries the colors in its
+   sky instead and turns the strip off. */
+:root {
+	--nv-strip: linear-gradient(
+		to right,
+		var(--nv-naples) 0 25%,
+		var(--nv-coral) 25% 50%,
+		var(--nv-methyl) 50% 75%,
+		var(--nv-eugenia) 75% 100%
+	);
+}
+
+header.header {
+	border-bottom: 0;
+	background-color: var(--nv-bg);
+	background-image: var(--nv-strip);
+	background-size: 100% 4px;
+	background-position: bottom;
+	background-repeat: no-repeat;
+}
+
+/* The wordmark: "nuvem" in Naples cells, at its own pixel size so each
+   cell lands on whole pixels and the word stays sharp. */
+.site-title img {
+	width: 129px;
+	height: 24px;
+}
+
+/* Page title: the one Naples line, heavier than the headings below it. */
+.content-panel h1#_top {
+	font-weight: 800;
+	letter-spacing: -0.03em;
+}
+
+/* Section headings carry a short strip on their rule. */
+.sl-markdown-content h2:not(:where(.not-content *)),
+.sl-markdown-content .sl-heading-wrapper:has(> h2) {
+	background-image: var(--nv-strip);
+	background-size: 2.5rem 3px;
+	background-position: 0 0;
+	background-repeat: no-repeat;
+}
+
+.sl-markdown-content .sl-heading-wrapper > h2 {
+	background-image: none;
+}
+
+/* The current page in the sidebar is drawn as nuvem draws the selected
+   row: a raised bar with a `>` in front. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+	background-color: var(--nv-plate);
+}
+
+.sidebar-content a[aria-current='page']::before {
+	content: '>';
+	position: absolute;
+	inset-inline-start: 0.25rem;
+	top: 50%;
+	width: auto;
+	border-top: 0;
+	color: var(--nv-naples);
+	font-family: var(--nv-font-mono);
+	font-weight: 700;
+	line-height: 1;
+	transform: translateY(-50%);
+}
+
+.sidebar-content a[aria-current='page'] {
+	padding-inline-start: 1.25rem;
+}
+
+/* Note and tip name their kind on a filled label. */
+.starlight-aside--note,
+.starlight-aside--tip {
+	border-color: var(--nv-rule);
+}
+
+.starlight-aside:is(.starlight-aside--note, .starlight-aside--tip) .starlight-aside__title {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin-bottom: var(--nv-space-2);
+	padding: 0.125rem 0.5rem;
+	border-radius: var(--nv-radius);
+	color: var(--nv-ink);
+}
+
+.starlight-aside--note .starlight-aside__title {
+	background-color: var(--nv-methyl);
+}
+
+.starlight-aside--tip .starlight-aside__title {
+	background-color: var(--nv-naples);
+}
+
+.starlight-aside:is(.starlight-aside--note, .starlight-aside--tip) .starlight-aside__icon {
+	color: var(--nv-ink);
+}
+
+/* Reference tables: a heavier rule under the header row. */
+.sl-markdown-content .nv-table th {
+	border-bottom-width: 2px;
+}
+
+/* The colophon opens with the strip. */
+.colophon {
+	border-top: 0;
+	background-image: var(--nv-strip);
+	background-size: 100% 4px;
+	background-position: 0 0;
+	background-repeat: no-repeat;
+}
+
+/* One right edge for the page's structure. Prose keeps its reading
+   measure, but the rules that divide the page (under the title, over each
+   section) run to the same right edge as the tables and code plates. */
+.sl-markdown-content > .sl-heading-wrapper:has(> h2) {
+	max-width: none;
+}
+
+main > .content-panel:first-child:not(:only-child) {
+	padding-bottom: 0;
+}
+
+main > .content-panel:first-child:not(:only-child) > .sl-container {
+	padding-bottom: var(--nv-space-5);
+	border-bottom: 1px solid var(--nv-rule);
+}
+
+main > .content-panel + .content-panel {
+	border-top: 0;
+}
+
+/* Air between a heading and the text it opens. */
+.sl-markdown-content .sl-heading-wrapper:has(> h2) {
+	margin-bottom: var(--nv-space-3);
+}
+
+.sl-markdown-content .sl-heading-wrapper:has(> :is(h3, h4)) {
+	margin-bottom: var(--nv-space-2);
+}
+
+/* A top-level page with no group (Changelog) reads as an entry of the same
+   rank as the groups above it, not as a muted, disabled-looking link. */
+.sidebar-content .top-level > li > a.large:not([aria-current='page']) {
+	color: var(--nv-text);
+	font-weight: 650;
+}
+
+.sidebar-content .top-level > li > a.large:not([aria-current='page']):hover {
+	color: var(--nv-naples);
+}

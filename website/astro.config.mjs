@@ -30,6 +30,8 @@ export default defineConfig({
 		starlight({
 			title: 'nuvem',
 			description: 'A terminal UI for Google Cloud.',
+			// The site title stays as text for screen readers, so the image is decorative.
+			logo: { src: './src/assets/wordmark.svg', alt: '', replacesTitle: true },
 			social: [{ icon: 'github', label: 'Source on GitHub', href: REPO_URL }],
 			editLink: { baseUrl: `${REPO_URL}/edit/main/website/` },
 			head: [
@@ -38,7 +40,7 @@ export default defineConfig({
 				{ tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
 				{ tag: 'meta', attrs: { property: 'og:image:alt', content: 'nuvem: a terminal UI for Google Cloud.' } },
 			],
-			customCss: ['./src/styles/tokens.css', './src/styles/docs.css'],
+			customCss: ['./src/styles/tokens.css', './src/styles/docs.css', './src/styles/identity.css'],
 			// Starlight's own Markdown features (asides, heading anchors) also
 			// apply to the repository's docs, which live outside src/.
 			markdown: { processedDirs: ['../docs'] },

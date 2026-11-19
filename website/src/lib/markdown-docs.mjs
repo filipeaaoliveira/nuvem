@@ -6,9 +6,9 @@
 // - Relative links become site URLs or GitHub URLs (see doc-links.mjs, which
 //   also fails the build on a broken one).
 // - Inline code breaks only at spaces, never inside a token such as
-//   `--configuration`; a long path may still break after a `/`.
+//   `--configuration`; a long token may still break after a `/`, `=` or `:`.
 // - Table cells carry their column's header as `data-label`, so a narrow
-//   screen can show each row as a labelled block, and each table's scroll
+//   screen can show each row as a labeled block, and each table's scroll
 //   region is named after the heading above it.
 
 import { readFileSync } from 'node:fs';
@@ -151,13 +151,14 @@ function escapeHtml(text) {
 
 /**
  * `<code>` whose words never break inside: each run of non-space characters
- * is an unbreakable token, and a long path offers a break after each `/`.
+ * is an unbreakable token, and a long one offers a break after each `/`,
+ * `=` and `:`, as in `--local-host-port=localhost:<local>`.
  */
 function codeHtml(value) {
 	const parts = value.split(/(\s+)/).map((part, i) => {
 		if (i % 2 === 1) return escapeHtml(part);
 		if (!part) return '';
-		const token = part.length > 24 ? escapeHtml(part).replace(/\//g, '/<wbr>') : escapeHtml(part);
+		const token = part.length > 24 ? escapeHtml(part).replace(/[/=:]/g, '$&<wbr>') : escapeHtml(part);
 		return `<span class="nv-token">${token}</span>`;
 	});
 	return `<code>${parts.join('')}</code>`;
