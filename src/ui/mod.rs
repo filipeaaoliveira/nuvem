@@ -110,16 +110,26 @@ fn render_active_overlay(frame: &mut Frame<'_>, session: &RuntimeSession, area: 
         return;
     }
 
+    // Every overlay below is drawn over a cleared body. Drawn over the panes,
+    // a box keeps whatever words its edges cut through on the rows it crosses
+    // (`│      [│`, `│.0.4   │` around a Stop confirmation). The header, the
+    // status line and the footer are whole rows and stay. The batch progress
+    // glance is the one exception: it is not modal, and the list it reports
+    // on is what the operator keeps working in while it shows.
+    if overlay_is_modal(session) {
+        frame.render_widget(Clear, body);
+    }
+
     // Directly below help and above every confirmation, matching the mode
     // precedence in `services::runtime::input_context`: whichever overlay
     // renders is the one that must own the keys.
     if session.app().root.system.plugin_output().is_some() {
-        render_plugin_output(frame, session);
+        render_plugin_output(frame, session, body);
         return;
     }
 
     if session.app().root.configurations.context_picker().is_some() {
-        configurations::render_context_picker_overlay(frame, session);
+        configurations::render_context_picker_overlay(frame, session, body);
         return;
     }
 
@@ -221,6 +231,25 @@ fn render_active_overlay(frame: &mut Frame<'_>, session: &RuntimeSession, area: 
     }
 }
 
+/// Whether an overlay other than the batch progress glance is open: the same
+/// conditions, in the same order, as the branches of `render_active_overlay`.
+fn overlay_is_modal(session: &RuntimeSession) -> bool {
+    let root = &session.app().root;
+    root.system.plugin_output().is_some()
+        || root.configurations.context_picker().is_some()
+        || root.resources.action_confirmation().is_some()
+        || root.resources.batch_confirmation().is_some()
+        || root.configurations.activation_confirmation().is_some()
+        || root.resources.plugin_prompt().is_some()
+        || root.resources.plugin_confirmation().is_some()
+        || root.resources.command_preview().is_some()
+        || root.resources.ssh_launch_preview().is_some()
+        || root.resources.k9s_launch_confirmation().is_some()
+        || root.resources.tunnel_launch_preview().is_some()
+        || root.jump_picker.is_some()
+        || root.command.is_open()
+}
+
 /// Everything below the two header rows: the breadcrumb, the body, the status
 /// line and the footer.
 fn below_header(area: Rect, body: Rect) -> Rect {
@@ -262,13 +291,15 @@ fn session_hotkeys(session: &RuntimeSession) -> KeyOverrides {
 /// modals: those are read at a glance and this is scrolled through, so a box
 /// that changed size with the run would move the text under the operator as
 /// they paged between runs.
-fn render_plugin_output(frame: &mut Frame<'_>, session: &RuntimeSession) {
+fn render_plugin_output(frame: &mut Frame<'_>, session: &RuntimeSession, body: Rect) {
     let Some(viewer) = session.app().root.system.plugin_output() else {
         return;
     };
     let runs = plugin_output::retained_runs(&session.app().root.system.operations).len();
 
-    let area = centered_rect(88, 80, frame.area());
+    // Inside the body it has cleared, so the box crosses no whole row of the
+    // frame (`Home ┌…`, `[OK] └…`).
+    let area = centered_rect(88, 100, body);
     let inner_width = usize::from(area.width.saturating_sub(2));
     // Two chrome rows inside the borders: the heading and the footer.
     let body_height = usize::from(area.height.saturating_sub(2)).saturating_sub(2);

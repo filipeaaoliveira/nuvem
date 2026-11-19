@@ -288,6 +288,8 @@ mod logging_initial_selection_test;
 mod logging_projection_test;
 #[path = "logging_read_order_test.rs"]
 mod logging_read_order_test;
+#[path = "overlay_backdrop_test.rs"]
+mod overlay_backdrop_test;
 #[path = "status_label_rendering_test.rs"]
 mod status_label_rendering_test;
 

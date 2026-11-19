@@ -232,11 +232,13 @@ pub fn activation_confirmation_lines(
     ]
 }
 
-pub fn render_context_picker_overlay(frame: &mut Frame<'_>, session: &RuntimeSession) {
+pub fn render_context_picker_overlay(frame: &mut Frame<'_>, session: &RuntimeSession, body: Rect) {
     let Some(picker) = session.app().root.configurations.context_picker() else {
         return;
     };
-    let area = centered_rect(80, 70, frame.area());
+    // Inside the body the caller has cleared, so the box crosses no whole row
+    // of the frame.
+    let area = centered_rect(80, 100, body);
     let lines = if picker_chrome_fits(area, picker) {
         picker_lines(picker, area)
     } else {
