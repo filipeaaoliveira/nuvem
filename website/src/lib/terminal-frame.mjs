@@ -1,10 +1,10 @@
-// Reads a frame from `demo/frames/` (one screen of nuvem as a coloured
+// Reads a frame from `demo/frames/` (one screen of nuvem as a colored
 // `<pre>`, written by `scripts/ansi2html.py`) so a page can inline it as text.
 //
 // - Only the markup ansi2html writes is accepted: one `<pre>` holding text
 //   and flat `<span style="...">` runs. Anything else fails the build, so a
 //   frame can never carry a script or a link into the page.
-// - One terminal colour is shown differently from the recordings. nuvem's
+// - One terminal color is shown differently from the recordings. nuvem's
 //   selected row uses the terminal's "blue" slot, which the recordings set to
 //   the page ground. On the site the selected row becomes a raised plate, so
 //   it stays distinct from the page around the frame.
@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { REPO_ROOT } from './docs-source.mjs';
 
-/** Terminal colour (as the recordings draw it) -> colour on the site. */
+/** Terminal color (as the recordings draw it) -> color on the site. */
 export const SITE_COLOURS = {
 	'#423b36': '#2c2622', // blue: the selected row (--nv-plate-raised)
 };
@@ -28,7 +28,7 @@ function luminance(hex) {
 	return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-/** WCAG contrast ratio of two `#rrggbb` colours. */
+/** WCAG contrast ratio of two `#rrggbb` colors. */
 export function contrast(a, b) {
 	const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
 	return (hi + 0.05) / (lo + 0.05);
@@ -40,7 +40,7 @@ function parseStyle(style, where) {
 		const [prop, value] = rule.split(':').map((s) => s.trim());
 		if (!ALLOWED_PROPERTIES.has(prop)) throw new Error(`${where}: unexpected style "${rule}"`);
 		if ((prop === 'color' || prop === 'background') && !/^#[0-9a-f]{6}$/i.test(value)) {
-			throw new Error(`${where}: colour "${value}" is not #rrggbb`);
+			throw new Error(`${where}: color "${value}" is not #rrggbb`);
 		}
 		out[prop] = prop === 'color' || prop === 'background' ? (SITE_COLOURS[value.toLowerCase()] ?? value.toLowerCase()) : value;
 	}
@@ -54,7 +54,7 @@ const styleText = (props) =>
 
 /**
  * Reads the frame at `absPath`. Returns the inner HTML (with the site's
- * colours), the frame's own text and background colours, and its size in
+ * colors), the frame's own text and background colors, and its size in
  * columns and rows.
  */
 export function readTerminalFrame(absPath) {
@@ -88,7 +88,7 @@ export function readTerminalFrame(absPath) {
 	const base = contrast(frame.color, frame.background);
 	if (base < MIN_CONTRAST) problems.push(`${frame.color} on ${frame.background} is ${base.toFixed(2)}:1`);
 	if (problems.length > 0) {
-		throw new Error(`${where}: text below ${MIN_CONTRAST}:1 after the site's colours:\n  ${[...new Set(problems)].join('\n  ')}`);
+		throw new Error(`${where}: text below ${MIN_CONTRAST}:1 after the site's colors:\n  ${[...new Set(problems)].join('\n  ')}`);
 	}
 
 	return { ...measure(html), html, color: frame.color, background: frame.background };
@@ -159,7 +159,7 @@ function trimToWord(row, left, width, right) {
 
 /**
  * A narrow view of a frame for small screens: the box whose title starts
- * with `title`, from its top-left corner, `width` columns wide. Fails the build when no such box exists, so a
+ * with `title`, from its top-left corner, at most `width` columns wide. Fails the build when no such box exists, so a
  * re-captured frame cannot silently lose its subject on phones.
  */
 export function cropToBox(frame, title, width) {
@@ -172,6 +172,8 @@ export function cropToBox(frame, title, width) {
 	if (bottom === -1) bottom = rows.length - 1;
 	const topRow = [...text[top]];
 	const right = topRow.indexOf('┐', left) === -1 ? topRow.length : topRow.indexOf('┐', left);
+	// A box narrower than `width` is shown whole and no wider.
+	width = Math.min(width, right - left + 1);
 	const cropped = rows.slice(top, bottom + 1).map((row) => trimToWord(row, left, width, right));
 	const html = fromCells(cropped);
 	return { ...frame, ...measure(html), html };

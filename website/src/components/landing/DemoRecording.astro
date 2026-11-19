@@ -8,13 +8,21 @@
 // - It starts by itself only on screens wider than 48rem, without
 //   prefers-reduced-motion and without the browser's data saver. Otherwise
 //   the poster shows, the control reads Play, and nothing is downloaded until
-//   the reader presses it. On a phone the terminal text would be too small
-//   to read anyway; the caption links to the file to watch it full size.
-// - Without JavaScript the browser's own controls are shown instead.
+//   the reader presses it.
+// - Up to 40rem, a 138-column screen would shrink past reading, so until
+//   the reader presses Play the window shows a still instead: the Inventory
+//   box of the Home screen as text (demo/frames/home.html), at a readable
+//   size. Play swaps in the recording. Without JavaScript the still stays,
+//   and the caption links to the file to watch it full size.
+// - The poster is set by the script, and only where it shows: on a phone
+//   it is not downloaded until Play. Without JavaScript the browser's own
+//   controls are shown, with no poster.
 import { getImage } from 'astro:assets';
 import webm from '../../../../demo/out/nuvem-demo.webm?url';
 import mp4 from '../../../../demo/out/nuvem-demo.mp4?url';
 import posterSource from '../../../../demo/out/nuvem-demo-poster.png';
+import { cropToBox, readTerminalFrame } from '../../lib/terminal-frame.mjs';
+import { demoPath } from '../../lib/demo-assets.mjs';
 
 interface Props {
 	/** What the recording shows, for readers who cannot see it. */
@@ -23,10 +31,14 @@ interface Props {
 
 const { description } = Astro.props;
 const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 });
+// The service names and their counts, ending at the "loaded" column, so no
+// status list is cut halfway and the text can be larger.
+const still = cropToBox(readTerminalFrame(demoPath('frame-home')), 'Inventory', 33);
 ---
 
 <figure class="recording" data-recording>
 	<div class="bar">
+		<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
 		<span class="caption"><span class="prompt" aria-hidden="true">$ </span>nuvem --demo</span>
 		<button type="button" class="toggle" data-state="paused" aria-controls="recording-video" hidden>
 			<svg class="icon-play" aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
@@ -43,7 +55,7 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 		width={posterSource.width}
 		height={posterSource.height}
 		style={`aspect-ratio: ${posterSource.width} / ${posterSource.height}`}
-		poster={poster.src}
+		data-poster={poster.src}
 		preload="none"
 		muted
 		loop
@@ -54,12 +66,17 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 		<source src={webm} type="video/webm" />
 		<source src={mp4} type="video/mp4" />
 	</video>
+	<div class="still" style={`--frame-bg: ${still.background}; --still-columns: ${still.columns}`}>
+		<pre role="img" aria-label="nuvem's Home view: the number of loaded resources for each of its services." style={`color: ${still.color}`} set:html={still.html} />
+	</div>
 	<figcaption><span id="recording-description">{description}</span> <a href={mp4}>Open it full size</a>.</figcaption>
 </figure>
 
 <script>
 	const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 	const narrow = matchMedia('(max-width: 48rem)');
+	// Up to here the window shows the still instead of the video (see the CSS).
+	const stillOnly = matchMedia('(max-width: 40rem)');
 	const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
 	const mayStartItself = () => !reducedMotion.matches && !narrow.matches && !saveData;
 
@@ -85,10 +102,22 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 			else video.pause();
 		};
 
+		// The poster, fetched only once the video can be seen.
+		const showPoster = () => {
+			if (!video.poster && video.dataset.poster && (!stillOnly.matches || figure.hasAttribute('data-started'))) video.poster = video.dataset.poster;
+		};
+		showPoster();
+		stillOnly.addEventListener('change', showPoster);
+
 		video.addEventListener('play', show);
 		video.addEventListener('pause', show);
 		button.addEventListener('click', () => {
 			wanted = video.paused ? 'play' : 'pause';
+			// On a narrow screen this replaces the still with the recording.
+			if (wanted === 'play') {
+				figure.toggleAttribute('data-started', true);
+				showPoster();
+			}
 			if (wanted === 'play') video.play().catch(show);
 			else video.pause();
 		});
@@ -113,24 +142,50 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 </script>
 
 <style>
+	/* A terminal window with presence: an ink frame, a title bar, and a flat
+	   Naples block offset behind it, like a second printing plate that has
+	   slipped out of register. */
 	.recording {
+		position: relative;
 		margin: 0;
-		border: 1px solid var(--nv-rule);
+		border: 3px solid var(--nv-ink);
 		border-radius: var(--nv-radius);
 		background-color: var(--nv-plate);
+		box-shadow: clamp(0.5rem, 1.2vw, 1rem) clamp(0.5rem, 1.2vw, 1rem) 0 var(--nv-naples);
 	}
 
 	.bar {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--nv-space-4);
 		min-height: 2.75rem;
 		padding: var(--nv-space-1) var(--nv-space-2) var(--nv-space-1) var(--nv-space-4);
-		border-bottom: 1px solid var(--nv-rule);
+		border-bottom: 3px solid var(--nv-ink);
+		background-color: var(--nv-plate-raised);
+	}
+
+	/* The window's controls as three cells in the combination's colors. */
+	.dots {
+		display: flex;
+		gap: 4px;
+	}
+
+	.dots span {
+		width: 0.625rem;
+		height: 0.625rem;
+		background-color: var(--nv-coral);
+	}
+
+	.dots span:nth-child(2) {
+		background-color: var(--nv-naples);
+	}
+
+	.dots span:nth-child(3) {
+		background-color: var(--nv-methyl);
 	}
 
 	.caption {
+		margin-inline-end: auto;
 		color: var(--nv-text-muted);
 		font-family: var(--nv-font-mono);
 		font-size: var(--nv-text-small);
@@ -176,9 +231,44 @@ const poster = await getImage({ src: posterSource, format: 'webp', quality: 85 }
 		background-color: var(--nv-plate);
 	}
 
+	.still {
+		display: none;
+		overflow-x: auto;
+		background-color: var(--frame-bg);
+	}
+
+	.still pre {
+		width: max-content;
+		margin: 0;
+		padding: var(--nv-space-3);
+		border: 0;
+		background: none;
+		font-family: var(--nv-font-mono);
+		font-size: min(0.9375rem, max(0.625rem, (100cqi - 1.5rem - 6px) / (var(--still-columns) * 0.602)));
+		line-height: 1.2;
+		font-variant-ligatures: none;
+		white-space: pre;
+	}
+
+	/* Narrow: the still until Play, then the recording. */
+	@media (max-width: 40rem) {
+		.recording {
+			container-type: inline-size;
+		}
+
+		.recording:not([data-started]) video {
+			display: none;
+		}
+
+		.recording:not([data-started]) .still {
+			display: block;
+		}
+	}
+
 	figcaption {
 		padding: var(--nv-space-3) var(--nv-space-4);
-		border-top: 1px solid var(--nv-rule);
+		border-top: 3px solid var(--nv-ink);
+		background-color: var(--nv-plate-raised);
 		color: var(--nv-text-muted);
 		font-size: var(--nv-text-small);
 	}

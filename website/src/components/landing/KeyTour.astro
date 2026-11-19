@@ -1,0 +1,517 @@
+---
+// The key tour: real screens of `nuvem --demo` as text (demo/frames/), one
+// per tab, each reached by the key that reaches it in nuvem.
+//
+// - Pattern: ARIA tabs with automatic activation. Arrow keys, Home and End
+//   move between tabs; Enter and Space keep their usual meaning.
+// - While focus is inside the tour, the tool's own keys also switch the
+//   screen: h, g, /, :, ? and Space then : (a mark, then the palette). These
+//   keys are listed in each tab's aria-keyshortcuts. Outside the tour, `/`
+//   still opens the site search.
+// - Every panel holds the same number of rows, and the stack reserves the
+//   tallest, so switching never moves the page.
+// - Wide screens show the whole screen; below 64rem each panel shows only
+//   the box the screen is about, cut at build time (cropToBox), so the text
+//   stays readable on a phone. The window is at most NARROW_MAX_ROWS tall;
+//   a box taller or wider than that scrolls inside it.
+// - Without JavaScript the tab row is hidden and every screen is shown in
+//   order with its heading and caption.
+import { cropToBox, readTerminalFrame } from '../../lib/terminal-frame.mjs';
+import { demoPath } from '../../lib/demo-assets.mjs';
+
+interface Stop {
+	id: string;
+	/** Keys drawn on the tab, in the order you press them. */
+	keys: string[];
+	/** Keys that switch to this tab while the tour has focus (aria-keyshortcuts). */
+	shortcut?: string;
+	label: string;
+	/** A key of DEMO_FILES. */
+	frame: string;
+	/** Title of the box shown on narrow screens. */
+	focus: string;
+	/** What the screen shows, for readers who cannot see it. */
+	description: string;
+	/** One sentence; `link` is appended as the sentence after it. */
+	caption: string;
+	/** A key the caption starts with, drawn as a key cap. */
+	captionKey?: string;
+	link: { text: string; href: string };
+}
+
+interface Props {
+	stops: Stop[];
+	/** Id of the stop shown first. */
+	initial?: string;
+}
+
+/** How a screen reader should say a key on a tab, where the symbol alone reads poorly. */
+const SPOKEN = { '/': 'slash', ':': 'colon', '?': 'question mark' };
+const spoken = (keys) => keys.map((k) => SPOKEN[k] ?? k).join(' then ');
+const NARROW_COLUMNS = 46;
+// Taller crops scroll inside the window rather than making every panel tall.
+const NARROW_MAX_ROWS = 22;
+const { stops, initial } = Astro.props;
+const first = Math.max(0, stops.findIndex((s) => s.id === initial));
+const panels = stops.map((stop) => {
+	const wide = readTerminalFrame(demoPath(stop.frame));
+	const narrow = cropToBox(wide, stop.focus, NARROW_COLUMNS);
+	return { ...stop, wide, narrow };
+});
+const columns = Math.max(...panels.map((p) => p.wide.columns));
+const rows = Math.max(...panels.map((p) => p.wide.rows));
+const narrowRows = Math.min(NARROW_MAX_ROWS, Math.max(...panels.map((p) => p.narrow.rows)));
+---
+
+<div class="tour" data-tour style={`--columns: ${columns}; --rows: ${rows}; --narrow-columns: ${NARROW_COLUMNS}; --narrow-rows: ${narrowRows}`}>
+	<div class="keys" role="tablist" aria-label="Screens of nuvem" data-tour-tabs>
+		{
+			panels.map((p, i) => (
+				<button
+					type="button"
+					role="tab"
+					id={`tour-tab-${p.id}`}
+					aria-controls={`tour-panel-${p.id}`}
+					aria-selected={i === first ? 'true' : 'false'}
+					tabindex={i === first ? 0 : -1}
+					aria-label={`${spoken(p.keys)}: ${p.label}`}
+					aria-keyshortcuts={p.shortcut}
+					data-shortcut={p.shortcut}
+				>
+					<span class="caps">
+						{p.keys.map((k, j) => (
+							<>
+								{j > 0 && <span class="then" aria-hidden="true" />}
+								<span class:list={['cap', { long: k.length > 1 }]}>{k}</span>
+							</>
+						))}
+					</span>
+					<span class="label">{p.label}</span>
+				</button>
+			))
+		}
+	</div>
+
+	<div class="stack">
+		{
+			panels.map((p, i) => (
+				<section class="panel" role="tabpanel" id={`tour-panel-${p.id}`} aria-labelledby={`tour-tab-${p.id}`} hidden={i !== first} data-tour-panel>
+					<h3 class="panel-title">
+						{p.label} ({p.keys.join(' then ')})
+					</h3>
+					<div class="window">
+						<div class="titlebar" aria-hidden="true">
+							<span class="dots">
+								<span />
+								<span />
+								<span />
+							</span>
+							<span class="title">nuvem --demo</span>
+						</div>
+						<div class="screen wide" style={`--frame-bg: ${p.wide.background}`}>
+							<pre role="img" aria-label={p.description} style={`color: ${p.wide.color}`} set:html={p.wide.html} />
+						</div>
+						<div class="screen narrow" style={`--frame-bg: ${p.narrow.background}`} role="region" aria-label={`${p.label}, screen`} data-tour-scroll>
+							<pre role="img" aria-label={p.description} style={`color: ${p.narrow.color}`} set:html={p.narrow.html} />
+						</div>
+					</div>
+					<p class="caption">
+						{p.captionKey && (
+							<>
+								<kbd class="caption-key">{p.captionKey}</kbd>{' '}
+							</>
+						)}
+						{p.caption} <a href={p.link.href}>{p.link.text}</a>.
+					</p>
+				</section>
+			))
+		}
+	</div>
+</div>
+
+<noscript>
+	<style>
+		[data-tour-tabs] {
+			display: none !important;
+		}
+		[data-tour-panel] {
+			grid-area: auto !important;
+			visibility: visible !important;
+		}
+		[data-tour-panel] + [data-tour-panel] {
+			margin-top: 3rem;
+		}
+		[data-tour] .panel-title {
+			position: static !important;
+			width: auto !important;
+			height: auto !important;
+			clip-path: none !important;
+		}
+	</style>
+</noscript>
+
+<script>
+	// How long a Space waits for the `:` that makes it a lifecycle action.
+	const SEQUENCE_MS = 1500;
+
+	for (const tour of document.querySelectorAll<HTMLElement>('[data-tour]')) {
+		const tabs = [...tour.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+		const panelFor = (tab: HTMLElement) => document.getElementById(tab.getAttribute('aria-controls')!)!;
+		let marked = false;
+		let markTimer: number | undefined;
+
+		const select = (tab: HTMLButtonElement, focus = true) => {
+			for (const t of tabs) {
+				const on = t === tab;
+				t.setAttribute('aria-selected', String(on));
+				t.tabIndex = on ? 0 : -1;
+				panelFor(t).hidden = !on;
+			}
+			if (focus) tab.focus();
+			updateScroll();
+		};
+
+		const byShortcut = (keys: string) => tabs.find((t) => t.dataset.shortcut === keys);
+
+		const unmark = () => {
+			marked = false;
+			tour.removeAttribute('data-marked');
+			window.clearTimeout(markTimer);
+		};
+
+		tour.addEventListener('click', (event) => {
+			const tab = (event.target as Element).closest<HTMLButtonElement>('[role="tab"]');
+			if (tab && tabs.includes(tab)) select(tab);
+		});
+
+		tour.addEventListener('keydown', (event) => {
+			if (event.metaKey || event.ctrlKey || event.altKey) return;
+			const current = document.activeElement as HTMLButtonElement;
+			const onTab = tabs.includes(current);
+			const i = tabs.indexOf(current);
+
+			if (onTab) {
+				const move = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: tabs.length - 1 }[event.key];
+				if (move !== undefined) {
+					event.preventDefault();
+					select(tabs[(move + tabs.length) % tabs.length]);
+					unmark();
+					return;
+				}
+			}
+
+			// The tool's own keys. Handled here, they do not reach the page's
+			// `/` search shortcut.
+			if (event.key === ' ' && onTab) {
+				event.preventDefault();
+				marked = true;
+				tour.setAttribute('data-marked', '');
+				window.clearTimeout(markTimer);
+				markTimer = window.setTimeout(unmark, SEQUENCE_MS);
+				return;
+			}
+			const tab = (marked && byShortcut(`Space ${event.key}`)) || byShortcut(event.key);
+			unmark();
+			if (tab) {
+				event.preventDefault();
+				event.stopPropagation();
+				select(tab);
+			}
+		});
+
+		// A panel that scrolls sideways must be reachable by keyboard; one
+		// that fits must not add an empty tab stop.
+		const regions = [...tour.querySelectorAll<HTMLElement>('[data-tour-scroll]')];
+		function updateScroll() {
+			for (const region of regions) {
+				if (region.offsetParent && (region.scrollWidth > region.clientWidth + 1 || region.scrollHeight > region.clientHeight + 1)) region.tabIndex = 0;
+				else region.removeAttribute('tabindex');
+			}
+		}
+		new ResizeObserver(updateScroll).observe(tour);
+	}
+</script>
+
+<style>
+	.tour {
+		--pad: var(--nv-space-4);
+	}
+
+	/* The tab row: one key cap (or a sequence) over a short name. */
+	.keys {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--nv-space-2) var(--nv-space-5);
+		margin-bottom: var(--nv-space-5);
+	}
+
+	@media (min-width: 64rem) {
+		.keys {
+			flex-wrap: nowrap;
+			gap: var(--nv-space-7);
+		}
+	}
+
+	[role='tab'] {
+		display: grid;
+		justify-items: start;
+		align-content: start;
+		gap: var(--nv-space-2);
+		min-height: 2.75rem;
+		padding: var(--nv-space-2) 0;
+		border: 0;
+		background: none;
+		color: var(--nv-ink);
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+
+	[role='tab']:focus-visible {
+		outline: 3px solid var(--nv-ink);
+		outline-offset: 2px;
+	}
+
+	.caps {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.then {
+		width: 0.5rem;
+		border-top: 2px solid var(--nv-ink);
+	}
+
+	/* A physical cap: plate face, a deep ink edge below. Pressed, it sinks
+	   into its edge and takes a Coral face. */
+	.cap {
+		display: inline-grid;
+		place-items: center;
+		min-width: 3rem;
+		height: 3rem;
+		padding: 0 0.625rem;
+		border: 2px solid var(--nv-ink);
+		border-bottom-width: 6px;
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate-raised);
+		color: var(--nv-naples);
+		font-family: var(--nv-font-mono);
+		font-size: 1.25rem;
+		font-weight: 700;
+		line-height: 1;
+		transition:
+			transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+			border-bottom-width 120ms cubic-bezier(0.16, 1, 0.3, 1),
+			background-color 120ms linear;
+	}
+
+	.cap.long {
+		font-size: 0.875rem;
+	}
+
+	[role='tab']:hover .cap {
+		background-color: var(--nv-plate);
+	}
+
+	/* The tour sits on the Naples dusk, so the pressed cap takes Coral. */
+	[role='tab'][aria-selected='true'] .cap {
+		transform: translateY(4px);
+		border-bottom-width: 2px;
+		background-color: var(--nv-coral);
+		color: var(--nv-ink);
+	}
+
+	/* After Space, the Space cap of the lifecycle tab stays down until `:`. */
+	.tour[data-marked] [data-shortcut='Space :'] .cap:first-child {
+		transform: translateY(4px);
+		border-bottom-width: 2px;
+		background-color: var(--nv-coral);
+		color: var(--nv-ink);
+	}
+
+	.label {
+		font-size: var(--nv-text-small);
+		font-weight: 600;
+		line-height: 1.25;
+	}
+
+	[role='tab'][aria-selected='true'] .label {
+		font-weight: 800;
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.25em;
+	}
+
+	/* Every panel in one grid cell: the tallest sets the height, and the
+	   hidden ones keep their space without showing. */
+	.stack {
+		display: grid;
+		container-type: inline-size;
+	}
+
+	.panel {
+		grid-area: 1 / 1;
+		min-width: 0;
+	}
+
+	.panel[hidden] {
+		display: block;
+		visibility: hidden;
+	}
+
+	.panel-title {
+		margin: 0 0 var(--nv-space-3);
+		color: inherit;
+		font-size: var(--nv-text-h3);
+		font-weight: 800;
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.window {
+		border: 2px solid var(--nv-ink);
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate);
+	}
+
+	.titlebar {
+		display: flex;
+		align-items: center;
+		gap: var(--nv-space-4);
+		height: 2.25rem;
+		padding: 0 var(--nv-space-4);
+		border-bottom: 2px solid var(--nv-ink);
+		background-color: var(--nv-plate-raised);
+		color: var(--nv-text-muted);
+		font-family: var(--nv-font-mono);
+		font-size: var(--nv-text-small);
+	}
+
+	/* The window's three controls, as three cells in the palette. */
+	.dots {
+		display: flex;
+		gap: 4px;
+	}
+
+	.dots span {
+		width: 0.625rem;
+		height: 0.625rem;
+		background-color: var(--nv-coral);
+	}
+
+	.dots span:nth-child(2) {
+		background-color: var(--nv-naples);
+	}
+
+	.dots span:nth-child(3) {
+		background-color: var(--nv-methyl);
+	}
+
+	.screen {
+		overflow-x: auto;
+		background-color: var(--frame-bg);
+	}
+
+	.window .screen:focus-visible {
+		outline: 3px solid var(--nv-naples);
+		outline-offset: -3px;
+	}
+
+	pre {
+		width: max-content;
+		margin: 0;
+		padding: var(--pad);
+		border: 0;
+		border-radius: 0;
+		background: none;
+		font-family: var(--nv-font-mono);
+		line-height: 1.2;
+		font-variant-ligatures: none;
+		white-space: pre;
+	}
+
+	/* Wide: the whole screen, scaled so its widest line fills the window. */
+	.wide pre {
+		--size: max(0.6875rem, (100cqi - 4px - 2 * var(--pad)) / (var(--columns) * 0.602));
+		min-height: calc(var(--rows) * 1.2 * var(--size) + 2 * var(--pad));
+		font-size: var(--size);
+	}
+
+	/* Narrow: the box the screen is about, at 10px or more, never larger
+	   than body text, in a window as tall as the tallest box. */
+	.narrow {
+		--size: min(0.9375rem, max(0.625rem, (100cqi - 4px - 2 * var(--pad)) / (var(--narrow-columns) * 0.602)));
+		height: calc(var(--narrow-rows) * 1.2 * var(--size) + 2 * var(--pad));
+		overflow: auto;
+	}
+
+	.narrow pre {
+		font-size: var(--size);
+	}
+
+	.wide {
+		display: none;
+	}
+
+	@media (min-width: 64rem) {
+		.wide {
+			display: block;
+		}
+
+		.narrow {
+			display: none;
+		}
+	}
+
+	.caption {
+		max-width: var(--nv-measure);
+		margin: var(--nv-space-4) 0 0;
+		color: var(--nv-ink);
+		font-size: var(--nv-text-body);
+		line-height: 1.5;
+	}
+
+	.caption-key {
+		display: inline-block;
+		min-width: 1.75em;
+		padding: 0 0.4em;
+		border: 2px solid var(--nv-ink);
+		border-bottom-width: 3px;
+		border-radius: var(--nv-radius);
+		background-color: var(--nv-plate-raised);
+		color: var(--nv-naples);
+		font-family: var(--nv-font-mono);
+		font-size: 0.875em;
+		font-weight: 700;
+		line-height: 1.4;
+		text-align: center;
+	}
+
+	.caption a {
+		color: var(--nv-ink);
+		font-weight: 700;
+		text-decoration-line: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+
+	.caption a:hover {
+		text-decoration-thickness: 3px;
+	}
+
+	.caption a:focus-visible {
+		outline: 3px solid var(--nv-ink);
+		outline-offset: 2px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cap {
+			transition: none;
+		}
+	}
+</style>

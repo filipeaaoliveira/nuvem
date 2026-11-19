@@ -17,7 +17,14 @@ export const DEMO_FILES = {
 	webm: 'demo/out/nuvem-demo.webm',
 	mp4: 'demo/out/nuvem-demo.mp4',
 	poster: 'demo/out/nuvem-demo-poster.png',
-	frame: 'demo/frames/palette.html',
+	// Screens of the app as colored text, for the home page's key tour.
+	'frame-home': 'demo/frames/home.html',
+	'frame-resources': 'demo/frames/resources.html',
+	'frame-detail': 'demo/frames/detail.html',
+	'frame-palette': 'demo/frames/palette.html',
+	'frame-confirm': 'demo/frames/confirm.html',
+	'frame-bigquery': 'demo/frames/bigquery.html',
+	'frame-help': 'demo/frames/help.html',
 };
 
 const MAKES = {

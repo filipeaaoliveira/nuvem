@@ -1,0 +1,395 @@
+---
+// How nuvem reaches Google Cloud, drawn as lanes from nuvem to Google Cloud:
+// the reads go straight through, and every lane that can change something
+// starts at the confirmation, which nuvem shows before the program runs.
+// Every claim here follows docs/reference/services/overview.md ("How nuvem
+// reads" and "Before a change runs"). Built from HTML so all of its text is real
+// text, in reading order: nuvem, the reads, the confirmation, the changes,
+// Google Cloud. From 56rem the lanes run left to right; below that they
+// stack, with the confirmation drawn as a band across the changes.
+
+interface Lane {
+	program: string;
+	what: string;
+	/** What the confirmation shows for this lane, when it has one. */
+	shows?: string;
+}
+
+const reads: Lane[] = [
+	{ program: 'Client libraries', what: 'Lists and details for every service but BigQuery, with a short-lived token that gcloud issues and nuvem keeps in memory.' },
+	{ program: 'bq, gcloud', what: 'BigQuery datasets and tables, budgets, and label-mode filters.' },
+];
+
+const changes: Lane[] = [
+	{ program: 'Client libraries', what: 'GCE and Cloud SQL lifecycle actions, with the same token.', shows: 'the API call, such as compute.instances.stop' },
+	{ program: 'gcloud', what: 'Configurations, SSH, GCE tunnels and plugins.', shows: 'the command line; for a new or edited configuration, the values it sets' },
+	{ program: 'cloud-sql-proxy', what: 'Cloud SQL tunnels.', shows: 'the command line' },
+	{ program: 'k9s', what: 'GKE clusters.', shows: 'the k9s command, and the gcloud command that fetches credentials when one is needed' },
+];
+import Wordmark from './Wordmark.astro';
+---
+
+<figure class="flow" aria-labelledby="flow-caption">
+	<figcaption id="flow-caption" class="sr-only">How nuvem reaches Google Cloud: reads go straight to Google Cloud, and everything that can change something passes a confirmation first.</figcaption>
+	<div class="grid">
+		<div class="end source">
+			<span class="source-word">nuvem</span>
+			<Wordmark class="source-mark" ink="var(--nv-naples)" offset="var(--nv-coral)" vertical decorative />
+		</div>
+
+		<div class="group reads">
+			<h3 class="group-title">Reads</h3>
+			<ul>
+				{
+					reads.map((lane) => (
+						<li class="lane">
+							<code class="program">{lane.program}</code>
+							<span class="what">{lane.what}</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+
+		<div class="gate">
+			<h3 class="gate-title">Confirmation</h3>
+			<p>Shows what is about to run. Nothing runs until you confirm.</p>
+		</div>
+
+		<div class="group changes">
+			<h3 class="group-title">Changes, SSH, tunnels and sessions</h3>
+			<ul>
+				{
+					changes.map((lane) => (
+						<li class="lane">
+							<code class="program">{lane.program}</code>
+							<span class="what">
+								{lane.what}{' '}
+								<span class="shows">Shows {lane.shows}.</span>
+							</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+
+		<div class="end target"><span>Google Cloud</span></div>
+	</div>
+</figure>
+
+<style>
+	/* A lit plate on the night: a Naples field inset from the page's edges,
+	   with nuvem hanging over its left edge and Google Cloud over its right
+	   (on a phone, over its top and bottom). Everything on it is ink. */
+	.flow {
+		--line: 3px;
+		--hang: 1.5rem;
+		margin: 0 calc(var(--hang) / 2);
+		padding: var(--nv-space-5) var(--nv-space-4);
+		background-color: var(--nv-naples);
+		color: var(--nv-ink);
+	}
+
+	.source {
+		margin: calc(-1 * var(--nv-space-5) - var(--hang)) calc(-1 * var(--nv-space-4) - var(--hang) / 2) 0;
+	}
+
+	.target {
+		margin: 0 calc(-1 * var(--nv-space-4) - var(--hang) / 2) calc(-1 * var(--nv-space-5) - var(--hang));
+	}
+
+	.grid {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+	}
+
+	/* Narrow: the reads run down an outer spine from nuvem straight to
+	   Google Cloud, past the confirmation. The confirmation and the change
+	   lanes sit indented on a spine of their own that starts at it. */
+	.grid::before {
+		content: '';
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: calc(var(--nv-space-3) - var(--line) / 2);
+		border-inline-start: var(--line) solid var(--nv-ink);
+	}
+
+	.end {
+		position: relative;
+		z-index: 1;
+	}
+
+	.gate,
+	.changes {
+		margin-inline-start: var(--nv-space-6);
+	}
+
+	.gate::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		inset-inline-start: calc(-1 * var(--nv-space-6) + var(--nv-space-3) - var(--line));
+		width: calc(var(--nv-space-6) - var(--nv-space-3) + var(--line));
+		border-top: var(--line) solid var(--nv-ink);
+	}
+
+	ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* The two ends: nuvem in the plate and its wordmark color, Google Cloud
+	   in a Methyl field. */
+	.end {
+		display: grid;
+		place-items: center;
+		padding: var(--nv-space-4);
+		border: var(--line) solid var(--nv-ink);
+		font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1.1;
+		text-align: center;
+	}
+
+	/* nuvem is a terminal window's raised plate in the same 3px ink frame
+	   as the other two ends. */
+	.source {
+		background-color: var(--nv-plate-raised);
+		color: var(--nv-naples);
+	}
+
+	.target {
+		background-color: var(--nv-methyl);
+		color: var(--nv-ink);
+	}
+
+	.group-title,
+	.gate-title {
+		margin: 0;
+		color: inherit;
+		font-size: var(--nv-text-body);
+		font-weight: 800;
+		letter-spacing: -0.01em;
+	}
+
+	.group {
+		position: relative;
+		padding: var(--nv-space-4) 0 var(--nv-space-4) var(--nv-space-6);
+	}
+
+	/* The spine: one ink line from nuvem down to Google Cloud. */
+	.group::before {
+		content: '';
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: calc(var(--nv-space-3) - var(--line) / 2);
+		border-inline-start: var(--line) solid var(--nv-ink);
+	}
+
+	.lane {
+		position: relative;
+		display: grid;
+		gap: var(--nv-space-1);
+		padding-block: var(--nv-space-3);
+	}
+
+	.lane + .lane {
+		border-top: 1px solid color-mix(in srgb, var(--nv-ink) 35%, transparent);
+	}
+
+	/* Each lane branches off the spine. */
+	.lane::before {
+		content: '';
+		position: absolute;
+		top: 1.35rem;
+		inset-inline-start: calc(-1 * var(--nv-space-6) + var(--nv-space-3));
+		width: calc(var(--nv-space-6) - var(--nv-space-3) - var(--nv-space-1));
+		border-top: var(--line) solid var(--nv-ink);
+	}
+
+	.source :global(.source-mark) {
+		display: none;
+	}
+
+	.program {
+		position: relative;
+		z-index: 1;
+		justify-self: start;
+		padding: 0.15em 0.5em;
+		border-radius: 2px;
+		background-color: var(--nv-ink);
+		color: var(--nv-text);
+		font-family: var(--nv-font-mono);
+		font-size: 0.875rem;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.what {
+		font-size: var(--nv-text-body-sm);
+		line-height: 1.45;
+	}
+
+	.shows {
+		display: block;
+		color: var(--nv-ink-soft);
+	}
+
+	/* The confirmation: a Eugenia band every change passes through. */
+	.gate {
+		position: relative;
+		padding: var(--nv-space-4);
+		border: var(--line) solid var(--nv-ink);
+		background-color: var(--nv-eugenia);
+	}
+
+	.gate p {
+		max-width: none;
+		margin: var(--nv-space-1) 0 0;
+		font-size: var(--nv-text-body-sm);
+		line-height: 1.4;
+	}
+
+	/* On the Eugenia band, secondary text stays full ink (5.17:1). */
+	.changes .shows {
+		color: var(--nv-ink-soft);
+	}
+
+	/* Wide: nuvem on the left, Google Cloud on the right. Every lane is one
+	   stroke to Google Cloud, with its program sitting on the line and what
+	   it does written under it. The reads run from nuvem over the top, past
+	   the confirmation. Below them, nuvem leads into the confirmation, and
+	   the change lanes leave it for Google Cloud: you confirm in nuvem
+	   first, then the program runs. */
+	@media (min-width: 56rem) {
+		.flow {
+			--hang: 2rem;
+			margin: var(--hang) var(--hang);
+			padding: var(--nv-space-6) var(--nv-space-5);
+		}
+
+		.source {
+			margin: 0 0 0 calc(-1 * var(--nv-space-5) - var(--hang));
+		}
+
+		.target {
+			margin: 0 calc(-1 * var(--nv-space-5) - var(--hang)) 0 0;
+		}
+
+		.grid {
+			--gutter: 2rem;
+			grid-template-columns: 5.5rem var(--gutter) 10rem var(--gutter) minmax(0, 1fr) var(--gutter) 8.5rem;
+			grid-template-rows: auto auto;
+			row-gap: var(--nv-space-6);
+		}
+
+		.grid::before,
+		.gate::before,
+		.group::before,
+		.lane::before {
+			display: none;
+		}
+
+		.source {
+			grid-column: 1;
+			grid-row: 1 / 3;
+			padding: var(--nv-space-4) var(--nv-space-3);
+		}
+
+		.source-word {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+
+		.source :global(.source-mark) {
+			display: block;
+			width: 4rem;
+		}
+
+		.target {
+			grid-column: 7;
+			grid-row: 1 / 3;
+			font-size: var(--nv-text-h3);
+		}
+
+		.reads {
+			grid-column: 3 / 6;
+			grid-row: 1;
+		}
+
+		.changes {
+			grid-column: 5;
+			grid-row: 2;
+		}
+
+		.gate {
+			grid-column: 3;
+			grid-row: 2;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			text-align: center;
+			margin-inline-start: 0;
+		}
+
+		.group {
+			padding: 0;
+		}
+
+		.changes {
+			margin-inline-start: 0;
+		}
+
+		.group-title {
+			margin-bottom: var(--nv-space-2);
+		}
+
+		.lane {
+			gap: var(--nv-space-2);
+			padding-block: var(--nv-space-2) var(--nv-space-3);
+		}
+
+		.lane + .lane {
+			border-top: 0;
+		}
+
+		/* The stroke: from nuvem's edge, under the program, to the end. */
+		.lane::after {
+			content: '';
+			position: absolute;
+			top: calc(var(--nv-space-2) + 0.8rem - var(--line) / 2);
+			inset-inline: calc(-1 * var(--gutter)) calc(-1 * var(--gutter) - var(--line));
+			border-top: var(--line) solid var(--nv-ink);
+		}
+
+		.what {
+			max-width: 34rem;
+		}
+
+		/* nuvem leads into the confirmation; the change lanes leave it. */
+		.gate::before {
+			display: block;
+			inset-inline-start: calc(-1 * var(--gutter) - var(--line));
+			width: var(--gutter);
+		}
+
+		.gate::after {
+			display: none;
+		}
+
+		/* The reads start at nuvem, so their titles and text clear the gate
+		   column only by running over it; the gate sits in the row below. */
+		.reads .group-title,
+		.reads .what {
+			max-width: 34rem;
+		}
+	}
+</style>
