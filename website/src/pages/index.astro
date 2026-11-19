@@ -159,9 +159,8 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		<div class="closing">
 		<section aria-labelledby="how">
 			<h2 id="how">How it works</h2>
-			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. A few reads, such as BigQuery, budgets and label filters, run the <code>bq</code> or <code>gcloud</code> command instead. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
-			<p>Lifecycle actions on GCE and Cloud SQL instances go through the same client libraries. SSH, tunnels to GCE instances, plugins and changes to your gcloud configurations run the <code>gcloud</code> CLI you already have. Cloud SQL tunnels run <code>cloud-sql-proxy</code>, and a GKE cluster opens in <code>k9s</code>, the terminal UI for Kubernetes.</p>
-			<p>Before anything changes, a confirmation shows what is about to happen. For a lifecycle action, it shows the API call. For SSH, tunnels, k9s, plugins and activating a configuration, it shows the command line. When you create or edit a configuration, it shows the values themselves.</p>
+			<p>nuvem reads Google Cloud through the official client libraries for Rust. It uses a short-lived token that gcloud issues for your configuration and keeps it in memory only, so nuvem stores no credentials of its own. A few reads, such as BigQuery, run <code>bq</code> or <code>gcloud</code> instead.</p>
+			<p>Lifecycle actions use the same client libraries. SSH, plugins, tunnels to GCE instances and configuration changes run the <code>gcloud</code> CLI you already have. Before anything changes, a confirmation shows what is about to happen. For a lifecycle action, that is the API call, such as <code>compute.instances.stop</code>.</p>
 			<p>Read more in <a href={docs.beforeChange}>Before a change runs</a>, the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
 		</section>
 
@@ -169,6 +168,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 			<h2 id="install">Install</h2>
 			<InstallCommand id="install-bottom" command={INSTALL} />
 			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page.</p>
+			<p class="then">Then run <code>nuvem --demo</code> to try it on sample data, with no account, or <code>nuvem</code> to open your active gcloud configuration.</p>
 		</section>
 		</div>
 	</div>
@@ -299,24 +299,13 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		letter-spacing: -0.01em;
 	}
 
-	/* How it works and the closing install, side by side on wide screens. */
+	/* How it works, then the closing install, each at the full width. */
 	.closing {
-		display: grid;
-		gap: var(--nv-space-8) var(--nv-space-7);
 		margin-top: var(--nv-space-8);
 	}
 
-	@media (min-width: 64rem) {
-		.closing {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-
-	.closing > section {
-		margin-top: 0;
-	}
-
-	.closing .also {
+	.closing .also,
+	.closing .then {
 		margin-top: var(--nv-space-3);
 	}
 
