@@ -1,11 +1,11 @@
 ---
 title: Install
-description: What nuvem needs, and how to install it with Homebrew, from a release archive, or from source.
+description: What nuvem needs, and how to install it with Homebrew, Cargo, a release archive, or from source.
 sidebar:
   order: 1
 ---
 
-Install nuvem with Homebrew, from a release archive, or from source.
+Install nuvem with Homebrew, with Cargo, from a release archive, or from source.
 
 ## Requirements
 
@@ -41,6 +41,20 @@ brew install filipeaaoliveira/tap/nuvem
 To upgrade later, run `brew upgrade nuvem`. Homebrew does not install the
 Google Cloud CLI for you. If you do not have it, run
 `brew install --cask gcloud-cli` and then `gcloud auth login`.
+
+## Install with Cargo
+
+With Rust 1.94 or newer, install nuvem from
+[crates.io](https://crates.io/crates/nuvem):
+
+```bash
+cargo install nuvem --locked
+```
+
+Cargo builds nuvem on your machine, so you also need a C toolchain and
+`cmake`, as for a [build from source](#build-from-source). `--locked` builds
+with the exact dependency versions nuvem was tested with. To upgrade later,
+run the same command again.
 
 ## Download a release
 

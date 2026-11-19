@@ -20,6 +20,7 @@ const description =
 
 const docs = {
 	install: await docHref('getting-started/install.md'),
+	cargo: await docHref('getting-started/install.md#install-with-cargo'),
 	release: await docHref('getting-started/install.md#download-a-release'),
 	source: await docHref('getting-started/install.md#build-from-source'),
 	firstRun: await docHref('getting-started/first-run.md'),
@@ -116,7 +117,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 	<div class="nv-landing not-content">
 		<section class="get-it">
 			<InstallCommand id="install-top" command={INSTALL} />
-			<p class="also">Homebrew on macOS and Linux. Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
+			<p class="also">Homebrew on macOS and Linux. Or install with <a href={docs.cargo}>cargo</a>, download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
 			<p class="next">Try it first with <code>nuvem --demo</code>, on sample data with no account. Your own projects need the gcloud CLI, signed in. See <a href={docs.firstRun}>First run</a>.</p>
 		</section>
 

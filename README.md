@@ -19,6 +19,13 @@ With [Homebrew](https://brew.sh), on macOS or Linux:
 brew install filipeaaoliveira/tap/nuvem
 ```
 
+With Rust 1.94 or newer, a C toolchain and `cmake`, install it from
+[crates.io](https://crates.io/crates/nuvem):
+
+```bash
+cargo install nuvem --locked
+```
+
 Each [GitHub release](https://github.com/filipeaaoliveira/nuvem/releases) also
 has a binary for Linux (x86_64 and arm64) and macOS (Apple silicon and Intel).
 Every archive comes with a SHA-256 checksum and a signed build-provenance
