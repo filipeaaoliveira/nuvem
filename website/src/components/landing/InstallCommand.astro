@@ -3,8 +3,10 @@
 // prompt is drawn by CSS, so selecting the text gives the command alone.
 // When the command is wider than the plate (on a phone), it wraps after a
 // `/` or at a space, so the whole command stays visible; the prompt hangs
-// and the button stays beside the wrapped block. Without JavaScript the
-// button stays hidden and the command is plain selectable text.
+// and the button stays beside the wrapped block. The button is in place
+// from the first paint, so the command never rewraps when the script runs;
+// without JavaScript a <noscript> style hides it and the command is plain
+// selectable text.
 interface Props {
 	command: string;
 	/** Unique on the page: the button finds its command by this id. */
@@ -19,7 +21,7 @@ const parts = command.split('/');
 
 <div class="install">
 	<pre class="command"><code id={id}>{parts.map((part, i) => (i < parts.length - 1 ? <>{part}/<wbr /></> : part))}</code></pre>
-	<button type="button" class="copy" data-copy={id} hidden>
+	<button type="button" class="copy" data-copy={id}>
 		<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
 			<rect x="5.5" y="5.5" width="8" height="8" rx="1"></rect>
 			<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"></path>
@@ -28,6 +30,14 @@ const parts = command.split('/');
 	</button>
 	<span class="sr-only" role="status" data-copy-status={id}></span>
 </div>
+
+<noscript>
+	<style>
+		button[data-copy] {
+			display: none !important;
+		}
+	</style>
+</noscript>
 
 <script>
 	const RESET_AFTER_MS = 2000;
@@ -145,6 +155,13 @@ const parts = command.split('/');
 
 	.copy:hover {
 		border-color: var(--nv-coral);
+	}
+
+	/* The ring sits inside the button, on the plate, so it keeps its
+	   contrast whatever the plate's own edge is next to. */
+	.copy:focus-visible {
+		outline: 2px solid var(--nv-naples);
+		outline-offset: -5px;
 	}
 
 	.copy[data-copied] {
