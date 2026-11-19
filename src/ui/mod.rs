@@ -555,11 +555,17 @@ fn render_resource_action_confirmation(frame: &mut Frame<'_>, session: &RuntimeS
         return;
     };
     if !resource_action_confirmation_preview_visible(frame.area(), confirmation) {
-        render_resource_action_confirmation_small_terminal_message(frame, confirmation);
+        let label = confirmation.resource_kind_label();
+        render_dialog_too_small(
+            frame,
+            &format!("confirm {label} action"),
+            &format!("{label} confirmation"),
+            |area| resource_action_confirmation_preview_visible(area, confirmation),
+        );
         return;
     }
     let lines = resource_action_confirmation_lines(confirmation);
-    let area = resource_action_confirmation_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     let title = format!("confirm {} action", confirmation.resource_kind_label());
     frame.render_widget(Clear, area);
     frame.render_widget(
@@ -687,11 +693,16 @@ fn render_configuration_activation_confirmation(frame: &mut Frame<'_>, session: 
         return;
     };
     if !configuration_activation_confirmation_preview_visible(frame.area(), confirmation) {
-        render_configuration_activation_confirmation_small_terminal_message(frame);
+        render_dialog_too_small(
+            frame,
+            "confirm configuration activation",
+            "activation confirmation",
+            |area| configuration_activation_confirmation_preview_visible(area, confirmation),
+        );
         return;
     }
     let lines = configurations::activation_confirmation_lines(confirmation);
-    let area = configuration_activation_confirmation_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines))
@@ -705,25 +716,7 @@ pub fn configuration_activation_confirmation_preview_visible(
     confirmation: &ConfigurationActivationConfirmation,
 ) -> bool {
     let lines = configurations::activation_confirmation_lines(confirmation);
-    paragraph_fits(configuration_activation_confirmation_area(area), &lines)
-}
-
-fn configuration_activation_confirmation_area(area: Rect) -> Rect {
-    centered_rect(
-        CONFIRMATION_MODAL_PERCENT_X,
-        CONFIRMATION_MODAL_PERCENT_Y,
-        area,
-    )
-}
-
-fn render_configuration_activation_confirmation_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem activation confirmation needs a larger terminal")
-            .block(modal_block("confirm configuration activation")),
-        area,
-    );
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
 /// How many rows `confirmation` takes in `area` once wrapped.
@@ -738,7 +731,7 @@ pub fn resource_action_confirmation_rows(
     confirmation: &ResourceActionConfirmation,
 ) -> usize {
     let lines = resource_action_confirmation_lines(confirmation);
-    modal_lines(resource_action_confirmation_area(area), &lines).len()
+    modal_lines(dialog_area(area, &lines), &lines).len()
 }
 
 pub fn resource_action_confirmation_preview_visible(
@@ -746,27 +739,7 @@ pub fn resource_action_confirmation_preview_visible(
     confirmation: &ResourceActionConfirmation,
 ) -> bool {
     let lines = resource_action_confirmation_lines(confirmation);
-    paragraph_fits(resource_action_confirmation_area(area), &lines)
-}
-
-fn resource_action_confirmation_area(area: Rect) -> Rect {
-    centered_rect(
-        CONFIRMATION_MODAL_PERCENT_X,
-        CONFIRMATION_MODAL_PERCENT_Y,
-        area,
-    )
-}
-
-fn render_resource_action_confirmation_small_terminal_message(
-    frame: &mut Frame<'_>,
-    confirmation: &ResourceActionConfirmation,
-) {
-    let area = frame.area();
-    let label = confirmation.resource_kind_label();
-    let message = format!("nuvem {label} confirmation needs a larger terminal");
-    let title = format!("confirm {label} action");
-    frame.render_widget(Clear, area);
-    frame.render_widget(Paragraph::new(message).block(modal_block(&title)), area);
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
 fn render_plugin_confirmation(frame: &mut Frame<'_>, session: &RuntimeSession) {
@@ -774,11 +747,13 @@ fn render_plugin_confirmation(frame: &mut Frame<'_>, session: &RuntimeSession) {
         return;
     };
     if !plugin_confirmation_visible(frame.area(), confirmation) {
-        render_plugin_confirmation_small_terminal_message(frame);
+        render_dialog_too_small(frame, "run plugin", "plugin confirmation", |area| {
+            plugin_confirmation_visible(area, confirmation)
+        });
         return;
     }
     let lines = plugin_confirmation_lines(confirmation);
-    let area = resource_command_preview_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines)).block(modal_block("run plugin")),
@@ -788,7 +763,7 @@ fn render_plugin_confirmation(frame: &mut Frame<'_>, session: &RuntimeSession) {
 
 pub fn plugin_confirmation_visible(area: Rect, confirmation: &PluginConfirmation) -> bool {
     let lines = plugin_confirmation_lines(confirmation);
-    paragraph_fits(resource_command_preview_area(area), &lines)
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
 fn render_plugin_prompt(frame: &mut Frame<'_>, session: &RuntimeSession) {
@@ -796,11 +771,13 @@ fn render_plugin_prompt(frame: &mut Frame<'_>, session: &RuntimeSession) {
         return;
     };
     if !plugin_prompt_visible(frame.area(), prompt) {
-        render_plugin_prompt_small_terminal_message(frame);
+        render_dialog_too_small(frame, PLUGIN_PROMPT_TITLE, "plugin input", |area| {
+            plugin_prompt_visible(area, prompt)
+        });
         return;
     }
     let lines = plugin_prompt_lines(prompt);
-    let area = resource_command_preview_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines)).block(modal_block(PLUGIN_PROMPT_TITLE)),
@@ -817,17 +794,7 @@ fn render_plugin_prompt(frame: &mut Frame<'_>, session: &RuntimeSession) {
 /// both sides at once precisely because there is only one side.
 pub fn plugin_prompt_visible(area: Rect, prompt: &PluginPrompt) -> bool {
     let lines = plugin_prompt_lines(prompt);
-    paragraph_fits(resource_command_preview_area(area), &lines)
-}
-
-fn render_plugin_prompt_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem plugin input needs a larger terminal")
-            .block(modal_block(PLUGIN_PROMPT_TITLE)),
-        area,
-    );
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
 /// The modal's lines: one `String` per rendered line, the contract
@@ -912,16 +879,6 @@ fn plugin_prompt_key_line(prompt: &PluginPrompt) -> String {
     keys.join("   ")
 }
 
-fn render_plugin_confirmation_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem plugin confirmation needs a larger terminal")
-            .block(modal_block("run plugin")),
-        area,
-    );
-}
-
 /// The modal's lines: one `String` per rendered line, the contract
 /// `paragraph_fits` sizes the box from and `Paragraph::new(modal_text(area, &lines))`
 /// draws.
@@ -971,11 +928,13 @@ fn render_resource_command_preview(frame: &mut Frame<'_>, session: &RuntimeSessi
         return;
     };
     if !resource_command_preview_visible(frame.area(), preview) {
-        render_resource_command_preview_small_terminal_message(frame);
+        render_dialog_too_small(frame, "command preview", "command preview", |area| {
+            resource_command_preview_visible(area, preview)
+        });
         return;
     }
     let lines = resource_command_preview_lines(preview);
-    let area = resource_command_preview_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines)).block(modal_block("command preview")),
@@ -985,7 +944,60 @@ fn render_resource_command_preview(frame: &mut Frame<'_>, session: &RuntimeSessi
 
 pub fn resource_command_preview_visible(area: Rect, preview: &ResourceCommandPreview) -> bool {
     let lines = resource_command_preview_lines(preview);
-    paragraph_fits(resource_command_preview_area(area), &lines)
+    paragraph_fits(dialog_area(area, &lines), &lines)
+}
+
+/// Where a dialog showing `lines` is drawn in a frame of `area`.
+///
+/// The usual box, 80% by 60% of the frame, while the lines fit in it. When
+/// they do not, the dialog takes the whole body between the header and the
+/// footer, which stays on screen with the dialog's keys: at 80x24 the box has
+/// twelve rows inside, and a k9s or tunnel confirmation is fourteen or more.
+/// Only content that does not fit even there is refused.
+fn dialog_area(area: Rect, lines: &[String]) -> Rect {
+    let preferred = resource_command_preview_area(area);
+    if paragraph_fits(preferred, lines) {
+        return preferred;
+    }
+    shared::frame::split_frame(area).body
+}
+
+/// The notice a dialog shows in place of content the terminal cannot hold:
+/// what needs more room, the size that would hold it, and the key that leaves.
+///
+/// The size is found by asking `fits` itself, first taller at this width and
+/// then wider at this height, so it is the size at which the dialog really
+/// draws rather than an estimate.
+fn render_dialog_too_small(
+    frame: &mut Frame<'_>,
+    title: &str,
+    what: &str,
+    fits: impl Fn(Rect) -> bool,
+) {
+    let area = frame.area();
+    let taller = (area.height..=area.height.saturating_mul(4))
+        .map(|height| Rect { height, ..area })
+        .find(|candidate| fits(*candidate));
+    let wider = || {
+        (area.width..=area.width.saturating_mul(4))
+            .map(|width| Rect { width, ..area })
+            .find(|candidate| fits(*candidate))
+    };
+    let size = taller
+        .or_else(wider)
+        .map(|needed| format!(": {}x{} or more", needed.width, needed.height))
+        .unwrap_or_default();
+    let message = format!(
+        "nuvem {what} needs a larger terminal{size}. This one is {}x{}. Esc closes it.",
+        area.width, area.height
+    );
+    frame.render_widget(Clear, area);
+    frame.render_widget(
+        Paragraph::new(message)
+            .wrap(ratatui::widgets::Wrap { trim: true })
+            .block(modal_block(title)),
+        area,
+    );
 }
 
 fn resource_command_preview_area(area: Rect) -> Rect {
@@ -994,16 +1006,6 @@ fn resource_command_preview_area(area: Rect) -> Rect {
         CONFIRMATION_MODAL_PERCENT_Y,
         area,
     )
-}
-
-fn render_resource_command_preview_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem command preview needs a larger terminal")
-            .block(modal_block("command preview")),
-        area,
-    );
 }
 
 /// The modal's lines: one `String` per rendered line, which is the contract
@@ -1039,7 +1041,9 @@ fn render_ssh_launch_preview(frame: &mut Frame<'_>, session: &RuntimeSession) {
         return;
     };
     if !ssh_launch_preview_visible(frame.area(), preview) {
-        render_ssh_launch_preview_small_terminal_message(frame);
+        render_dialog_too_small(frame, "launch SSH", "SSH launch preview", |area| {
+            ssh_launch_preview_visible(area, preview)
+        });
         return;
     }
     let binary = session
@@ -1047,7 +1051,7 @@ fn render_ssh_launch_preview(frame: &mut Frame<'_>, session: &RuntimeSession) {
         .map(|config| config.gcloud_binary.to_string_lossy().into_owned())
         .unwrap_or_else(|| "gcloud".to_string());
     let lines = ssh_launch_preview_lines(&binary, preview);
-    let area = resource_command_preview_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines)).block(modal_block("launch SSH")),
@@ -1057,17 +1061,7 @@ fn render_ssh_launch_preview(frame: &mut Frame<'_>, session: &RuntimeSession) {
 
 pub fn ssh_launch_preview_visible(area: Rect, preview: &SshLaunchPreview) -> bool {
     let lines = ssh_launch_preview_lines("gcloud", preview);
-    paragraph_fits(resource_command_preview_area(area), &lines)
-}
-
-fn render_ssh_launch_preview_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem SSH launch preview needs a larger terminal")
-            .block(modal_block("launch SSH")),
-        area,
-    );
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
 fn ssh_launch_preview_lines(binary: &str, preview: &SshLaunchPreview) -> Vec<String> {
@@ -1109,7 +1103,9 @@ fn render_tunnel_launch_preview(frame: &mut Frame<'_>, session: &RuntimeSession)
         return;
     };
     if !tunnel_launch_preview_visible(frame.area(), preview) {
-        render_tunnel_launch_preview_small_terminal_message(frame);
+        render_dialog_too_small(frame, "start tunnel", "tunnel launch preview", |area| {
+            tunnel_launch_preview_visible(area, preview)
+        });
         return;
     }
     let gcloud_binary = session
@@ -1121,7 +1117,7 @@ fn render_tunnel_launch_preview(frame: &mut Frame<'_>, session: &RuntimeSession)
         .map(|config| config.cloud_sql_proxy_binary.to_string_lossy().into_owned())
         .unwrap_or_else(|| "cloud-sql-proxy".to_string());
     let lines = tunnel_launch_preview_lines(&gcloud_binary, &proxy_binary, preview);
-    let area = resource_command_preview_area(frame.area());
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines)).block(modal_block("start tunnel")),
@@ -1131,17 +1127,7 @@ fn render_tunnel_launch_preview(frame: &mut Frame<'_>, session: &RuntimeSession)
 
 pub fn tunnel_launch_preview_visible(area: Rect, preview: &TunnelLaunchPreview) -> bool {
     let lines = tunnel_launch_preview_lines("gcloud", "cloud-sql-proxy", preview);
-    paragraph_fits(resource_command_preview_area(area), &lines)
-}
-
-fn render_tunnel_launch_preview_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem tunnel launch preview needs a larger terminal")
-            .block(modal_block("start tunnel")),
-        area,
-    );
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
 /// Builds the argv the tunnel would spawn, from the same domain planners the
@@ -1270,8 +1256,11 @@ fn render_k9s_launch_confirmation(frame: &mut Frame<'_>, session: &RuntimeSessio
     let Some(confirmation) = session.app().root.resources.k9s_launch_confirmation() else {
         return;
     };
-    if !k9s_launch_confirmation_preview_visible(frame.area(), confirmation) {
-        render_k9s_launch_confirmation_small_terminal_message(frame);
+    let demo = session.config().is_some_and(|config| config.demo);
+    if !k9s_launch_confirmation_preview_visible(frame.area(), confirmation, demo) {
+        render_dialog_too_small(frame, "open in k9s", "k9s launch confirmation", |area| {
+            k9s_launch_confirmation_preview_visible(area, confirmation, demo)
+        });
         return;
     }
     let binary = session
@@ -1282,8 +1271,8 @@ fn render_k9s_launch_confirmation(frame: &mut Frame<'_>, session: &RuntimeSessio
         .config()
         .map(|config| config.gcloud_binary.to_string_lossy().into_owned())
         .unwrap_or_else(|| "gcloud".to_string());
-    let lines = k9s_launch_confirmation_lines(&gcloud_binary, &binary, confirmation);
-    let area = resource_command_preview_area(frame.area());
+    let lines = k9s_launch_confirmation_lines(&gcloud_binary, &binary, confirmation, demo);
+    let area = dialog_area(frame.area(), &lines);
     frame.render_widget(Clear, area);
     frame.render_widget(
         Paragraph::new(modal_text(area, &lines)).block(modal_block("open in k9s")),
@@ -1294,25 +1283,20 @@ fn render_k9s_launch_confirmation(frame: &mut Frame<'_>, session: &RuntimeSessio
 pub fn k9s_launch_confirmation_preview_visible(
     area: Rect,
     confirmation: &K9sLaunchConfirmation,
+    demo: bool,
 ) -> bool {
-    let lines = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation);
-    paragraph_fits(resource_command_preview_area(area), &lines)
+    let lines = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation, demo);
+    paragraph_fits(dialog_area(area, &lines), &lines)
 }
 
-fn render_k9s_launch_confirmation_small_terminal_message(frame: &mut Frame<'_>) {
-    let area = frame.area();
-    frame.render_widget(Clear, area);
-    frame.render_widget(
-        Paragraph::new("nuvem k9s launch confirmation needs a larger terminal")
-            .block(modal_block("open in k9s")),
-        area,
-    );
-}
-
+/// The confirmation's lines. In a demo session neither command runs and the
+/// kubeconfig is not touched, so the warning that get-credentials changes it is
+/// replaced by a line saying so.
 fn k9s_launch_confirmation_lines(
     gcloud_binary: &str,
     k9s_binary: &str,
     confirmation: &K9sLaunchConfirmation,
+    demo: bool,
 ) -> Vec<String> {
     let target = confirmation.target();
     let run_get_credentials = confirmation.credential_step() == CredentialStep::RunGetCredentials;
@@ -1327,13 +1311,21 @@ fn k9s_launch_confirmation_lines(
         String::new(),
     ];
     if run_get_credentials {
-        lines.push("Run get-credentials first (updates local kubeconfig):".to_string());
+        lines.push(if demo {
+            "Run get-credentials first:".to_string()
+        } else {
+            "Run get-credentials first (updates local kubeconfig):".to_string()
+        });
         lines.push(format!(
             "  {} {}",
             gcloud_binary,
             target.credentials_argv().join(" ")
         ));
-        lines.push("Note: get-credentials modifies your local kubeconfig.".to_string());
+        lines.push(if demo {
+            "Demo mode runs neither command and leaves your kubeconfig alone.".to_string()
+        } else {
+            "Note: get-credentials modifies your local kubeconfig.".to_string()
+        });
     } else {
         lines.push("Reuse existing kubeconfig context.".to_string());
     }
@@ -1842,7 +1834,7 @@ mod tests {
     fn k9s_confirmation_lines_show_both_argvs_and_mutation_note_when_creating() {
         let resources = k9s_confirmation("us-central1-a", None);
         let confirmation = resources.k9s_launch_confirmation().unwrap();
-        let lines = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation);
+        let lines = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation, false);
 
         assert!(
             lines
@@ -1862,12 +1854,35 @@ mod tests {
         assert!(lines.contains(&"Enter launch   Esc cancel".to_string()));
     }
 
+    /// In a demo session nothing runs, so the dialog does not warn that the
+    /// kubeconfig will change; it says that it will not. Same line count, so
+    /// the demo dialog fits exactly where the real one does.
+    #[test]
+    fn k9s_confirmation_lines_in_demo_say_the_kubeconfig_is_left_alone() {
+        let resources = k9s_confirmation("us-central1-a", None);
+        let confirmation = resources.k9s_launch_confirmation().unwrap();
+        let real = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation, false);
+        let demo = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation, true);
+
+        assert!(!demo.iter().any(|line| line.contains("modifies")));
+        assert!(
+            !demo
+                .iter()
+                .any(|line| line.contains("updates local kubeconfig"))
+        );
+        assert!(
+            demo.iter()
+                .any(|line| line.starts_with("Demo mode runs neither command"))
+        );
+        assert_eq!(demo.len(), real.len());
+    }
+
     #[test]
     fn k9s_confirmation_lines_reuse_omit_get_credentials_and_note() {
         let existing = vec!["gke_dev-project_us-central1_platform-dev".to_string()];
         let resources = k9s_confirmation("us-central1", Some(&existing));
         let confirmation = resources.k9s_launch_confirmation().unwrap();
-        let lines = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation);
+        let lines = k9s_launch_confirmation_lines("gcloud", "k9s", confirmation, false);
 
         assert!(lines.iter().any(|line| line.contains("Reuse existing")));
         assert!(!lines.iter().any(|line| line.contains("get-credentials")));
@@ -2274,10 +2289,8 @@ mod tests {
         let mut agreed = (0, 0);
         for height in 6..40 {
             let area = Rect::new(0, 0, 80, height);
-            let measured = paragraph_fits(
-                resource_command_preview_area(area),
-                &plugin_prompt_lines(&prompt),
-            );
+            let lines = plugin_prompt_lines(&prompt);
+            let measured = paragraph_fits(dialog_area(area, &lines), &lines);
             assert_eq!(
                 plugin_prompt_visible(area, &prompt),
                 measured,

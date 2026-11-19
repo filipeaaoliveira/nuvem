@@ -233,10 +233,10 @@ async fn the_k9s_launch_confirmation_shows_which_cluster_it_opens() {
         .resources
         .open_k9s_launch_confirmation(target, CredentialStep::RunGetCredentials);
 
-    // Taller sizes than the GCE confirmation needs, and not because of width:
-    // with a get-credentials step this modal is fourteen lines, so it wants a
-    // frame of about twenty-seven rows before its 60% share can hold them.
-    for (width, height) in [(132u16, 30u16), (160, 40)] {
+    // With a get-credentials step this modal is fourteen lines. Its 60% box
+    // holds them from about twenty-seven rows; below that it takes the whole
+    // body, which holds them at 80x24.
+    for (width, height) in [(80u16, 24u16), (132, 30), (160, 40)] {
         let text = lines(&session, width, height).join("\n");
         assert!(
             text.contains("Open in k9s"),
@@ -255,13 +255,17 @@ async fn the_k9s_launch_confirmation_shows_which_cluster_it_opens() {
     }
 
     // And it still refuses where its lines genuinely do not fit. Wrapping moved
-    // that boundary down; it did not remove it, and this modal is one where the
-    // guard earns its keep — the operator is about to be handed a read-write
-    // Kubernetes UI.
-    let cramped = lines(&session, 80, 24).join("\n");
+    // that boundary down, and so did taking the body; neither removed it, and
+    // this modal is one where the guard earns its keep — the operator is about
+    // to be handed a read-write Kubernetes UI. The refusal names a size that
+    // holds it and the key that leaves.
+    let cramped = lines(&session, 60, 12).join("\n");
     assert!(
-        cramped.contains("needs a larger terminal"),
-        "fourteen lines cannot be shown in twelve rows, and the modal must say \
+        cramped.contains("needs a larger terminal")
+            && cramped.contains("or more")
+            && cramped.contains("This one is 60x12")
+            && cramped.contains("Esc closes it"),
+        "fourteen lines cannot be shown in six rows, and the modal must say \
          so rather than showing some of them; rendered:\n{cramped}"
     );
 }

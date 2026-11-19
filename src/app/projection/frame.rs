@@ -163,10 +163,8 @@ pub fn project_app_frame_with(root: &RootState, overrides: &KeyOverrides) -> App
 ///
 /// The predicate mirrors the overlay ladder in `ui::render_active_overlay`
 /// and the text-entry sub-views each `*_metadata` builder early-returns for.
-/// It is not derived from `transient_footer_hints`, which covers only the
-/// subset of those modes that has a *specialised* footer: a jump picker or a
-/// plugin prompt leaves the view's own hints on screen, and pinning `?` there
-/// would add a new wrong promise to an existing one.
+/// Every overlay is covered by `transient_footer_hints`, which gives each its
+/// own footer; the text-entry sub-views are listed beside it.
 fn pinned_hints(root: &RootState, overrides: &KeyOverrides) -> Vec<FrameHint> {
     if a_mode_owns_the_keyboard(root) {
         return Vec::new();
@@ -186,14 +184,6 @@ fn pinned_hints(root: &RootState, overrides: &KeyOverrides) -> Vec<FrameHint> {
 /// advertising a swallowed key.
 fn a_mode_owns_the_keyboard(root: &RootState) -> bool {
     transient_footer_hints(root).is_some()
-        // Overlays that render without a footer of their own.
-        || root.system.plugin_output().is_some()
-        || root.resources.plugin_prompt().is_some()
-        || root.resources.plugin_confirmation().is_some()
-        || root.resources.ssh_launch_preview().is_some()
-        || root.resources.tunnel_launch_preview().is_some()
-        || root.resources.k9s_launch_confirmation().is_some()
-        || root.jump_picker.is_some()
         // Text entry: every one of these reads a printable `?` as a character.
         || root.configurations.context_picker().is_some()
         || root.configurations.is_filter_input_active()
@@ -372,8 +362,28 @@ fn with_copy_diagnostic_hint(mut hints: Vec<FrameHint>, root: &RootState) -> Vec
 }
 
 fn transient_footer_hints(root: &RootState) -> Option<Vec<FrameHint>> {
+    use crate::app::projection::binding::{
+        JUMP_PICKER_SELECT, LAUNCH_CONFIRM, LIST_SELECT, OUTPUT_CLOSE, OUTPUT_COPY, OUTPUT_NEWER,
+        OUTPUT_OLDER, OUTPUT_SCROLL, PLUGIN_ACK_DIGIT, PLUGIN_PROMPT_CONTINUE,
+        PLUGIN_PROMPT_NEXT_FIELD, PLUGIN_RUN,
+    };
+
+    // In the order `services::runtime::input_context` ranks the modes, so the
+    // footer names the keys of the overlay that owns them. Every modal owns
+    // the footer: a list's `Enter Open` or `/ Filter` left under a dialog
+    // names keys the dialog swallows.
     if root.system.show_help {
         return Some(from_bindings(&[HELP_CLOSE]));
+    }
+
+    if root.system.plugin_output().is_some() {
+        return Some(from_bindings(&[
+            OUTPUT_SCROLL,
+            OUTPUT_CLOSE,
+            OUTPUT_OLDER,
+            OUTPUT_NEWER,
+            OUTPUT_COPY,
+        ]));
     }
 
     if root.resources.action_confirmation().is_some() {
@@ -396,8 +406,43 @@ fn transient_footer_hints(root: &RootState) -> Option<Vec<FrameHint>> {
         ]));
     }
 
+    // `Enter` is offered where the keymap dispatches it: a prompt with a
+    // required field still empty, or a dangerous plugin not yet acknowledged,
+    // does not continue.
+    if let Some(prompt) = root.resources.plugin_prompt() {
+        let mut hints = Vec::new();
+        if prompt.is_satisfied() {
+            hints.push(PLUGIN_PROMPT_CONTINUE);
+        }
+        hints.extend([PLUGIN_PROMPT_NEXT_FIELD, MODAL_CANCEL]);
+        return Some(from_bindings(&hints));
+    }
+
+    if let Some(confirmation) = root.resources.plugin_confirmation() {
+        return Some(from_bindings(if confirmation.is_ack_satisfied() {
+            &[PLUGIN_RUN, MODAL_CANCEL]
+        } else {
+            &[PLUGIN_ACK_DIGIT, MODAL_CANCEL]
+        }));
+    }
+
     if root.resources.command_preview().is_some() {
         return Some(from_bindings(&[PREVIEW_COPY, MODAL_CANCEL]));
+    }
+
+    if root.resources.ssh_launch_preview().is_some()
+        || root.resources.k9s_launch_confirmation().is_some()
+        || root.resources.tunnel_launch_preview().is_some()
+    {
+        return Some(from_bindings(&[LAUNCH_CONFIRM, MODAL_CANCEL]));
+    }
+
+    if root.jump_picker.is_some() {
+        return Some(from_bindings(&[
+            JUMP_PICKER_SELECT,
+            LIST_SELECT,
+            MODAL_CANCEL,
+        ]));
     }
 
     if root.command.is_open() {
