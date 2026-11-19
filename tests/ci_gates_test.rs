@@ -437,9 +437,10 @@ fn the_release_workflow_publishes_what_it_builds() {
             "x86_64-apple-darwin",
         ],
         "every published platform is built in CI, natively, on a runner that can \
-         also execute it: the Homebrew formula and the README name exactly these \
-         four, and a target built anywhere else would ship an archive the smoke \
-         test never touched and the attestation never signed: {targets:?}"
+         also execute it: the Homebrew formula and docs/getting-started/install.md \
+         name exactly these four, and a target built anywhere else would ship an \
+         archive the smoke test never touched and the attestation never signed: \
+         {targets:?}"
     );
     assert!(
         release.contains("name: archive-${{ matrix.target }}"),
@@ -481,8 +482,8 @@ fn the_release_workflow_publishes_what_it_builds() {
     // a named glibc and then reads the requirement back off the binary: a
     // --target suffix silently ignored, or a dependency that drags in a newer
     // symbol, would otherwise ship a binary that refuses to start on the
-    // distributions the README promises, and the failure lands on whoever
-    // downloads it rather than here.
+    // distributions docs/getting-started/install.md promises, and the failure
+    // lands on whoever downloads it rather than here.
     assert!(
         build.contains("--target ${{ matrix.target }}.${{ env.GLIBC_FLOOR }}"),
         "the release binary must be linked against the declared glibc floor, \
