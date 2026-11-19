@@ -2254,6 +2254,61 @@ async fn every_other_demo_screen_names_only_fixtures() {
         drain(&mut session).await;
         screens.push((format!("{workspace:?}"), screen(&session, 160, 40)));
     }
+    // The context pickers: the projects, regions and zones gcloud lists.
+    let mut session = demo_session_showing(ResourceServiceKind::ComputeInstances).await;
+    session
+        .dispatch_action(Action::Workspace(WorkspaceAction::Configurations))
+        .await;
+    session
+        .dispatch_action(Action::Configurations(
+            nuvem::app::ConfigurationsAction::StartEditActiveContext,
+        ))
+        .await;
+    for picker in ["Project", "Region", "Zone"] {
+        session
+            .dispatch_action(Action::Configurations(
+                nuvem::app::ConfigurationsAction::OpenContextPicker,
+            ))
+            .await;
+        drain(&mut session).await;
+        let painted = screen(&session, 160, 40);
+        assert!(
+            painted.contains(&format!("Select {picker}")) || painted.contains(picker),
+            "the walk reached the {picker} picker:\n{painted}"
+        );
+        // A picker paints bare ids, which no marker in the checker reads as
+        // a project; each listed project is checked as one.
+        let listed: String = session
+            .app()
+            .root
+            .configurations
+            .context_picker()
+            .map(|open| open.visible_items())
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|item| match item {
+                nuvem::app::state::configurations::ConfigurationContextPickerItem::Project(
+                    project,
+                ) => Some(format!("Project: {}\n", project.project_id)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            listed.is_empty(),
+            picker != "Project",
+            "the {picker} picker lists projects only where it is the project picker"
+        );
+        screens.push((format!("{picker} picker"), format!("{painted}\n{listed}")));
+        for action in [
+            nuvem::app::ConfigurationsAction::CancelContextPicker,
+            nuvem::app::ConfigurationsAction::FocusNextContextEditField,
+        ] {
+            session
+                .dispatch_action(Action::Configurations(action))
+                .await;
+            drain(&mut session).await;
+        }
+    }
     let mut session = demo_session_showing(ResourceServiceKind::BigQueryDatasets).await;
     for _ in 0..2 {
         session

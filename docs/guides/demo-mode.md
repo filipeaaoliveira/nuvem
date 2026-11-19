@@ -21,7 +21,8 @@ persistent disks, Pub/Sub, BigQuery, VPC, IAM, Cloud Logging and FinOps. Each
 service lists a handful of resources in several states, the way a small real
 project would. The data uses fixture names such as `dev-project` and
 `example.com`, addresses from private and documentation ranges, and the ranges
-Google publishes for its own health checks and IAP.
+Google publishes for its own health checks, IAP and Private Google Access
+(`199.36.153.8/30`).
 
 Demo mode opens on [Home](home-overview.md) with every service already listed
 and gcloud already checked, so the first screen shows the inventory rather
