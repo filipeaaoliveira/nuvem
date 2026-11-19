@@ -25,8 +25,10 @@ recovery hint; opening it never starts empty.
    `↑`/`↓` move through the matches; `j` and `k` type into the search.
 3. Press `Enter` to run the selected command, or `Esc` to close the palette.
 
-A command that changes a resource opens a confirmation showing the exact
-`gcloud` command before anything runs.
+A command that changes something opens a confirmation showing what it is about
+to do before anything runs: the API call for a lifecycle action, the command
+line for anything that runs `gcloud`. See
+[Before a change runs](../reference/services/overview.md#before-a-change-runs).
 
 [Palette commands](../reference/commands.md) lists every command, its aliases
 and when it is offered.

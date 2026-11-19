@@ -98,7 +98,7 @@ fn every_native_service_module_has_a_test_constructor() {
     );
 }
 
-/// Every compute verb reaches its own method on the client.
+/// Every compute verb reaches the method its confirmation shows.
 ///
 /// The stub records which method was called and answers with an operation. A
 /// verb wired to the wrong method is what this catches, and no unit test of
@@ -131,9 +131,12 @@ async fn every_compute_verb_calls_its_own_method() {
             ) -> google_cloud_gax::Result<
                 google_cloud_gax::response::Response<google_cloud_compute_v1::model::Operation>,
             > {
+                // Recorded in the shape a `ResourceCall` names a call, so it
+                // can be compared with what the confirmation displays.
                 self.called.lock().expect("not poisoned").push(format!(
-                    "{} {} {}",
+                    "instances.{} projects/{}/zones/{}/instances/{}",
                     stringify!($method),
+                    req.project,
                     req.zone,
                     req.instance
                 ));
@@ -181,19 +184,34 @@ async fn every_compute_verb_calls_its_own_method() {
             .await
             .expect("the stub answers");
 
+        // What the confirmation's `Call:` line is rendered from, for the same
+        // action and target: the method and resource the client received must
+        // be the ones it names.
+        let shown = nuvem::app::state::resources::compute_lifecycle_call(
+            &nuvem_domain::gcp::configuration::GcloudContext {
+                configuration: nuvem_domain::gcp::configuration::GcloudConfigurationName::new(
+                    "dev",
+                ),
+                account: None,
+                project: Some("ledger-prod".to_string()),
+                region: None,
+                zone: None,
+            },
+            "checkout-api-3",
+            "europe-west4-b",
+            action,
+        );
         assert_eq!(
             called.lock().expect("not poisoned").as_slice(),
-            [format!(
-                "{} europe-west4-b checkout-api-3",
-                action.command_verb()
-            )],
-            "{action:?} must call its own method, with the zone and instance \
-             it was given"
+            [format!("{} {}", shown.method, shown.resource)],
+            "{action:?} must call the method the confirmation shows ({}), on the \
+             resource it shows",
+            shown.preview()
         );
     }
 }
 
-/// Every Cloud SQL action reaches its own method, and the two patches differ.
+/// Every Cloud SQL action reaches the method and body its confirmation shows.
 ///
 /// Start and stop are the same method on the same resource and differ only in
 /// the activation policy they set, so a transposition between them is
@@ -228,10 +246,10 @@ async fn every_cloud_sql_action_calls_its_own_method_with_its_own_body() {
                 .and_then(|settings| settings.activation_policy.name())
                 .unwrap_or("none")
                 .to_string();
-            self.called
-                .lock()
-                .expect("not poisoned")
-                .push(format!("patch {} {policy}", req.instance));
+            self.called.lock().expect("not poisoned").push(format!(
+                "instances.patch projects/{}/instances/{} activationPolicy={policy}",
+                req.project, req.instance
+            ));
             Ok(google_cloud_gax::response::Response::from(
                 google_cloud_sql_v1::model::Operation::new()
                     .set_status(google_cloud_sql_v1::model::operation::SqlOperationStatus::Done),
@@ -245,10 +263,10 @@ async fn every_cloud_sql_action_calls_its_own_method_with_its_own_body() {
         ) -> google_cloud_gax::Result<
             google_cloud_gax::response::Response<google_cloud_sql_v1::model::Operation>,
         > {
-            self.called
-                .lock()
-                .expect("not poisoned")
-                .push(format!("restart {}", req.instance));
+            self.called.lock().expect("not poisoned").push(format!(
+                "instances.restart projects/{}/instances/{}",
+                req.project, req.instance
+            ));
             Ok(google_cloud_gax::response::Response::from(
                 google_cloud_sql_v1::model::Operation::new()
                     .set_status(google_cloud_sql_v1::model::operation::SqlOperationStatus::Done),
@@ -262,10 +280,10 @@ async fn every_cloud_sql_action_calls_its_own_method_with_its_own_body() {
         ) -> google_cloud_gax::Result<
             google_cloud_gax::response::Response<google_cloud_sql_v1::model::Operation>,
         > {
-            self.called
-                .lock()
-                .expect("not poisoned")
-                .push(format!("failover {}", req.instance));
+            self.called.lock().expect("not poisoned").push(format!(
+                "instances.failover projects/{}/instances/{}",
+                req.project, req.instance
+            ));
             Ok(google_cloud_gax::response::Response::from(
                 google_cloud_sql_v1::model::Operation::new()
                     .set_status(google_cloud_sql_v1::model::operation::SqlOperationStatus::Done),
@@ -288,12 +306,32 @@ async fn every_cloud_sql_action_calls_its_own_method_with_its_own_body() {
 
     impl google_cloud_sql_v1::stub::SqlOperationsService for OperationsStub {}
 
-    for (action, expected) in [
-        (CloudSqlInstanceAction::Start, "patch orders-db ALWAYS"),
-        (CloudSqlInstanceAction::Stop, "patch orders-db NEVER"),
-        (CloudSqlInstanceAction::Restart, "restart orders-db"),
-        (CloudSqlInstanceAction::Failover, "failover orders-db"),
-    ] {
+    for action in CloudSqlInstanceAction::ALL {
+        // What the confirmation's `Call:` line is rendered from: method,
+        // resource and, for a patch, the activation policy it sets.
+        let shown = nuvem::app::state::resources::cloud_sql_lifecycle_call(
+            &nuvem_domain::gcp::configuration::GcloudContext {
+                configuration: nuvem_domain::gcp::configuration::GcloudConfigurationName::new(
+                    "dev",
+                ),
+                account: None,
+                project: Some("ledger-prod".to_string()),
+                region: None,
+                zone: None,
+            },
+            "orders-db",
+            action,
+        );
+        let expected = match &shown.field {
+            Some(field) => format!(
+                "{} {} {}={}",
+                shown.method,
+                shown.resource,
+                field.name.rsplit('.').next().unwrap_or(field.name),
+                field.value
+            ),
+            None => format!("{} {}", shown.method, shown.resource),
+        };
         let called: Recorded = Arc::new(Mutex::new(Vec::new()));
         let service = SdkCloudSqlService::from_clients_for_test(
             google_cloud_sql_v1::client::SqlInstancesService::from_stub(InstancesStub {
@@ -310,8 +348,9 @@ async fn every_cloud_sql_action_calls_its_own_method_with_its_own_body() {
 
         assert_eq!(
             called.lock().expect("not poisoned").as_slice(),
-            [expected.to_string()],
-            "{action:?} must reach its own method with its own body"
+            [expected],
+            "{action:?} must reach the method and body the confirmation shows ({})",
+            shown.preview()
         );
     }
 }

@@ -17,9 +17,11 @@ All notable changes to nuvem are documented here. The format follows
   access token from `gcloud config config-helper` for the selected gcloud
   configuration. The token is held in memory only. BigQuery is read through
   `bq`.
-- Changes go through the `gcloud` CLI: switching configuration or project,
-  start, stop, reset, suspend and failover on single or marked rows. Each
-  mutation asks for confirmation and shows the exact command first.
+- Start, stop, reset, suspend, resume, restart and failover on single or
+  marked rows, through the client libraries; switching configuration or
+  project through the `gcloud` CLI. Each change asks for confirmation and
+  first shows what it will do: the API call for a lifecycle action, the
+  command line for a `gcloud` command.
 - Cloud Logging scoped to a resource or the whole project, with a live tail,
   a severity floor and a search grammar.
 - Tunnels (IAP, SSH local forward, Cloud SQL Auth Proxy) supervised from a

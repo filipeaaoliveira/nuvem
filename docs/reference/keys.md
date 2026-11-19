@@ -348,7 +348,7 @@ The confirmation before a lifecycle action, single or batch. A batch that stops,
 
 | Key | Footer label | What it does |
 | --- | --- | --- |
-| `Enter` | Confirm | Confirm and run the command shown. |
+| `Enter` | Confirm | Confirm and make the API call shown. |
 | `Esc` | Cancel | Cancel. Nothing runs. |
 
 ## Configuration activation
@@ -359,7 +359,7 @@ The confirmation before nuvem activates a gcloud configuration.
 
 | Key | Footer label | What it does |
 | --- | --- | --- |
-| `Enter` | Confirm | Confirm and run the command shown. |
+| `Enter` | Confirm | Confirm and run the `gcloud` command shown. |
 | `y` | Confirm | Confirm the activation. |
 | `n` | Cancel | Cancel the activation. |
 | `Esc` | Cancel | Cancel and close, changing nothing. |

@@ -524,13 +524,14 @@ the difference is worth stating rather than discovering. `core/universe_domain`
 is taken from the `config-helper` payload and surfaced through the provider, so
 a client resolves its hostname inside the universe the configuration names.
 `api_endpoint_overrides`, `billing/quota_project` and the `proxy/*` section are
-*not* applied on the native path. Every call that still goes through gcloud —
-every mutation, every tunnel, every plugin, configuration discovery and
-activation, BigQuery through `bq`, and the reads that still fall back to it —
+*not* applied on the native path, and that now includes the GCE and Cloud SQL
+lifecycle actions, which go through the client libraries. Every call that still
+goes through gcloud — every tunnel, every plugin, configuration activation and
+edits, BigQuery through `bq`, and the reads that still fall back to it —
 continues to honour all of them, because gcloud resolves them itself. Those
-paths keep the argv boundary for their own reasons — a mutation's confirmation
-modal shows the exact command line that will run, and a tunnel, an SSH session
-or a cloud-sql-proxy is a long-lived child process rather than a request — and
+paths keep the argv boundary for their own reasons — their confirmation shows
+the exact command line that will run, and a tunnel, an SSH session or a
+cloud-sql-proxy is a long-lived child process rather than a request — and
 the property coverage is a second benefit of that boundary rather than its
 cause. A deployment that depends on those properties gets them on the argv path
 and not on the native one.
@@ -1261,11 +1262,12 @@ The same typed command runner serves the CLI backend: `gcloud --configuration
 <active-config> compute instances list --format=json --limit=500` for list
 refreshes and `gcloud --configuration <active-config> compute instances
 describe <name> --zone <zone> --format=json` for the detail view. That backend
-is what demo mode and the test harnesses run on, and what a label-mode list
-refresh falls back to. Lifecycle mutations run through it on every path. It
-also runs `gcloud --configuration <active-config> compute instances start
-<name> --zone <zone>` and `gcloud --configuration <active-config> compute
-instances stop <name> --zone <zone>` for confirmed selected-instance actions.
+is what the test harnesses run on, and what a label-mode list refresh falls
+back to. Lifecycle actions go through the client library whenever the session
+holds clients, which every running session does, demo included; the CLI
+backend's `gcloud compute instances start|stop|... <name> --zone <zone>` is
+reached only by a session with no clients, which in practice means a test
+harness.
 The runtime maps command and JSON parse failures to
 `ComputeInstancesLoadFailed` or `ComputeInstanceDetailLoadFailed` so reducers
 can stale, clear, or update only rows and details for the matching active
@@ -1641,7 +1643,8 @@ stale, filtered-empty, and failed-refresh states with visible text, and opens
 read-only tabbed detail views. Lifecycle actions for GCE and Cloud SQL
 instances are reached from the resource command palette; selecting one opens a
 confirmation overlay with the active configuration, project when known, the
-target resource, its location, and the exact gcloud command preview. Very
+target resource, its location, the impact, and the API call the action will
+make (`Call: compute.instances.stop zones/<zone>/instances/<name>`). Very
 small terminals show a larger-terminal message and withhold the action until
 the preview fits. After a successful action, the stale rows stay cleared while
 a context-scoped list refresh runs once in the background; success restores
@@ -2278,9 +2281,9 @@ for the life of the process.
 Two terminal outcomes, chosen by what is provable rather than by what is
 convenient:
 
-- **`Cancelled`** — the target never issued a gcloud command. Nothing changed
+- **`Cancelled`** — the target never issued its call. Nothing changed
   outside the app and there is nothing for the operator to re-check.
-- **`Unknown`** — the command was already issued and its result was then
+- **`Unknown`** — the call was already issued and its result was then
   discarded. GCP may well be carrying it out.
 
 `Unknown` rather than `Cancelled` for a started target is the whole point.
@@ -2641,7 +2644,8 @@ Activation flow:
    command palette
 2. reducer stores a pending snapshot for activation confirmation
 3. UI renders a centered confirmation overlay with target, account, project,
-   region, zone, and the exact native command preview
+   region, zone, and the `gcloud config configurations activate` command it
+   will run
 4. `Enter` or `y` confirms only when the full preview fits; `Esc` or `n` always
    cancels without invoking gcloud
 5. confirmation reducer emits `Effect::ActivateConfiguration`

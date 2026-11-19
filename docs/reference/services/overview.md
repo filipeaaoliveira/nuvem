@@ -70,7 +70,47 @@ client-library call, authenticated by `gcloud config config-helper` for the
 active configuration; the `gcloud` command shown with each service is the
 equivalent invocation, and is what demo mode, the fallback path and a
 label-mode (`-l`) read actually run. BigQuery is the exception: it always
-shells out to `bq`. Mutations always run the `gcloud` command shown.
+shells out to `bq`. For changes, see [Before a change runs](#before-a-change-runs).
 
 List reads are capped at 500 rows; the command shown on each page says where. Columns for each service are listed in
 [Columns and sort](../../configuration/columns-and-sort.md).
+
+## Before a change runs
+
+nuvem always shows what it is about to do and waits for you to confirm it.
+What it shows depends on how the change is made.
+
+Lifecycle actions go through the Google Cloud client libraries, so there is
+no command line to show. Their confirmation lists the `Action`, the
+`Instance`, its `Zone` (GCE) or `Region` (Cloud SQL), the `Configuration`,
+the `Project`, the `Impact`, and the `Call`: the API method and the resource
+it acts on, for example `compute.instances.stop
+zones/europe-west1-b/instances/web-01`. A batch on marked rows lists the same
+`Call` line for every target.
+
+| Service | Action | Call |
+| --- | --- | --- |
+| GCE instances | Start instance | `compute.instances.start` |
+| GCE instances | Stop instance | `compute.instances.stop` |
+| GCE instances | Reset instance | `compute.instances.reset` |
+| GCE instances | Suspend instance | `compute.instances.suspend` |
+| GCE instances | Resume instance | `compute.instances.resume` |
+| Cloud SQL | Start instance | `sql.instances.patch` with `activationPolicy=ALWAYS` |
+| Cloud SQL | Stop instance | `sql.instances.patch` with `activationPolicy=NEVER` |
+| Cloud SQL | Restart instance | `sql.instances.restart` |
+| Cloud SQL | Fail over instance | `sql.instances.failover` |
+
+Everything else that changes something runs a `gcloud` command, or another
+command-line tool, and its confirmation shows the command line:
+
+- Activating a configuration shows `gcloud config configurations activate`
+  with the configuration's name.
+- SSH shows the `gcloud compute ssh` command, and a tunnel the command that
+  holds it open; see [Tunnels](../../guides/tunnels.md).
+- Opening a GKE cluster in k9s shows the `gcloud container clusters
+  get-credentials` command, when one is needed, and the `k9s` command.
+- A plugin shows its whole command line; see
+  [Plugins](../../plugins/overview.md).
+
+Creating a configuration and editing the active context run `gcloud config`
+commands when you submit the form; the form itself shows the values they set.

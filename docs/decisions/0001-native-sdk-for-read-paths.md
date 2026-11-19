@@ -235,3 +235,30 @@ second. Lengthening the interval would have reclaimed most of the former, which
 is what made the question worth asking; against the latter it reclaims nothing
 worth the staleness it costs. The cadence stays where it is, and the
 outstanding item is closed rather than deferred.
+
+## Amendment, 2026-11-19: lifecycle actions moved to the client libraries
+
+The table under [Decision](#decision) keeps lifecycle mutations on `gcloud`,
+because the confirmation showed the exact argv that would run, and an RPC
+would have meant "displaying a command string nothing executes — a
+transcription presented as a capture".
+
+**That is no longer how nuvem works.** The GCE start, stop, reset, suspend and
+resume actions and the Cloud SQL start, stop, restart and failover actions now
+go through the client libraries whenever the session holds clients, which
+every running session does. The table above is left as it was decided.
+
+The objection is answered rather than set aside. The confirmation no longer
+shows a command line at all: it shows the call itself, `Call:
+compute.instances.stop zones/<zone>/instances/<name>` beside the action, the
+instance, its location, the configuration, the project and the impact. That
+line is rendered from `ResourceCall`; the request is built by
+`run_action` from the same inputs, the action and its target, one arm per verb.
+The two are not one value, so they could drift, and a test closes that: it
+runs every action in `ComputeInstanceAction::ALL` and
+`CloudSqlInstanceAction::ALL` against a recording client and checks that the
+method, the resource and, for a Cloud SQL patch, the activation policy the
+client received are the ones the `Call:` line shows. Nothing on screen claims
+to be a command that runs. Configuration activation, SSH, tunnels, k9s and
+plugins still run `gcloud` or another tool, and their confirmations still show
+the command line.
