@@ -38,6 +38,13 @@ export const DOCS_ROUTE = 'docs';
  */
 export const EXCLUDED = ['decisions', 'performance-read-paths.md'];
 
+/**
+ * The repository's changelog. The site renders it in place as the last
+ * sidebar entry, so there is no copy under `docs/` that can drift from it.
+ */
+export const CHANGELOG_FILE = join(REPO_ROOT, 'CHANGELOG.md');
+export const CHANGELOG_ID = `${DOCS_ROUTE}/changelog`;
+
 /** Glob patterns for the content loader. */
 export const DOCS_GLOB = ['**/*.{md,mdx}', ...EXCLUDED.map((p) => (p.includes('.') ? `!${p}` : `!${p}/**`))];
 
@@ -236,12 +243,16 @@ function items(dir, topLevel) {
 			return { name, abs, isDir: true, order: index ? sidebarOrder(index) : Infinity, title: groupLabel(abs) };
 		}),
 	];
+	if (topLevel && existsSync(CHANGELOG_FILE)) {
+		entries.push({ name: 'changelog', abs: CHANGELOG_FILE, isDir: false, order: Infinity, title: 'Changelog' });
+	}
 	entries.sort((a, b) =>
 		topLevel
 			? intentRank(a.name) - intentRank(b.name) || a.name.localeCompare(b.name)
 			: a.order - b.order || Number(a.isDir) - Number(b.isDir) || a.title.localeCompare(b.title),
 	);
 	return entries.flatMap(({ name, abs, isDir }) => {
+		if (abs === CHANGELOG_FILE) return [{ slug: CHANGELOG_ID }];
 		if (!isDir) return topLevel && INDEX.test(name) ? [] : [link(abs)];
 		// A directory with a single page is a link, not a group of one.
 		if (countPages(abs) === 1) return [link(onlyPage(abs))];

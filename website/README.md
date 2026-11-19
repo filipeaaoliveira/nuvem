@@ -51,6 +51,8 @@ you edit a file in `docs/`, the page changes.
 - Not published: `docs/decisions/` and `docs/performance-read-paths.md`
   are contributor documentation. The list is `EXCLUDED` in
   `src/lib/docs-source.mjs`.
+- Changelog: the repository's `CHANGELOG.md` is read in place too, served
+  at `/docs/changelog/` and listed last in the sidebar.
 
 To add a page, add a Markdown file to `docs/`. To add a sidebar group, add a
 directory with at least two pages.

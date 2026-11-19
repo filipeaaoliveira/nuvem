@@ -1,4 +1,5 @@
-// Markdown (Sätteri mdast) plugin for files rendered from the repository's `docs/`.
+// Markdown (Sätteri mdast) plugin for files rendered from the repository's
+// `docs/`, and for its `CHANGELOG.md`.
 //
 // The same Markdown has to read well on GitHub and on the site, so:
 // - The leading `# Title` is dropped: Starlight prints the page title itself.
@@ -12,13 +13,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolveLink, inside } from './doc-links.mjs';
-import { DOCS_DIR, firstHeading, splitFrontmatter } from './docs-source.mjs';
+import { CHANGELOG_FILE, DOCS_DIR, firstHeading, splitFrontmatter } from './docs-source.mjs';
 
 /** Plugin factory: Sätteri calls it once per file and skips files it returns nothing for. */
 export default function docsMarkdown({ fileURL }) {
 	if (!fileURL) return undefined;
 	const path = fileURLToPath(fileURL);
-	if (!inside(path, DOCS_DIR)) return undefined;
+	if (!inside(path, DOCS_DIR) && path !== CHANGELOG_FILE) return undefined;
 	let titleSeen = false;
 
 	const relink = (node, ctx) => {
