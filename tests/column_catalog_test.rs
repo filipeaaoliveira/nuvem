@@ -692,15 +692,15 @@ fn cloud_sql_default_table_columns_are_unchanged() {
         golden(&table(ResourceServiceKind::CloudSql).columns),
         vec![
             ("name", "NAME", 6, 26, 0, CellAlign::Left, true),
-            ("engine", "ENGINE", 7, 20, 1, CellAlign::Left, true),
-            ("region", "REGION", 6, 16, 2, CellAlign::Left, true),
-            ("tier", "TIER", 6, 18, 3, CellAlign::Left, true),
+            ("engine", "ENGINE", 7, 20, 2, CellAlign::Left, true),
+            ("region", "REGION", 6, 16, 3, CellAlign::Left, true),
+            ("tier", "TIER", 6, 18, 4, CellAlign::Left, true),
             (
                 "availability",
                 "AVAILABILITY",
                 6,
                 14,
-                4,
+                5,
                 CellAlign::Left,
                 true
             ),
@@ -709,11 +709,13 @@ fn cloud_sql_default_table_columns_are_unchanged() {
                 "CONNECTIVITY",
                 7,
                 12,
-                5,
+                6,
                 CellAlign::Left,
                 false
             ),
-            ("status", "STATUS", 6, 12, 6, CellAlign::Left, true),
+            // STATUS is shown last but dropped second-to-last: on a narrow
+            // terminal a Cloud SQL row's state is worth more than its tier.
+            ("status", "STATUS", 6, 12, 1, CellAlign::Left, true),
         ]
     );
 }

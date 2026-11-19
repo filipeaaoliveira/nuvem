@@ -1425,9 +1425,9 @@ fn the_tables_list_paints_a_distinct_empty_state_per_outcome() {
 /// is exactly the direction a priority list is easy to write backwards, so the
 /// order is pinned by the plan rather than by reading the numbers back.
 ///
-/// The min widths are 6 + 4 + 8 + 4 + 5 + 13 = 40 plus five 2-cell gaps = 50.
-/// Each width below is one cell under the budget the column above it needs, so
-/// each forces exactly one more drop.
+/// Read off the plan at every width from wide to narrow, as the sequence of
+/// distinct column sets it passes through, so the claim is the order of the
+/// drops rather than the width each one happens at.
 #[test]
 fn narrowing_drops_the_enrichment_columns_then_created_before_type() {
     let app = app_showing_tables();
@@ -1442,34 +1442,30 @@ fn narrowing_drops_the_enrichment_columns_then_created_before_type() {
             .map(|column| model.columns[column.index].key)
             .collect::<Vec<_>>()
     };
+    let mut sequence: Vec<Vec<&str>> = Vec::new();
+    for width in (1..=200u16).rev() {
+        let keys = visible(width);
+        if sequence.last() != Some(&keys) {
+            sequence.push(keys);
+        }
+    }
 
     assert_eq!(
-        visible(50),
-        vec!["name", "type", "created", "rows", "bytes", "last modified"],
-        "at the full min-width budget every catalogue column shows, in \
-         catalogue order"
-    );
-    assert_eq!(
-        visible(49),
-        vec!["name", "type", "created", "rows", "bytes"],
-        "the first column narrow mode gives up must be LAST MODIFIED"
-    );
-    assert_eq!(
-        visible(34),
-        vec!["name", "type", "created", "rows"],
-        "then BYTES"
-    );
-    assert_eq!(
-        visible(27),
-        vec!["name", "type", "created"],
-        "then ROWS — the three `bq show` columns go before the two the \
-         listing itself answered"
-    );
-    assert_eq!(
-        visible(21),
-        vec!["name", "type"],
-        "and only then CREATED: a table whose TYPE went first would tell a \
-         reader a view was a table"
+        sequence,
+        vec![
+            vec!["name", "type", "created", "rows", "bytes", "last modified"],
+            // The first column narrow mode gives up must be LAST MODIFIED,
+            vec!["name", "type", "created", "rows", "bytes"],
+            // then BYTES,
+            vec!["name", "type", "created", "rows"],
+            // then ROWS — the three `bq show` columns go before the two the
+            // listing itself answered —
+            vec!["name", "type", "created"],
+            // and only then CREATED: a table whose TYPE went first would tell
+            // a reader a view was a table.
+            vec!["name", "type"],
+            vec!["name"],
+        ]
     );
 }
 
