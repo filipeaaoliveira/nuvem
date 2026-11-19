@@ -36,10 +36,10 @@ in the column an audit reads down.
 
 The member cell leads with the badges the row wears:
 
-- `PUBLIC` — the grant is held by `allUsers` (anyone on the internet, with or
+- `PUBLIC`: the grant is held by `allUsers` (anyone on the internet, with or
   without a Google account) or by `allAuthenticatedUsers` (any authenticated
   Google account, including accounts outside your organisation).
-- `DELETED` — the principal was deleted after the binding was written, so the
+- `DELETED`: the principal was deleted after the binding was written, so the
   grant names an identity that no longer exists.
 
 Both are stale policy, not errors, so a badged row is coloured as a warning,

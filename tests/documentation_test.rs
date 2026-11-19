@@ -1884,7 +1884,7 @@ fn docs_enumerate_every_cloud_logging_entry_point() {
         11 => "eleven",
         other => panic!("no count word for {other} services; add one"),
     };
-    let opening = format!("`L` covers all {count} services — the selected ");
+    let opening = format!("`L` covers all {count} services: the selected ");
     // Pinned parsing: the enumeration is compared with the registry.
     let logging = unwrapped(&readme.section_for_pinned_parsing(CLOUD_LOGGING));
     let at = logging
@@ -1892,8 +1892,8 @@ fn docs_enumerate_every_cloud_logging_entry_point() {
         .unwrap_or_else(|| panic!("README says {opening:?}"));
     let body = &logging[at + opening.len()..];
     let close = body
-        .find(" —")
-        .expect("the enumeration is closed by its second dash");
+        .find(". ")
+        .expect("the enumeration is closed by the end of its sentence");
     // Sorted `Vec`s rather than sets: a set would swallow a noun listed twice,
     // leaving six items documented under the word "five".
     let mut documented: Vec<&str> = body[..close]
@@ -2197,7 +2197,7 @@ fn docs_document_configurable_jump_rules() {
             // — the zone-stripping guess is right on most topologies, so a
             // README that quietly started recommending it would read fine.
             "from the segment following `regions`",
-            "not** by stripping the last part off the instance's `{zone}`",
+            "`regions`, not by stripping the last part off the instance's `{zone}`",
             "There is no `{network_region}` beside it",
         ],
     );
@@ -2368,7 +2368,7 @@ fn docs_document_configurable_jump_rules() {
     {
         let example = toml_block_before(
             readme.text_for_pinned_parsing(),
-            "A `[[jumps]]` array **replaces the built-in set**",
+            "A `[[jumps]]` array replaces the built-in set",
         );
         assert_eq!(
             example.matches("[[jumps]]").count(),
@@ -3445,8 +3445,8 @@ fn docs_document_the_iam_policy_table_contract() {
             "filter by a member to see what that principal can do".to_string(),
             "filter by a role to see who holds it".to_string(),
             "The role is shown verbatim, exactly as the policy spells it".to_string(),
-            format!("`{PUBLIC_BADGE}` — the grant is held by `allUsers`"),
-            format!("`{DELETED_BADGE}` — the principal was deleted"),
+            format!("`{PUBLIC_BADGE}`: the grant is held by `allUsers`"),
+            format!("`{DELETED_BADGE}`: the principal was deleted"),
             format!("`/{PUBLIC_BADGE}` isolates the badged rows"),
             // List-only, and the sentence that says so is the one an operator
             // reads before looking for an edit key that does not exist.
@@ -3602,7 +3602,7 @@ fn docs_document_the_plugin_run_reload() {
             // other is a claim broader than the reducer arm: the workspace has
             // to be Resources *and* the result's context has to still be the
             // active one.
-            "the resource table reloads — provided you are still looking at it",
+            "the resource table reloads, provided you are still looking at it",
             "under the configuration you launched the run from",
             // The in-place reload, which is the whole reason this arm does not
             // reuse the lifecycle path's clear-and-mark-stale.

@@ -63,8 +63,8 @@ because a killed command can already have done its work.
 
 ## After a run
 
-However the run ends, the resource table reloads — provided you are still
-looking at it, under the configuration you launched the run from. The reload
+However the run ends, the resource table reloads, provided you are still
+looking at it under the configuration you launched the run from. The reload
 happens after every plugin, a reading one included, so the table agrees with
 the log. It is in place, so your marks, your cursor and an open detail pane
 survive the reload.
