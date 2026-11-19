@@ -1189,7 +1189,7 @@ fn the_tables_tools_line_and_footer_claim_no_sort_and_no_column_cursor() {
          the help overlay: {labels:?}"
     );
     assert!(
-        labels.contains(&"Open / enter"),
+        labels.contains(&"Open"),
         "and Enter is hinted again: it descends into the selected table's \
          columns, so the hint promises something the key delivers: {labels:?}"
     );
@@ -1212,7 +1212,7 @@ fn the_tables_tools_line_and_footer_claim_no_sort_and_no_column_cursor() {
         .iter()
         .map(|hint| hint.label)
         .collect::<Vec<_>>();
-    for present in ["Sort column", "Select column", "Open / enter"] {
+    for present in ["Sort column", "Select column", "Open"] {
         assert!(
             labels.contains(&present),
             "the datasets footer still hints {present}: {labels:?}"
@@ -1614,7 +1614,7 @@ fn the_schema_footer_hints_only_keys_that_do_something_here() {
         labels.contains(&"Leave drill-down"),
         "Esc leaves the schema for the tables list, so the footer says so: {labels:?}"
     );
-    for absent in ["Sort column", "Select column", "Open / enter"] {
+    for absent in ["Sort column", "Select column", "Open"] {
         assert!(
             !labels.contains(&absent),
             "{absent} names a key that does nothing in the schema view: {labels:?}"

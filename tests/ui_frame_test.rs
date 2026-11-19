@@ -1214,6 +1214,14 @@ fn the_footer_never_paints_a_key_without_its_whole_label() {
                     .iter()
                     .map(|cell| cell.symbol())
                     .collect::<String>();
+                // Non-vacuous: help is pinned, and it is shown wherever its
+                // whole hint fits in the row.
+                if !pinned.is_empty() && usize::from(width) >= "? Help".len() {
+                    assert!(
+                        line.trim_end().ends_with("? Help"),
+                        "{ctx:?} at {width} columns lost the help pin: {line:?}"
+                    );
+                }
                 for painted in line
                     .split("  ")
                     .map(str::trim)

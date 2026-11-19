@@ -100,7 +100,7 @@ pub struct Context {
     ///
     /// It exists because `HelpContext` is derived from this struct, and one
     /// drill-down flag with no depth is why the help overlay taught
-    /// `Open / enter` on a column row for three slices. The frame
+    /// `Open` on a column row for three slices. The frame
     /// footer never had the problem: it reads live state through
     /// `drilldown_opens_another_level` rather than a context.
     pub resources_drilldown_opens_another_level: bool,

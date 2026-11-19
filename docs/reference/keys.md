@@ -146,7 +146,7 @@ A service's list in Resources.
 | `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (keep every column). |
 | `←/→` | Select column | Move the selected column, which `s` sorts by. |
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
-| `Enter` | Open / enter | Open the selected row: a detail pane, the Cloud Storage object browser, or the next BigQuery level. |
+| `Enter` | Open | Open the selected row: a detail pane, the Cloud Storage object browser, or the next BigQuery level. |
 | `Space` | Mark | Mark or unmark the selected row (GCE instances and Cloud SQL only). See [Batch actions](../guides/batch-actions.md). |
 | `V` | Range mark | Mark every row from the last marked row to the selected row (`Shift-V`). |
 | `\` | Clear marks | Clear every mark. |
@@ -212,7 +212,7 @@ The tables of a dataset. `Enter` opens a table's column schema.
 | `/` | Filter | Edit the filter for this list. See [Filter a list](../guides/filter-a-list.md). |
 | `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (keep every column). |
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
-| `Enter` | Open / enter | Open the selected row: a detail pane, the Cloud Storage object browser, or the next BigQuery level. |
+| `Enter` | Open | Open the selected row: a detail pane, the Cloud Storage object browser, or the next BigQuery level. |
 | `Space` | Mark | Mark or unmark the selected row (GCE instances and Cloud SQL only). See [Batch actions](../guides/batch-actions.md). |
 | `V` | Range mark | Mark every row from the last marked row to the selected row (`Shift-V`). |
 | `\` | Clear marks | Clear every mark. |

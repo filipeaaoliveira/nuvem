@@ -535,7 +535,7 @@ fn the_pins_take_a_bounded_share_of_a_footer_that_has_overflowed() {
         "a roomy footer carries both pins with their labels, got {roomy:?}"
     );
     assert!(
-        roomy.contains("Enter Open / enter"),
+        roomy.contains("Enter Open"),
         "and still every view hint, got {roomy:?}"
     );
 
@@ -551,12 +551,12 @@ fn the_pins_take_a_bounded_share_of_a_footer_that_has_overflowed() {
         "and drops the palette pin first, got {full:?}"
     );
 
-    // Narrower than any pin with its label: the pins go whole. A bare `?`
-    // names a key but not what it does.
+    // Narrower than the view's hints: help still fits, so it stays, whole.
+    // A bare `?` would name a key but not what it does.
     let narrow = footer_at(20);
     assert!(
-        !narrow.contains('?'),
-        "a pin is never shown as a bare key, got {narrow:?}"
+        narrow.trim_end().ends_with("? Help"),
+        "the help pin stays whole wherever it fits, got {narrow:?}"
     );
 }
 

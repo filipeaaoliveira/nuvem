@@ -151,35 +151,34 @@ const PINNED_HINT_SHARE: usize = 3;
 
 /// The pins that survive at this width, given what the view's own hints want.
 ///
-/// The pins yield before they take. Their allowance is whatever the view's
-/// hints leave over, so a row with room for both keeps both, a row with room
-/// for one keeps help, and no view hint is ever paid for a pin that could have
-/// fitted in the slack. Only where the hints fill the row on their own — where
-/// they are going to be dropped whether the pins are there or not — do the
-/// pins take a bounded share of it (`PINNED_HINT_SHARE`) rather than collapse
-/// to nothing for a drop that was happening anyway.
+/// Their allowance is the larger of what the view's hints leave over and a
+/// bounded share of the row (`PINNED_HINT_SHARE`). The slack alone is not
+/// enough: a view whose hints nearly fill the row would leave the pins three
+/// columns and lose `? Help` for the sake of a hint that is dropped anyway.
 ///
 /// Within the allowance they are dropped whole from the front — palette first,
 /// help last. Help is last out because it is the pin that repays the space: it
 /// names the overlay that lists every key the view has, the palette's
-/// included. A pin is never shown as a bare key: a key without its label is
-/// an instruction nobody can read.
+/// included, so it stays wherever it fits in the row at all, even when the
+/// view's own hints have to give way for it. A pin is never shown as a bare
+/// key: a key without its label is an instruction nobody can read.
 fn fitted_pins(
     pinned: &[crate::app::projection::FrameHint],
     hints_width: usize,
     total: usize,
 ) -> Vec<crate::app::projection::FrameHint> {
     let slack = total.saturating_sub(hints_width + PINNED_HINT_GAP);
-    let allowance = if slack > 0 {
-        slack
-    } else {
-        (total / PINNED_HINT_SHARE).saturating_sub(PINNED_HINT_GAP)
-    };
+    let share = (total / PINNED_HINT_SHARE).saturating_sub(PINNED_HINT_GAP);
+    let allowance = slack.max(share);
     let fits = |pins: &[crate::app::projection::FrameHint]| natural_width(pins) <= allowance;
 
     let mut pins = pinned.to_vec();
-    while !pins.is_empty() && !fits(&pins) {
+    while pins.len() > 1 && !fits(&pins) {
         pins.remove(0);
+    }
+    // The last pin standing is help, which stays wherever the row can hold it.
+    if pins.len() == 1 && !fits(&pins) && natural_width(&pins) > total {
+        pins.clear();
     }
     pins
 }

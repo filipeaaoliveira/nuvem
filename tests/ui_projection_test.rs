@@ -1615,7 +1615,7 @@ async fn resources_view_renders_gce_list_through_public_render() {
 
     let lines = render_lines(&session, 80, 24);
 
-    assert_shared_frame(&lines, "Resources", "Enter Open / enter");
+    assert_shared_frame(&lines, "Resources", "Enter Open");
     assert!(lines.iter().any(|line| line.contains("Configuration: dev")));
     assert!(
         lines
@@ -1696,7 +1696,7 @@ async fn resources_view_renders_gke_cluster_rows() {
 
     let lines = render_lines(&session, 80, 24);
 
-    assert_shared_frame(&lines, "Resources", "Enter Open / enter");
+    assert_shared_frame(&lines, "Resources", "Enter Open");
     assert!(lines.iter().any(|line| line.contains("Configuration: dev")));
     assert!(
         lines
@@ -2739,7 +2739,7 @@ async fn resources_view_renders_gce_list_safely_at_minimum_frame_size() {
     assert!(lines.iter().any(|line| line.contains("[OK]")));
     // The footer's first hint, in priority order: at 60 columns the rest are
     // dropped whole rather than cut.
-    assert!(lines.iter().any(|line| line.contains("Enter Open / enter")));
+    assert!(lines.iter().any(|line| line.contains("Enter Open")));
     // At this minimum frame size the NAME column shrinks to its min width,
     // truncating "api-dev-1" to "api-d…"; check the surviving prefix.
     assert!(lines.iter().any(|line| line.contains("api-d")));
