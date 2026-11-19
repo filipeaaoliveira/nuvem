@@ -28,11 +28,17 @@ and gcloud already checked, so the first screen shows the inventory rather
 than sixteen `Not loaded` rows. Against a real project Home never loads a list
 on its own; demo mode does because its lists cost nothing.
 
-Commands that would change something — activating a configuration, starting or
-stopping an instance — succeed without doing anything. Demo mode starts no
-process: SSH and k9s are not opened, and the status line says so; a tunnel is
-simulated and listed in Tunnels without one running; and a plugin's command is
-answered from the sample data, or refused, instead of being run.
+Commands that would change something, such as starting or stopping an
+instance, succeed without doing anything. Configurations are the exception:
+activating one, creating one or editing the active context takes effect for the
+rest of the session, and Home and the context line follow it. The change is
+held in memory and never saved, so your own gcloud configurations are not
+touched, and the next demo session starts on `dev` again. A project the sample
+data does not contain lists nothing but errors. Demo mode starts no
+process other than your system's clipboard tool when you copy a value: SSH and
+k9s are not opened, and the status line says so; a tunnel is simulated and
+listed in Tunnels without one running; and a plugin's command is answered from
+the sample data, or refused, instead of being run.
 
 ## Things to try
 

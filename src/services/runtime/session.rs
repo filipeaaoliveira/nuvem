@@ -554,9 +554,9 @@ pub struct RuntimeSession {
     bigquery_enrichment_cancellation: CancellationToken,
     pending_background_refreshes: usize,
     auto_loaded_scope: Option<(ResourceServiceKind, GcloudContext)>,
-    /// Demo mode only: whether the opening screen has been filled in. See
+    /// Demo mode only: the context Home was last filled in for. See
     /// [`RuntimeSession::fill_demo_home`].
-    demo_home_filled: bool,
+    demo_home_filled: Option<GcloudContext>,
     pending_interactive_command: Option<InteractiveCommand>,
     kubectl_runner: Option<Arc<dyn CommandRunner + Send + Sync>>,
     k9s_binary: String,
@@ -824,7 +824,7 @@ impl RuntimeSession {
             bigquery_enrichment_cancellation: CancellationToken::new(),
             pending_background_refreshes: 0,
             auto_loaded_scope: None,
-            demo_home_filled: false,
+            demo_home_filled: None,
             pending_interactive_command: None,
             kubectl_runner,
             k9s_binary,
@@ -1043,6 +1043,7 @@ impl RuntimeSession {
         }
         self.dispatch_effects(effects, false).await;
         self.ensure_active_resource_loaded().await;
+        self.fill_demo_home().await;
         true
     }
 
@@ -1582,15 +1583,19 @@ impl RuntimeSession {
     /// project, where each list is a network call the operator did not ask
     /// for. In demo mode every list is an embedded fixture, and a first screen
     /// of sixteen `Not loaded` rows under `gcloud: unknown` shows a visitor
-    /// nothing about what the tool does. Runs once per session.
+    /// nothing about what the tool does. Runs once per context, so switching
+    /// to another demo configuration fills Home for it too.
     async fn fill_demo_home(&mut self) {
-        if self.demo_home_filled || !self.config.as_ref().is_some_and(|config| config.demo) {
+        if !self.is_demo() {
             return;
         }
         let Some(context) = self.app.root.current_context() else {
             return;
         };
-        self.demo_home_filled = true;
+        if self.demo_home_filled.as_ref() == Some(&context) {
+            return;
+        }
+        self.demo_home_filled = Some(context.clone());
         let loads: Vec<Effect> = ResourceServiceKind::ALL
             .into_iter()
             .filter_map(crate::app::service_registry::service_id_for_resource)
@@ -1598,8 +1603,8 @@ impl RuntimeSession {
             .collect();
         self.dispatch_effects(loads, true).await;
         if self.app.root.workspace == Workspace::Home {
-            self.dispatch_action(Action::Workspace(crate::app::WorkspaceAction::Home))
-                .await;
+            let probe = self.reduce(&Action::Workspace(crate::app::WorkspaceAction::Home));
+            self.dispatch_effects(probe, true).await;
         }
     }
 

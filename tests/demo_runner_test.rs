@@ -2186,3 +2186,138 @@ async fn every_other_demo_screen_names_only_fixtures() {
         );
     }
 }
+
+/// Every demo configuration can be activated, and the session settles on it.
+///
+/// The demo's configuration state is held in memory by its runner, so
+/// activating `prod` makes `prod` the active configuration the next list
+/// reports. Before that, the list always reported `dev`, the activation
+/// "was not uniquely active after reload", and Home went stale under an
+/// account that did not match. For each configuration the demo lists, in
+/// turn: activate it, then require a settled healthy status line, and the
+/// configuration's own account and project on the context line, on Home and
+/// in Home's gcloud line, with every service counted again.
+#[tokio::test(flavor = "multi_thread")]
+async fn every_demo_configuration_can_be_activated_and_settles() {
+    use nuvem::app::ConfigurationsAction;
+    use nuvem::app::projection::project_app_frame;
+    use nuvem::app::state::system::OperationPhase;
+
+    let mut session = demo_session_showing(ResourceServiceKind::ComputeInstances).await;
+    let configurations: Vec<_> = session.app().root.configurations.rows().to_vec();
+    assert!(
+        configurations.len() >= 2,
+        "the demo has configurations to switch between"
+    );
+    // The inactive ones first, then back to the one the demo opened on.
+    let mut order: Vec<_> = configurations
+        .iter()
+        .filter(|c| !c.is_active)
+        .cloned()
+        .collect();
+    order.extend(configurations.iter().filter(|c| c.is_active).cloned());
+
+    for target in order {
+        session
+            .dispatch_action(Action::Workspace(WorkspaceAction::Configurations))
+            .await;
+        drain(&mut session).await;
+        for _ in 0..configurations.len() {
+            session
+                .dispatch_action(Action::Configurations(ConfigurationsAction::SelectPrevious))
+                .await;
+        }
+        for _ in 0..configurations.len() {
+            if session
+                .app()
+                .root
+                .configurations
+                .selected()
+                .map(|c| &c.name)
+                == Some(&target.name)
+            {
+                break;
+            }
+            session
+                .dispatch_action(Action::Configurations(ConfigurationsAction::SelectNext))
+                .await;
+        }
+        for action in [
+            ConfigurationsAction::RequestActivateSelected,
+            ConfigurationsAction::ConfirmActivation,
+        ] {
+            session
+                .dispatch_action(Action::Configurations(action))
+                .await;
+            drain(&mut session).await;
+        }
+        let name = target.name.to_string();
+        // Read where the activation lands, before anything else can replace
+        // its outcome on the status line.
+        assert_eq!(
+            session
+                .app()
+                .root
+                .system
+                .last_diagnostic()
+                .map(|d| d.headline()),
+            None,
+            "{name}: the switch recorded a failure"
+        );
+        let landed = project_app_frame(&session.app().root);
+        assert_eq!(
+            landed.operation.phase,
+            OperationPhase::Healthy,
+            "{name}: activating it did not settle healthy: {:?} {:?}",
+            landed.operation.label,
+            landed.operation.message
+        );
+        session
+            .dispatch_action(Action::Workspace(WorkspaceAction::Home))
+            .await;
+        drain(&mut session).await;
+
+        assert_eq!(
+            session
+                .app()
+                .root
+                .configurations
+                .active_name()
+                .map(ToString::to_string),
+            Some(name.clone()),
+            "{name} did not become the active configuration"
+        );
+        let frame = project_app_frame(&session.app().root);
+        assert_eq!(
+            frame.operation.phase,
+            OperationPhase::Healthy,
+            "{name}: the switch did not settle healthy: {:?} {:?}",
+            frame.operation.label,
+            frame.operation.message
+        );
+        let account = target
+            .account
+            .clone()
+            .expect("demo configurations name an account");
+        let project = target
+            .project
+            .clone()
+            .expect("demo configurations name a project");
+        let painted = screen(&session, 160, 40);
+        for expected in [
+            format!("Configuration: {name}"),
+            format!("Account: {account}"),
+            format!("Project: {project}"),
+            format!("gcloud: available ({account})"),
+        ] {
+            assert!(
+                painted.contains(&expected),
+                "{name}: no {expected:?} on\n{painted}"
+            );
+        }
+        assert!(
+            !painted.contains("Stale") && !painted.contains("Not loaded"),
+            "{name}: Home did not reload cleanly:\n{painted}"
+        );
+    }
+}
