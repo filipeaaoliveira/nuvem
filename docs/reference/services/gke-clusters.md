@@ -5,14 +5,14 @@ sidebar:
   order: 3
 ---
 
-For GKE clusters, pressing `r` runs:
+For GKE clusters, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
 gcloud --configuration <active-config> container clusters list --format=json --limit=500
 ```
 
-In the GKE clusters service, select a cluster and press `Enter` to load a
-read-only detail view. The detail command is:
+To open a read-only detail view, select a cluster and press `Enter`. The
+equivalent detail command is:
 
 ```bash
 gcloud --configuration <active-config> container clusters describe <name> --location <location> --format=json
@@ -24,26 +24,29 @@ delete clusters.
 
 ## Open a cluster in k9s
 
-Select a GKE cluster and open the palette with `:` to run `Open selected GKE
+Select a GKE cluster, open the palette with `:`, and run `Open selected GKE
 cluster in k9s` (aliases `k9s`, `open`). The action appears only when the active
-configuration provides a project and the cluster has a location. nuvem first
-checks (best-effort, via `kubectl config get-contexts`) whether the deterministic
-kubeconfig context `gke_<project>_<location>_<cluster>` already exists, then shows
-a confirmation modal that spells out whether it will reuse that context or run
-`get-credentials` first, the exact argv for both commands, and a note that
-`get-credentials` modifies your local kubeconfig:
+configuration provides a project and the cluster has a location.
+
+nuvem first runs `kubectl config get-contexts` to find out whether the
+kubeconfig context `gke_<project>_<location>_<cluster>` already exists. This
+check is best-effort. nuvem then shows a confirmation with three things:
+whether it will reuse that context or run `get-credentials` first, the exact
+argv for both commands, and a note that `get-credentials` modifies your local
+kubeconfig:
 
 ```bash
 gcloud --configuration <active-config> container clusters get-credentials <name> --location <location> --project <project>
 k9s --context gke_<project>_<location>_<cluster>
 ```
 
-Press `Enter` to launch or `Esc` to cancel before either command runs. When a
-credentials refresh is required it runs first; if it fails, k9s is not launched
-and the error is surfaced. The launch itself reuses the shared interactive-process
-runtime, so nuvem suspends the TUI while k9s owns the terminal and restores it
-(preserving your list selection and detail state) when k9s exits. If `k9s` is not
-on your `PATH` you get a diagnostic and cluster browsing stays usable. Commands
-are invoked without a shell, so cluster names and locations are never interpolated
-into a shell string. Override the binaries with `--k9s-binary` and
-`--kubectl-binary` when they live outside `PATH`.
+Press `Enter` to launch or `Esc` to cancel before either command runs. If a
+credentials refresh is required, it runs first. If it fails, nuvem shows the
+error and does not launch k9s.
+
+nuvem suspends the TUI while k9s owns the terminal. When k9s exits, nuvem
+restores the TUI with your list selection and detail state. If `k9s` is not on
+your `PATH`, you get a diagnostic and cluster browsing stays usable. nuvem runs
+both commands without a shell, so cluster names and locations never become part
+of a shell string. If the binaries live outside `PATH`, set them with
+`--k9s-binary` and `--kubectl-binary`.

@@ -5,7 +5,7 @@ sidebar:
   order: 11
 ---
 
-For Pub/Sub subscriptions, pressing `r` runs:
+For Pub/Sub subscriptions, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
 gcloud --configuration <active-config> [--project <project>] pubsub subscriptions list --format=json --limit=500
@@ -17,12 +17,12 @@ each one belongs to.
 The columns are NAME, TOPIC, DELIVERY, STATE, ACK(S) (the acknowledgement
 deadline in seconds), RETENTION, DEAD LETTER and LABELS.
 
-If the call fails, the table shows the failure rather than an empty list: an
-empty table would claim the project has no subscriptions.
+If the call fails, the table shows the failure. An empty table would claim
+that the project has no subscriptions.
 
 Label mode (`-l k=v`) is pushed to gcloud as a label filter. Every other filter
 mode narrows the loaded rows on what the table shows.
 
-The subscriptions list is list-only and read-only: `Enter` does nothing on a
+The subscriptions list is list-only and read-only. `Enter` does nothing on a
 row, and nuvem never creates, deletes, seeks or pulls from a subscription. `L`
 opens Cloud Logging for the selected subscription.
