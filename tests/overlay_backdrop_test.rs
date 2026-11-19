@@ -12,6 +12,7 @@ use std::collections::BTreeSet;
 use std::time::{Duration, Instant};
 
 use clap::Parser;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use nuvem::app::{
     Action, AppState, CommandAction, ConfigurationsAction, JumpsAction, ResourcesAction,
     SystemAction, WorkspaceAction,
@@ -170,14 +171,38 @@ fn assert_backdrop_is_clear(name: &str, lines: &[String]) {
     }
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn every_overlay_clears_the_panes_beneath_it() {
-    let directory = tempfile::tempdir().expect("tempdir");
-    let plugins = directory.path().join("plugins.toml");
-    std::fs::write(&plugins, PLUGINS).expect("writes");
+/// The key events a footer hint's key names, one per spelling it lists.
+fn events_named(key: &str) -> Vec<KeyEvent> {
+    let press = |code| KeyEvent::new(code, KeyModifiers::empty());
+    if key == "/" {
+        return vec![press(KeyCode::Char('/'))];
+    }
+    key.split('/')
+        .flat_map(|token| match token {
+            "Enter" => vec![press(KeyCode::Enter)],
+            "Esc" => vec![press(KeyCode::Esc)],
+            "Tab" => vec![press(KeyCode::Tab)],
+            "Shift-Tab" => vec![KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT)],
+            "Backspace" => vec![press(KeyCode::Backspace)],
+            "PgUp" => vec![press(KeyCode::PageUp)],
+            "PgDn" => vec![press(KeyCode::PageDown)],
+            "←" => vec![press(KeyCode::Left)],
+            "→" => vec![press(KeyCode::Right)],
+            "0-9" => ('0'..='9').map(|c| press(KeyCode::Char(c))).collect(),
+            single if single.chars().count() == 1 => {
+                vec![press(KeyCode::Char(
+                    single.chars().next().expect("one char"),
+                ))]
+            }
+            other => panic!("no key event for the footer spelling {other:?}"),
+        })
+        .collect()
+}
 
+/// The walks that reach every overlay mode, the way an operator does.
+fn walks() -> Vec<(&'static str, ResourceServiceKind, Vec<Action>)> {
     let gce = ResourceServiceKind::ComputeInstances;
-    let walks: Vec<(&str, ResourceServiceKind, Vec<Action>)> = vec![
+    vec![
         ("help", gce, vec![Action::System(SystemAction::ToggleHelp)]),
         ("palette", gce, vec![Action::Command(CommandAction::Open)]),
         (
@@ -220,10 +245,17 @@ async fn every_overlay_clears_the_panes_beneath_it() {
             actions.extend(palette("plugin output"));
             actions
         }),
-    ];
+    ]
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn every_overlay_clears_the_panes_beneath_it() {
+    let directory = tempfile::tempdir().expect("tempdir");
+    let plugins = directory.path().join("plugins.toml");
+    std::fs::write(&plugins, PLUGINS).expect("writes");
 
     let mut reached = BTreeSet::new();
-    for (name, kind, actions) in walks {
+    for (name, kind, actions) in walks() {
         let mut session = session_on(kind, &plugins).await;
         act(&mut session, actions).await;
         for (width, height) in SIZES {
@@ -241,6 +273,63 @@ async fn every_overlay_clears_the_panes_beneath_it() {
                 &format!("{name} at {width}x{height}"),
                 &screen(&session, width, height),
             );
+        }
+    }
+    let overlays: BTreeSet<String> = Mode::ALL
+        .into_iter()
+        .filter(|mode| is_overlay(*mode))
+        .map(|mode| format!("{mode:?}"))
+        .collect();
+    assert_eq!(reached, overlays, "every overlay mode is walked");
+}
+
+/// Every overlay owns the footer, and names only keys its mode dispatches.
+///
+/// SSH, tunnel, k9s, the plugin confirmation and the plugin output viewer used
+/// to leave the list's footer under the dialog: `Enter Open`, `/ Filter` and
+/// the rest, keys the dialog swallows. Walks every overlay mode, at both sizes,
+/// and resolves each key the footer names through the keymap in the mode the
+/// session is in. Every dialog also has to fit both sizes: at 80x24 the k9s
+/// and tunnel confirmations used to show only a notice.
+#[tokio::test(flavor = "multi_thread")]
+async fn every_overlay_footer_names_only_keys_its_mode_binds() {
+    use nuvem::app::projection::project_app_frame;
+    use nuvem::input::keymap::action_for_key;
+
+    let directory = tempfile::tempdir().expect("tempdir");
+    let plugins = directory.path().join("plugins.toml");
+    std::fs::write(&plugins, PLUGINS).expect("writes");
+
+    let mut reached = BTreeSet::new();
+    for (name, kind, actions) in walks() {
+        let mut session = session_on(kind, &plugins).await;
+        act(&mut session, actions).await;
+        let hints = project_app_frame(&session.app().root).footer_hints;
+        assert!(!hints.is_empty(), "{name}: the footer names no key");
+        for (width, height) in SIZES {
+            let context = nuvem::services::runtime::input_context_for_test(
+                &session,
+                Rect::new(0, 0, width, height),
+            );
+            reached.insert(format!("{:?}", context.mode));
+            // Every dialog fits both sizes, 80x24 included.
+            let painted = screen(&session, width, height).join("\n");
+            assert!(
+                !painted.contains("needs a larger terminal"),
+                "{name} does not fit {width}x{height}:\n{painted}"
+            );
+            for hint in &hints {
+                for event in events_named(&hint.key) {
+                    assert!(
+                        action_for_key(event, &context).is_some(),
+                        "{name} at {width}x{height}: the footer names `{} {}`, and {event:?} \
+                         does nothing in {:?}",
+                        hint.key,
+                        hint.label,
+                        context.mode
+                    );
+                }
+            }
         }
     }
     let overlays: BTreeSet<String> = Mode::ALL

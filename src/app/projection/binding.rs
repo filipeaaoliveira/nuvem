@@ -774,6 +774,45 @@ pub const LAUNCH_CONFIRM: Binding = Binding {
     rebindable: None,
 };
 
+// Plugin output viewer controls
+pub const OUTPUT_SCROLL: Binding = Binding {
+    triggers: &[
+        KeyTrigger::Char('j'),
+        KeyTrigger::Char('k'),
+        KeyTrigger::Down,
+        KeyTrigger::Up,
+        KeyTrigger::PageUp,
+        KeyTrigger::PageDown,
+    ],
+    key: "j/k",
+    label: "Scroll",
+    rebindable: None,
+};
+pub const OUTPUT_OLDER: Binding = Binding {
+    triggers: &[KeyTrigger::Char('n')],
+    key: "n",
+    label: "Older run",
+    rebindable: None,
+};
+pub const OUTPUT_NEWER: Binding = Binding {
+    triggers: &[KeyTrigger::Char('p')],
+    key: "p",
+    label: "Newer run",
+    rebindable: None,
+};
+pub const OUTPUT_COPY: Binding = Binding {
+    triggers: &[KeyTrigger::Char('y')],
+    key: "y",
+    label: "Copy",
+    rebindable: None,
+};
+pub const OUTPUT_CLOSE: Binding = Binding {
+    triggers: &[KeyTrigger::Esc],
+    key: "Esc",
+    label: "Close",
+    rebindable: None,
+};
+
 // Help view controls
 pub const HELP_SCROLL: Binding = Binding {
     triggers: &[

@@ -598,7 +598,11 @@ fn input_context(session: &session::RuntimeSession, terminal_area: Rect) -> Cont
         .resources
         .k9s_launch_confirmation()
         .is_some_and(|confirmation| {
-            crate::ui::k9s_launch_confirmation_preview_visible(terminal_area, confirmation)
+            crate::ui::k9s_launch_confirmation_preview_visible(
+                terminal_area,
+                confirmation,
+                session.config().is_some_and(|config| config.demo),
+            )
         });
     let workspace = session.app().root.workspace;
     let service_sidebar_visible = session.app().root.navigator.sidebar_visible();
