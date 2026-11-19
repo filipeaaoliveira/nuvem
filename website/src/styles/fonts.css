@@ -1,7 +1,7 @@
 /*
  * Schibsted Grotesk, self-hosted from @fontsource-variable, with
  * font-display: optional. The face is used when it is ready at first
- * paint (the home page preloads it) and otherwise not swapped in later, so
+ * paint (every page preloads it, in src/components/Head.astro) and otherwise not swapped in later, so
  * text never rewraps after the page has drawn. Until it is cached, the
  * metric-matched Arial fallback in tokens.css stands in.
  */

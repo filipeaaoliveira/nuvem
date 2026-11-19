@@ -49,6 +49,7 @@ export default defineConfig({
 			// src/pages/404.astro replaces Starlight's stock not-found page.
 			disable404Route: true,
 			components: {
+				Head: './src/components/Head.astro',
 				ThemeProvider: './src/components/ThemeProvider.astro',
 				ThemeSelect: './src/components/ThemeSelect.astro',
 				Search: './src/components/Search.astro',
