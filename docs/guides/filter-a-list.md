@@ -5,6 +5,9 @@ sidebar:
   order: 3
 ---
 
+Press `/` in a resource list to narrow it to the rows that match what you
+type.
+
 ## Filter the list you are looking at
 
 1. Press `/` with the list focused.
@@ -15,8 +18,8 @@ sidebar:
 4. To clear the filter, press `/`, delete the text with `Backspace`, and press
    `Enter`.
 
-Each service keeps its own filter. Switching service shows that service's
-filter, not the one you typed elsewhere.
+Each service keeps its own filter. When you switch service, you see that
+service's filter, not the one you typed elsewhere.
 
 ## The filter grammar
 
@@ -30,32 +33,38 @@ service except Cloud Storage:
 | `-l k=v[,k=v]` | `label`   | GCP resource labels; every pair must match           |
 | `!term`        | `inverse` | Rows the `regex` predicate does **not** match        |
 
-`regex` is the default, so a plain word keeps behaving the way the old
-substring filter did. An empty input — and a prefix with nothing after it
-(`-f`, `-l`, `!`) — means "no filter": every row stays visible and nothing is
-reported, because you are mid-typing and an error there would be noise. The
-mode renders as a `[mode]` chip next to the filter text. While the input is
-open the chip tracks the *draft*, so it flips to `[fuzzy]` the moment you type
-`-f`, before anything is applied; that is what makes the grammar discoverable.
+`regex` is the default, so a plain word matches every row that contains it in
+any field. An empty input means no filter, and so does a prefix with nothing
+after it (`-f`, `-l`, `!`). Every row stays visible and nuvem reports no
+error, because you are still typing.
 
-Label mode is server-side only. `-l` narrows nothing locally on any service —
-almost no list row carries labels to match against, and the client-side
-predicate keeps every row even where one does (a secret's does) — so the term
-is pushed to gcloud as a `--filter` and whatever comes back is shown as-is.
-A label-mode read therefore always goes through `gcloud`, even on the services
-that otherwise read through the native client libraries: it is the one filter
-mode the native path cannot honour, and an unfiltered table under a `[label]`
-chip would be worse than the slower call.
-Three consequences follow. Label values match
-**case-sensitively** on the server, unlike every other mode, so `-l env=Prod`
-will not find a `prod` label. `-l` does nothing under `--demo`, which serves
-embedded fixtures and ignores `--filter`. And Cloud Run exposes no user labels
-in list output, so `-l` there reports
-`label filtering is not supported for Cloud Run` and leaves the table unfiltered
-rather than pretending everything matched. Keys and values are
-limited to ASCII letters, digits, `.`, `_`, and `-`, and a key may not contain
-`.` (GCP label keys cannot); anything else reports `label selector is not
-expressible as a gcloud filter`.
+The `[mode]` chip next to the filter text shows the mode. While the input is
+open, the chip follows the draft. It changes to `[fuzzy]` as soon as you type
+`-f`, before you apply anything.
+
+## Label mode
+
+Label mode is server-side only. `-l` narrows nothing locally on any service.
+Almost no list row carries labels to match against, and where one does (a
+secret's row), the client-side predicate still keeps every row. nuvem pushes
+the term to gcloud as a `--filter` and shows whatever comes back as it is.
+
+A label-mode read always goes through `gcloud`, even on the services that
+otherwise read through the Google Cloud client libraries. The client
+libraries cannot apply this filter, and an unfiltered table under a `[label]`
+chip is worse than a slower call. Three consequences follow:
+
+- Label values match case-sensitively on the server, unlike every other mode.
+  `-l env=Prod` does not find a `prod` label.
+- `-l` does nothing under `--demo`, which serves embedded fixtures and ignores
+  `--filter`.
+- Cloud Run exposes no user labels in list output. There, `-l` reports
+  `label filtering is not supported for Cloud Run` and leaves the table
+  unfiltered.
+
+Keys and values can contain only ASCII letters, digits, `.`, `_`, and `-`. A
+key can never contain `.`, because GCP label keys cannot. Anything else
+reports `label selector is not expressible as a gcloud filter`.
 
 Which label field each service pushes:
 
@@ -83,57 +92,61 @@ Which label field each service pushes:
 On a service marked not supported, `-l` reports that label filtering is not
 supported and leaves the table unfiltered.
 
-A malformed filter never empties the table. `a(b` shows **every** loaded row
-plus an inline `⚠ invalid regex: unclosed group` next to the filter text, and
-`-l env` shows every row plus `⚠ malformed label selector: expected key=value`.
-Nothing panics and nothing silently disappears: an empty table behind a bad
-pattern is indistinguishable from a correct empty result, so nuvem shows too
-much and says why. The `⚠` describes the *applied* filter, so it is dropped as
-soon as your draft diverges from what is applied.
+## A malformed filter
 
-Cloud Storage keeps the plain case-insensitive substring filter and shows
-no mode chip. Its object browser already pushes safe filter text down as a
-server-side object prefix, and grammar prefixes would fight that pushdown for
-no benefit. The grammar therefore does not apply there at all, and the
-consequence is worth stating plainly: on Cloud Storage `-l env=prod`, `-f api`,
-and `!x` are not modes, they are text. In the bucket list that text is
-matched as literal substrings; in the object browser it goes through the same
-pushdown as any other text, so `-l env=prod` (no leading `/`, no glob
-characters) is sent as a server-side object prefix and the tools line reads
-`-l env=prod (remote)`. Either way it normally matches no bucket or object
-name and you get an empty table with no chip and no `⚠`:
-Cloud Storage reports no filter error, because it never parses the grammar in
-the first place.
+A malformed filter never empties the table. `a(b` shows every loaded row,
+with an inline `⚠ invalid regex: unclosed group` next to the filter text.
+`-l env` shows every row with `⚠ malformed label selector: expected key=value`.
+An empty table behind a bad pattern looks the same as a correct empty result,
+so nuvem shows too much and says why.
+
+The `⚠` describes the applied filter. It disappears as soon as your draft
+differs from the filter that is applied.
+
+## Filters in Cloud Storage
+
+Cloud Storage keeps the plain case-insensitive substring filter and shows no
+mode chip. Its object browser already sends safe filter text to the server as
+an object prefix, and grammar prefixes conflict with that. So the
+grammar does not apply to Cloud Storage at all. There, `-l env=prod`,
+`-f api`, and `!x` are plain text, not modes.
+
+In the bucket list, that text is matched as literal substrings. In the object
+browser, it goes to the server like any other text. `-l env=prod` has no
+leading `/` and no glob characters, so nuvem sends it as an object prefix, and
+the tools line reads `-l env=prod (remote)`.
+
+Either way, the text normally matches no bucket or object name, and you get an
+empty table with no chip and no `⚠`. Cloud Storage reports no filter error,
+because it never parses the grammar.
 
 ## What runs when you apply a filter
 
-For GCE, GKE, and Cloud SQL, applying or clearing the filter refreshes the list and
-pushes the term down to gcloud as a server-side `--filter` when it is safely
-expressible against raw fields, then narrows the residual client-side; a term
-that could only match a transformed or derived display value falls back to
-client-side-only narrowing so a matching row is never dropped. Cloud Run is
-capped but always narrowed client-side (its Knative list shape isn't reliably
-server-filter-expressible). Secret Manager also refreshes on apply and clear,
-but pushes only label mode: a secret's replication and its `key=value` label
-rendering are display values with no raw field behind them, so every other
-mode narrows client-side. Cloud Functions behaves the same way and for the same
-reason: label mode is pushed as `labels.k = "v"`, every other mode narrows the
-loaded rows on every cell the table paints — name, region, state, generation,
-update time, invoke URL and `key=value` labels. State and generation are
-narrowed on the words the column shows (`Active`, `1st gen`), which appear in
-no raw gcloud field, which is exactly why nothing but label mode is pushed.
-Pub/Sub topics behave the same way again: label mode is pushed as
-`labels.k = "v"`, and every other mode narrows the loaded rows on every cell the
-table paints — name, subscription count, retention, KMS key and `key=value`
-labels. The count is the clearest case for keeping the rest client-side: it is
-derived from a second list call and appears in no raw field of the topic
-resource at all. The displayed narrowing is still client-side: GCE
-filters match name, zone, status, machine type, internal IP, and external IP;
-GKE filters match name, location, status, Kubernetes version, node count, and
-endpoint visibility.
+Lists come from the Google Cloud client libraries, or from `bq` for BigQuery,
+and neither is given the filter. In every mode except label mode, the filter
+narrows the loaded rows on the client. List reads are capped at 500 rows, so
+in these modes the filter sees only the rows that were loaded.
+
+GCE, GKE, and Cloud SQL refresh the list when you apply or clear the filter.
+In label mode, that refresh goes through gcloud with the label selector as a
+server-side `--filter`. GCE filters match name, zone, status, machine type,
+internal IP, and external IP. GKE filters match name, location, status,
+Kubernetes version, node count, and endpoint visibility.
+
+Cloud Run also refreshes on apply and clear, and always narrows on the client.
+
+Secret Manager, Cloud Functions, and Pub/Sub topics refresh on apply and
+clear, and push only label mode, as `labels.k = "v"`. Every other mode
+narrows the loaded rows on every cell the table shows:
+
+- Cloud Functions: name, region, state, generation, update time, invoke URL,
+  and `key=value` labels. State and generation match the words the column
+  shows (`Active`, `1st gen`).
+- Pub/Sub topics: name, subscription count, retention, KMS key, and
+  `key=value` labels.
 
 Persistent disks and Pub/Sub subscriptions push label mode the same way and
 refresh on apply. Service accounts and the IAM policy refresh on apply but
 push nothing. BigQuery datasets and the three VPC tables run no command when
-you apply a filter: they re-narrow the rows already loaded, so a transient
+you apply a filter. They narrow the rows already loaded again, so a transient
 error cannot blank a table while you type.
