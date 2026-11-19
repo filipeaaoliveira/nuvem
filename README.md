@@ -3,9 +3,9 @@
 [![CI](https://github.com/filipeaaoliveira/nuvem/actions/workflows/ci.yml/badge.svg)](https://github.com/filipeaaoliveira/nuvem/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A terminal UI for Google Cloud, in the spirit of k9s. Browse and operate your
-Google Cloud projects from the keyboard, with the gcloud configurations you
-already have. The name is Portuguese for "cloud".
+A terminal UI for Google Cloud, like k9s is for Kubernetes. Browse and operate
+your Google Cloud projects from the keyboard, with the gcloud configurations
+you already have. The name is Portuguese for "cloud".
 
 The documentation is at [nuvem.fyi](https://nuvem.fyi).
 
@@ -63,7 +63,8 @@ quit.
 
 ## What it does
 
-- Lists sixteen services: GCE instances, GKE clusters, Cloud SQL, Cloud Run,
+- Lists sixteen services: Compute Engine (GCE) instances, GKE clusters, Cloud
+  SQL, Cloud Run,
   Cloud Storage, Secret Manager, Cloud Functions, persistent disks, Pub/Sub
   topics, Pub/Sub subscriptions, BigQuery datasets, service accounts, IAM
   policy, VPC networks, VPC subnets and firewall rules. Each one opens as a
@@ -76,7 +77,8 @@ quit.
   instances, and start, stop, restart and fail over on Cloud SQL. You choose
   them in the command palette. To run one on several instances at once, mark
   them with `Space` first.
-- Opens an SSH session to a GCE instance, and opens a GKE cluster in k9s.
+- Opens an SSH session to a GCE instance, and opens a GKE cluster in
+  [k9s](https://k9scli.io), the terminal UI for Kubernetes.
 - Starts IAP, SSH and Cloud SQL Auth Proxy tunnels with `t`, and lists them in
   one place (`Ctrl-t`).
 - Reads, tails and searches Cloud Logging. `l` opens the project's logs, and

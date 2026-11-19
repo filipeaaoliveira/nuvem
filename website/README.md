@@ -29,9 +29,9 @@ you edit a file in `docs/`, the page changes.
 
 - Title: the page's frontmatter `title`, or else its first `# ` heading.
   The heading is not repeated in the page body.
-- Address: `docs/keys.md` is served at `/docs/keys/`, and
-  `docs/guides/first-run.md` at `/docs/guides/first-run/`. A frontmatter
-  `slug` overrides this.
+- Address: `docs/reference/keys.md` is served at `/docs/reference/keys/`, and
+  `docs/getting-started/first-run.md` at `/docs/getting-started/first-run/`. A
+  frontmatter `slug` overrides this.
 - Sidebar: each top-level file is a link and each directory is a group. A
   directory inside a directory is a group inside a group. Groups are
   collapsed, except the one holding the page you are on. A directory with
@@ -79,17 +79,17 @@ from the repository's `demo/` directory in place:
 - `demo/out/nuvem-demo.webm`, `nuvem-demo.mp4` and `nuvem-demo-poster.png`
   are the recording. The build copies them into `dist/_astro/` with a
   content hash and converts the poster to WebP.
-- `demo/frames/palette.html` is a screen of the app as coloured text. The
-  build inlines it into the page, and for screens below 48rem also a cut of
-  just its command palette box, found by the box's title. If a re-captured
-  frame has no such box, the build says so.
+- `demo/frames/palette.html` is a screen of the app as colored text. The
+  build inlines it into the page. For screens narrower than 48rem, it also
+  inlines a crop of the command palette box alone, found by the box's title.
+  If a re-captured frame has no such box, the build says so.
 
 To re-render either, run the scripts in `scripts/` (see `demo/README.md`) and
 rebuild. Nothing under `website/` changes. If one of these files is missing,
 the build stops and names the command to run (`src/lib/demo-assets.mjs`).
 
-A frame is accepted only as the single `<pre>` of coloured `<span>` runs that
-`scripts/ansi2html.py` writes. Two terminal colours are shown lighter than in
+A frame is accepted only as the single `<pre>` of colored `<span>` runs that
+`scripts/ansi2html.py` writes. Two terminal colors are shown lighter than in
 the recordings so that every run of text reads at 4.5:1 or better, and the
 build fails on any pair below that (`src/lib/terminal-frame.mjs`).
 
@@ -121,9 +121,9 @@ rebuild. The site loads nothing from other origins. Keep it that way.
 | `src/lib/demo-assets.mjs` | The demo files the home page uses; fails the build when one is missing |
 | `src/lib/terminal-frame.mjs` | Reads a frame from `demo/frames/`, checks its markup and contrast |
 | `src/routeData.ts` | Hides a one-entry contents list; no canonical on the 404 page |
-| `src/styles/tokens.css` | Colours, type, spacing: shared by every page |
+| `src/styles/tokens.css` | Colors, type, spacing: shared by every page |
 | `src/styles/docs.css` | The docs theme, mapped onto Starlight |
-| `src/styles/code-theme.json` | Syntax colours for code blocks |
+| `src/styles/code-theme.json` | Syntax colors for code blocks |
 | `src/components/` | Starlight overrides: one theme, `/` opens search, a Docs link in the header, the site footer |
 | `src/components/landing/` | The home page's install plate, recording and terminal frame |
 | `src/pages/index.astro` | The home page |

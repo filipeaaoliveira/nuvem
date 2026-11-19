@@ -2,7 +2,7 @@
 
 All notable changes to nuvem are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
-[Semantic Versioning](https://semver.org/) (pre-1.0: minor bumps may break).
+[Semantic Versioning](https://semver.org/) (pre-1.0: minor bumps can break).
 
 ## [Unreleased]
 
@@ -17,7 +17,7 @@ All notable changes to nuvem are documented here. The format follows
   access token from `gcloud config config-helper` for the selected gcloud
   configuration. The token is held in memory only. BigQuery is read through
   `bq`.
-- Start, stop, reset, suspend, resume, restart and failover on single or
+- Start, stop, reset, suspend, resume, restart and fail over on single or
   marked rows, through the client libraries. Switching configuration or
   project goes through the `gcloud` CLI. Each change asks for confirmation and
   first shows what it will do: the API call for a lifecycle action, the
@@ -27,16 +27,16 @@ All notable changes to nuvem are documented here. The format follows
 - Tunnels (IAP, SSH local forward, Cloud SQL Auth Proxy) supervised from a
   workspace of their own.
 - `config.toml` with themes (`default`, `no-color`, `high-contrast`),
-  hotkeys, favorites, columns and sort, and jump rules. An unrecognised key at
+  hotkeys, favorites, columns and sort, and jump rules. An unrecognized key at
   the root or in `[general]` is reported by name.
 - Plugins: your own `gcloud` commands, declared in `plugins.toml` and offered
   against the selected row, behind the same confirmation.
 - `--demo`, which runs the whole UI against built-in sample data with no Google
-  Cloud account or credentials, and `--read-only`, which refuses every mutating
-  path.
+  Cloud account or credentials, and `--read-only`, which refuses every change
+  to a cloud resource and every session that can make one.
 - `nuvem info` for environment diagnostics, and distinct exit statuses: `0`
   success, `1` failure, `2` usage error, `3` no terminal, `4` startup failure.
-- Text from Google Cloud and plugins is sanitised before it reaches the
+- Text from Google Cloud and plugins is sanitized before it reaches the
   screen or the clipboard: escape sequences, bidirectional overrides and
   zero-width characters are removed, and tokens and keys are redacted from
   diagnostics. Secret Manager payloads are never read.

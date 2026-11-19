@@ -16,7 +16,7 @@ import { REPO_BLOB_URL, buildSidebar, firstPageUrl } from '../lib/docs-source.mj
 const INSTALL = 'brew install filipeaaoliveira/tap/nuvem';
 const pageTitle = 'nuvem: a terminal UI for Google Cloud';
 const description =
-	'nuvem is a terminal UI for Google Cloud in the spirit of k9s. Browse and operate your projects from the keyboard, with the gcloud configurations you already have.';
+	'nuvem is a terminal UI for Google Cloud, like k9s is for Kubernetes. Browse and operate your projects from the keyboard, with the gcloud configurations you already have.';
 
 const docs = {
 	install: await docHref('getting-started/install.md'),
@@ -57,25 +57,25 @@ const capabilities = [
 		reach: [{ key: 'Space' }, { word: 'then' }, { key: ':' }],
 		name: 'Lifecycle actions',
 		href: 'guides/batch-actions.md',
-		text: 'Start, stop, reset, suspend or resume Compute Engine instances. Start, stop, restart or fail over Cloud SQL instances. Mark rows with Space to act on several at once. A confirmation shows the API call for each one first.',
+		text: 'Start, stop, reset, suspend or resume Compute Engine (GCE) instances. Start, stop, restart or fail over Cloud SQL instances. Mark rows with Space to act on several at once. A confirmation shows the API call for each one first.',
 	},
 	{
 		reach: [{ key: 'l' }],
 		name: 'Cloud Logging',
 		href: 'guides/cloud-logging.md',
-		text: 'Read, tail and search the project’s logs. In most services, L opens the logs of the selected resource.',
+		text: "Read, tail and search the project's logs. In most services, L opens the logs of the selected resource.",
 	},
 	{
 		reach: [{ key: 't' }],
 		name: 'Tunnels',
 		href: 'guides/tunnels.md',
-		text: 'Start IAP, SSH or Cloud SQL Auth Proxy port forwards from a Compute Engine or Cloud SQL row, and manage them from one list.',
+		text: 'Start IAP, SSH or Cloud SQL Auth Proxy port forwards from a GCE instance or Cloud SQL row, and manage them from one list.',
 	},
 	{
 		reach: [{ flag: '--read-only' }],
 		name: 'Read-only mode',
 		href: 'guides/read-only-mode.md',
-		text: 'Refuses every change to a cloud resource, and the SSH and k9s sessions that could make one.',
+		text: 'Refuses every change to a cloud resource, and the SSH and k9s sessions that can make one.',
 	},
 	{
 		reach: [{ key: ',' }],
@@ -159,7 +159,8 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		<section aria-labelledby="how">
 			<h2 id="how">How it works</h2>
 			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. A few reads, such as BigQuery, budgets and label filters, run the <code>bq</code> or <code>gcloud</code> command instead. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
-			<p>Lifecycle actions on Compute Engine and Cloud SQL go through the same client libraries. SSH, tunnels to Compute Engine, plugins and changes to your gcloud configurations run the <code>gcloud</code> CLI you already have, and Cloud SQL tunnels run <code>cloud-sql-proxy</code>. Before anything changes, a confirmation shows what is about to happen. For a lifecycle action, it shows the API call. For SSH, tunnels, k9s, plugins and activating a configuration, it shows the command line. When you create or edit a configuration, it shows the values themselves.</p>
+			<p>Lifecycle actions on GCE and Cloud SQL instances go through the same client libraries. SSH, tunnels to GCE instances, plugins and changes to your gcloud configurations run the <code>gcloud</code> CLI you already have. Cloud SQL tunnels run <code>cloud-sql-proxy</code>, and a GKE cluster opens in <code>k9s</code>, the terminal UI for Kubernetes.</p>
+			<p>Before anything changes, a confirmation shows what is about to happen. For a lifecycle action, it shows the API call. For SSH, tunnels, k9s, plugins and activating a configuration, it shows the command line. When you create or edit a configuration, it shows the values themselves.</p>
 			<p>Read more in <a href={docs.beforeChange}>Before a change runs</a>, the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
 		</section>
 

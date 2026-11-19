@@ -46,19 +46,19 @@ CI runs the same checks plus two that the script does not: `cargo doc` under
 `scripts/check-fast.sh` locally and builds its docs cleanly, we expect it to
 pass CI.
 
-How much verification a change needs depends on what it puts at risk:
+How much verification a change needs depends on how far its effects reach:
 
-- Source behaviour unchanged (docs, comments, config, test-only, CI
+- Source behavior unchanged (docs, comments, config, test-only, CI
   plumbing): the gates and CI are the whole requirement.
-- Behaviour changed, with a local blast radius (one subsystem): the gates and
-  a review pass.
-- Behaviour changed, with a wide or sensitive blast radius (new feature,
-  security property, cross-cutting refactor): the gates and a deeper review.
+- Behavior changed inside one subsystem: the gates and a review pass.
+- Behavior changed across subsystems, or in a sensitive area (new feature,
+  security property, cross-cutting refactor): the gates, a review pass and a
+  deeper review.
 
-Features ship as small stacked PRs. Four small PRs each take minutes to
-review, and the same work in one branch takes hours.
+Features ship as small stacked PRs, because a small PR is quicker to review
+than the same work in one branch.
 
-The gates enforce these conventions, or the docs rely on them:
+The gates enforce some of these conventions, and the docs rely on the rest:
 
 - No clippy warnings. CI runs the command that follows. Keep `--workspace`:
   without it, a warning in `crates/nuvem-domain` is never linted.
@@ -66,8 +66,8 @@ The gates enforce these conventions, or the docs rely on them:
   ```bash
   cargo clippy --workspace --all-targets --all-features -- -D warnings
   ```
-- Tests for domain logic live in `crates/nuvem-domain`. The crate's own test
-  binary pins its behaviour, so you can check it on its own.
+- Tests for domain logic live in `crates/nuvem-domain`. That crate has its own
+  test binary, so you can test it without the rest of the workspace.
 - A new integration test file must be mounted in `tests/suite.rs` (or the
   domain crate's `tests/suite.rs`). Per-file test targets are turned off on
   purpose, and the header of that file explains why.
@@ -98,7 +98,7 @@ Open a GitHub issue. For anything that looks like a security problem, see
 For a rendering bug, include the terminal size and the output of
 `nuvem info`. Both make the bug much easier to reproduce. The built-in demo
 mode (`nuvem --demo`, see the [README](README.md)) reproduces most UI
-behaviour without any Google Cloud project.
+behavior without any Google Cloud project.
 
 ## License
 
