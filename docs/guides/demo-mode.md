@@ -28,7 +28,10 @@ than sixteen `Not loaded` rows. Against a real project Home never loads a list
 on its own; demo mode does because its lists cost nothing.
 
 Commands that would change something — activating a configuration, starting or
-stopping an instance — succeed without doing anything.
+stopping an instance — succeed without doing anything. Demo mode starts no
+process: SSH and k9s are not opened, and the status line says so; a tunnel is
+simulated and listed in Tunnels without one running; and a plugin's command is
+answered from the sample data, or refused, instead of being run.
 
 ## Things to try
 

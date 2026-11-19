@@ -724,6 +724,12 @@ impl RuntimeSession {
         self.sdk_clients.is_some()
     }
 
+    /// Whether this session can run `kubectl`. A demo session cannot: it
+    /// starts no process, and kubectl would read the operator's kubeconfig.
+    pub fn holds_kubectl_runner(&self) -> bool {
+        self.kubectl_runner.is_some()
+    }
+
     /// Where this session's native clients get their answers, or `None` when
     /// it holds none (the test harnesses).
     ///
@@ -758,8 +764,11 @@ impl RuntimeSession {
         remembered_view_store: Option<Arc<dyn RememberedViewStore + Send + Sync>>,
     ) -> Self {
         let (effect_result_sender, effect_result_receiver) = mpsc::unbounded_channel();
+        // None in demo mode: a demo session starts no process, and kubectl
+        // would read the operator's real kubeconfig.
         let kubectl_runner: Option<Arc<dyn CommandRunner + Send + Sync>> = config
             .as_ref()
+            .filter(|config| !config.demo)
             // kubectl reuses the same runner type, so the `gcloud` slot holds
             // the kubectl path and the `bq` slot keeps its `bq` default. Only
             // kubectl commands are ever submitted to this instance and they all
@@ -1401,6 +1410,21 @@ impl RuntimeSession {
                 Effect::ProbeGcloudDiagnostics { configuration } => {
                     self.dispatch_diagnostics_probe(configuration);
                 }
+                Effect::LaunchInteractiveProcess { command } if self.is_demo() => {
+                    // Demo mode starts no process: an SSH shell or a k9s
+                    // session would run the operator's real gcloud or k9s
+                    // against whatever their own configuration of the same
+                    // name points at. The request is answered here instead,
+                    // the way `DemoTunnelLauncher` answers a tunnel.
+                    let description = self.resolve_interactive_spec(&command).description;
+                    // The reducer sets the status line and asks for nothing more.
+                    let _ = self.reduce(&Action::EffectResult(
+                        EffectResult::InteractiveProcessCompleted {
+                            description,
+                            outcome: crate::services::runtime::interactive::InteractiveProcessOutcome::NotStartedInDemo,
+                        },
+                    ));
+                }
                 Effect::LaunchInteractiveProcess { command } => {
                     // The run loop owns the terminal; stash the request and let
                     // it perform the suspend/launch/restore. Any queued
@@ -1544,6 +1568,11 @@ impl RuntimeSession {
         self.dispatch_effects(effects, true).await;
         self.ensure_active_resource_loaded().await;
         self.fill_demo_home().await;
+    }
+
+    /// Whether this is a `--demo` session.
+    fn is_demo(&self) -> bool {
+        self.config.as_ref().is_some_and(|config| config.demo)
     }
 
     /// Demo mode only: once a configuration is active, list every service and

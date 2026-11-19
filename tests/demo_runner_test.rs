@@ -1898,6 +1898,86 @@ async fn a_demo_session_opens_on_a_populated_home() {
     }
 }
 
+/// A demo session starts no process: no SSH shell, no k9s, no kubectl.
+///
+/// Demo configurations are named `dev` and `prod`, like real ones, so an
+/// interactive launch from a demo session would run the operator's own
+/// `gcloud compute ssh ... --configuration dev` or k9s against their own
+/// kubeconfig. Each `InteractiveCommand` kind is reached the way an operator
+/// reaches it, through the palette and its confirmation, and must end in the
+/// demo's refusal rather than in a pending launch. `kinds_walked` is an
+/// exhaustive match, so a new kind does not compile until it has a walk here.
+/// The gcloud runner and the client cache are `DemoCommandRunner`s and
+/// tunnels use `DemoTunnelLauncher`, which other tests pin; kubectl is the
+/// remaining runner, and a demo session holds none.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_demo_session_starts_no_interactive_process() {
+    use nuvem::app::CommandAction;
+    use nuvem::app::effect::InteractiveCommand;
+
+    fn kinds_walked(command: &InteractiveCommand) -> &'static str {
+        match command {
+            InteractiveCommand::GceSsh { .. } => "ssh",
+            InteractiveCommand::K9s { .. } => "k9s",
+        }
+    }
+    let walks: [(ResourceServiceKind, &str, ResourcesAction, &str); 2] = [
+        (
+            ResourceServiceKind::ComputeInstances,
+            "ssh",
+            ResourcesAction::ConfirmSshLaunch,
+            "SSH to",
+        ),
+        (
+            ResourceServiceKind::GkeClusters,
+            "k9s",
+            ResourcesAction::ConfirmK9sLaunch,
+            "k9s (",
+        ),
+    ];
+    // The walks below are named by `kinds_walked`, one per kind.
+    let _ = kinds_walked;
+
+    for (kind, query, confirm, description) in walks {
+        let mut session = demo_session_showing(kind).await;
+        assert!(
+            !session.holds_kubectl_runner(),
+            "a demo session runs no kubectl"
+        );
+        session
+            .dispatch_action(Action::Command(CommandAction::Open))
+            .await;
+        for character in query.chars() {
+            session
+                .dispatch_action(Action::Command(CommandAction::AppendChar(character)))
+                .await;
+        }
+        session
+            .dispatch_action(Action::Command(CommandAction::Submit))
+            .await;
+        drain(&mut session).await;
+        session.dispatch_action(Action::Resources(confirm)).await;
+        drain(&mut session).await;
+
+        assert_eq!(
+            session.take_pending_interactive_command(),
+            None,
+            "{query}: a demo session must not hand a launch to the run loop"
+        );
+        let status = session
+            .app()
+            .root
+            .system
+            .status_message
+            .clone()
+            .unwrap_or_default();
+        assert!(
+            status.starts_with("Demo mode does not open sessions") && status.contains(description),
+            "{query}: the walk must reach the launch and the demo must refuse it, got {status:?}"
+        );
+    }
+}
+
 /// `Enter` opens something exactly on the services `opens_on_enter` names,
 /// read off the reducer through a demo session: the breadcrumb, the title or
 /// the table changes when a row opens, and none of them does when `Enter`

@@ -294,6 +294,11 @@ fn gcloud_fixture(args: &[String], corpus: Corpus) -> Result<CommandOutput, Comm
             include_str!("../../../tests/fixtures/demo/gke_clusters.json"),
         )));
     }
+    // Writing a kubeconfig entry is local, but it is the user's real
+    // kubeconfig, so demo mode answers it as a no-op like any other change.
+    if matches(args, &["container", "clusters", "get-credentials"]) {
+        return Ok(ok_noop());
+    }
     if matches(args, &["container", "clusters", "describe"]) {
         return Ok(fixture(include_str!(
             "../../../tests/fixtures/gke_cluster_detail.json"

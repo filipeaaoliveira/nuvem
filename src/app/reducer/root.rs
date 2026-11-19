@@ -2192,6 +2192,9 @@ fn interactive_status_line(
         }
         O::MissingBinary => format!("{description} failed: binary not found"),
         O::LaunchFailed { message } => format!("{description} failed: {message}"),
+        O::NotStartedInDemo => {
+            format!("Demo mode does not open sessions: {description} was not started")
+        }
     }
 }
 
