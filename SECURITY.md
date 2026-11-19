@@ -1,4 +1,4 @@
-# Security Policy
+# Security policy
 
 ## Supported versions
 
@@ -26,7 +26,7 @@ on a configuration switch.
 Of the gcloud properties that shape a request, the native path applies
 `core/universe_domain`. It does not yet apply `api_endpoint_overrides`,
 `billing/quota_project` or the `proxy/*` section, which `gcloud`'s own
-invocations still honour.
+invocations still honor.
 
 These areas are of particular interest for review:
 
@@ -35,12 +35,12 @@ These areas are of particular interest for review:
   the provider's `Debug`. The log file pins every client crate at `info`, so a
   request body cannot be traced out. A path that logs, renders, copies or
   persists the token is a vulnerability.
-- Diagnostics sanitisation (`crates/nuvem-domain`). gcloud output shown in
+- Diagnostics sanitization (`crates/nuvem-domain`). gcloud output shown in
   diagnostics or copied to the clipboard is scrubbed of bearer tokens, API
-  keys, and refresh tokens. A path where raw output escapes unsanitised is a
+  keys, and refresh tokens. A path where raw output escapes unsanitized is a
   vulnerability.
-- Secret Manager views. nuvem lists secret metadata and never accesses secret
-  payloads (`tests/secrets_no_payload_access_test.rs` pins this). A change that
+- Secret Manager views. nuvem lists secret metadata and deliberately never
+  accesses secret payloads (`tests/secrets_no_payload_access_test.rs` pins this). A change that
   reads payload data is a regression.
 - Plugins. A plugin declaration names arguments to `gcloud`. There is no
   program field and no shell on the path. `gcloud` itself can hand an argv to
@@ -48,5 +48,5 @@ These areas are of particular interest for review:
   confirmation that shows the exact argv, not the fixed program. A way to
   start a process without that confirmation is a vulnerability.
 - Terminal output. nuvem renders untrusted resource names and log payloads to
-  the terminal. Control-character injection that survives sanitisation is in
+  the terminal. Control-character injection that survives sanitization is in
   scope.
