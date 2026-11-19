@@ -21,7 +21,10 @@ For a lifecycle action, the confirmation shows the API call with its target,
 project and impact. For anything that runs `gcloud`, it shows the command
 line. See
 [Before a change runs](../reference/services/overview.md#before-a-change-runs).
-`--read-only` refuses them all.
+`--read-only` refuses every change to a cloud resource, and SSH, k9s and any
+plugin nuvem cannot prove only reads. It still lets you activate, create and
+edit gcloud configurations and open tunnels, because those change only your
+machine. See [Read-only mode](../guides/read-only-mode.md).
 
 ## Why does BigQuery need `bq`?
 

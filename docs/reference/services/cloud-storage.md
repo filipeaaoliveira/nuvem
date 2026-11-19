@@ -5,6 +5,9 @@ sidebar:
   order: 6
 ---
 
+The Cloud Storage list shows the project's buckets. `Enter` opens a bucket's
+objects, and you can copy any bucket's or object's `gs://` URI.
+
 For Cloud Storage, `r` reloads the bucket list. The equivalent `gcloud`
 command is:
 
@@ -54,9 +57,4 @@ Cloud Storage browsing is read-only. Uploading, downloading, deleting objects,
 ACL/IAM management, and signed URLs are out of scope.
 
 The object browser pages with the token that the service issues, so the next
-page starts exactly where the previous page ended. The fallback path runs
-`gcloud storage objects list` with `--limit` instead. That command returns no
-page token, so on that path the first page is also the last one. Pagination
-itself (page boundaries, selection preservation, and the local and remote
-filter interaction) is tested against fixtures, not against live buckets that
-change during the test.
+page starts exactly where the previous page ended.

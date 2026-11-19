@@ -5,6 +5,9 @@ sidebar:
   order: 15
 ---
 
+The VPC networks list shows the project's VPC networks, with their subnet
+mode, routing mode and subnet count.
+
 For VPC networks, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
@@ -22,7 +25,7 @@ network has.
 nuvem derives MODE and ROUTING from the API's own fields,
 `autoCreateSubnetworks` and `routingConfig.routingMode`. It never reads the
 `x_gcloud_subnet_mode` and `x_gcloud_bgp_routing_mode` keys that gcloud adds to
-the same JSON. Those two keys carry exactly the strings this table paints, but
+the same JSON. Those two keys carry exactly the strings this table shows, but
 they are gcloud's presentation layer and not API fields. The `x_` prefix marks
 them as gcloud's own, and gcloud makes no promise to keep them.
 
@@ -30,30 +33,32 @@ them as gcloud's own, and gcloud makes no promise to keep them.
 distinct from `CUSTOM` because the two differ in what you do next: a custom
 network has subnets to go and look at, and a legacy network cannot have any. A
 network whose JSON carries no `routingConfig` leaves ROUTING blank. It does not
-read `REGIONAL`. Regional is the API's default for a network created without
-one, and a default is a claim about creation, not about what this listing
-reported.
+read `REGIONAL`. Regional is only the API's default for a network created
+without one, so nuvem does not assume it for a listing that did not say.
 
 SUBNETS is a count, not a list. The `subnetworks` field is an array of full
 self-link URLs, 43 of them on the default network of a fresh project, which
-does not fit in a table cell. The subnets have a table of their own. A count of
-`0` is painted as `0` and never as a dash. The API listed the network's subnets
-and found none, and a custom-mode network with no subnets is a finding, not a
-missing value.
+does not fit in a table cell. The subnets have a table of their own.
+
+A count of `0` shows as `0` and never as a dash, because the API listed the
+network's subnets and found none. A custom-mode network with no subnets is
+worth noticing, so the cell states it.
 
 A network's description has no column, because it is unbounded free text that
 would push the four columns off a narrow terminal. It is searchable, and the
-preview pane shows it in full. `/` narrows wholly client-side here and pushes
-nothing to the server. Three of the four columns are derived values that appear
-verbatim in no raw field, so a pushed clause would drop rows you can read on
-screen. Label filtering (`-l k=v`) reports unsupported, because the
-`compute/v1` networks resource has no labels field at all.
+preview pane shows it in full.
+
+`/` narrows wholly client-side here and sends nothing to the server. Three of
+the four columns are derived values that appear verbatim in no raw field, so
+a filter sent to the server would drop rows you can read on screen. Label
+filtering (`-l k=v`) reports unsupported, because the `compute/v1` networks
+resource has no labels field at all.
 
 Because the narrowing is client-side, applying a filter makes no call at all.
-It narrows the rows already in memory again. This also protects the table. A
-list refresh that fails clears the table and its context, so a table refreshed
-on every filter keystroke would go blank on a short auth or quota error while
-you type. `r` still fetches, because `r` is an explicit request for fresh rows.
+It narrows the rows already in memory again, which also protects the table. A
+list refresh that fails clears the table and its context. A table refreshed on
+every filter keystroke would go blank on a short auth or quota error while you
+type. `r` still fetches, because `r` is an explicit request for fresh rows.
 
 The networks table is list-only and read-only. `Enter` does nothing on a row,
 there is no detail pane, and nuvem never creates, deletes or modifies a

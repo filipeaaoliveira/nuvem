@@ -21,7 +21,8 @@ Start here when nuvem shows an error, or does not do what you expect.
 
 When a call fails, nuvem names one of these categories with a hint. nuvem
 retries a transient failure on the next background refresh. A persistent
-failure waits until you press `r`, switch configuration or change scope.
+failure waits until you press `r`, switch configuration or open another
+service.
 
 | Category | Hint nuvem shows | Retried |
 | --- | --- | --- |
@@ -50,8 +51,8 @@ needs a terminal to draw on. `nuvem info` works without one. See
 ### "missing CLI"
 
 A program nuvem runs is not on your `PATH`: `gcloud`, `bq` (BigQuery), `k9s`
-or `kubectl` (k9s launch), or `cloud-sql-proxy` (Cloud SQL tunnels). Home's
-health card names which one. Install it, or point nuvem at it with
+or `kubectl` (k9s launch), or `cloud-sql-proxy` (Cloud SQL tunnels). Home
+names which one. Install it, or point nuvem at it with
 `--gcloud-binary`, `--bq-binary`, `--k9s-binary`, `--kubectl-binary` or
 `--cloud-sql-proxy-binary`.
 

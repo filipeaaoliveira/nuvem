@@ -61,18 +61,19 @@ own names with [`[aliases]`](../../configuration/aliases.md).
 Status and state columns show each value as a short label, such as `Running`
 or `Not ready`. When the API reports a value this version of nuvem does not
 know yet, nuvem shows it the same way: `MAINTENANCE_WINDOW` appears as
-`Maintenance window`, painted in the neutral colour.
+`Maintenance window`, in the neutral color.
 
 ## How nuvem reads
 
-Reads are native. Every list and detail load below is a Google Cloud
-client-library call, authenticated by `gcloud config config-helper` for the
-active configuration. The `gcloud` command shown with each service is the
-equivalent command. The fallback path and a label-mode (`-l`) read run that
-command. BigQuery is the exception: it always runs `bq`. For
-changes, see [Before a change runs](#before-a-change-runs).
+Reads go through the Google Cloud client libraries. Every list and detail
+load below is a client-library call, authenticated by
+`gcloud config config-helper` for the active configuration. The `gcloud`
+command shown with each service is the equivalent command, and only a
+label-mode (`-l`) read runs it. BigQuery is the exception: it always runs
+`bq`. For changes, see [Before a change runs](#before-a-change-runs).
 
-List reads are capped at 500 rows. The command shown on each page says where.
+List reads are capped at 500 rows. Where a list has the cap, its page's
+command shows it as `--limit=500` or `-n 500`.
 [Columns and sort](../../configuration/columns-and-sort.md) lists the columns
 for each service.
 

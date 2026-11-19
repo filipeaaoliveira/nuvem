@@ -5,6 +5,9 @@ sidebar:
   order: 5
 ---
 
+The Cloud Run list shows the project's Cloud Run services across all regions.
+`Enter` opens a service's detail, including its traffic split and revisions.
+
 For Cloud Run services, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
@@ -22,7 +25,7 @@ gcloud --configuration <active-config> [--project <project>] run services descri
 Use `[` and `]` to move across Summary, Traffic, Revisions, Configuration,
 Conditions, and JSON tabs. On the Revisions tab, press `Enter` to open a
 revision's own read-only detail (Summary, Conditions, and JSON tabs), read with
-the same region scoping. `Esc`, `q`, or history-Back returns to the service's
+the same region scoping. `Esc`, `q`, or `Alt-←` returns to the service's
 Revisions tab and keeps the previous selection.
 
 With a service selected in the list, the command palette's `Open logs for

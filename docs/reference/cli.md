@@ -21,7 +21,7 @@ defaults.
 | `--poll-interval <SECONDS>` | `5`, or `general.poll_interval_secs` | Seconds between background refreshes of the active service and of the Logging tail. `0` turns background refresh off. |
 | `--config <PATH>` | `~/.config/nuvem/config.toml` on Linux, `~/Library/Application Support/nuvem/config.toml` on macOS | Read the config file from this path. `state.toml` is kept beside it. |
 | `--plugins <PATH>` | `plugins.toml` in the same directory as the default config file | Read plugins from this path. Never derived from `--config`. |
-| `--demo` | off | Serve built-in fixtures instead of calling Google Cloud. See [Demo mode](../guides/demo-mode.md). |
+| `--demo` | off | Serve built-in sample data instead of calling Google Cloud. See [Demo mode](../guides/demo-mode.md). |
 | `--read-only` | off, or `general.read_only` | Refuse every command that changes a cloud resource. See [Read-only mode](../guides/read-only-mode.md). |
 | `--batch-concurrency <N>` | `4` | How many actions a [batch](../guides/batch-actions.md) runs at once. |
 | `--log-file <PATH>` | `~/.cache/nuvem/nuvem.log` on Linux, `~/Library/Caches/nuvem/nuvem.log` on macOS | Where nuvem writes its own log. `Ctrl-S` in Logging saves beside it. |
