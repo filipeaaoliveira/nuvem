@@ -3344,11 +3344,9 @@ fn docs_keep_the_bigquery_fixture_provenance_disclosure() {
 /// read: the slices that landed the tables drill-down, the per-row enrichment
 /// and the schema view each falsified a sentence an earlier slice had left
 /// behind. The `out of scope here` deferral is the same shape and not an
-/// exception to it — `git log -S"out of scope here" -- README.md` puts the
-/// clause in `6153219` (PR #176, the tables drill-down) and takes it out again
-/// in `e8ab32e` (PR #177, the per-table enrichment). #176 shipped the
-/// drill-down without the enrichment, so the deferral was true the day it was
-/// written; #177 falsified it and corrected it in the same breath. Every one
+/// exception to it: the tables drill-down shipped without the per-table
+/// enrichment, so the deferral was true the day it was written, and the
+/// enrichment falsified it and corrected it in the same breath. Every one
 /// was caught by a human reading the branch rather than by anything here. An
 /// absence check is what turns that into a gate — a
 /// superseded claim cannot come back through a revert, a copy-paste out of an
