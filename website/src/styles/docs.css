@@ -96,7 +96,7 @@ header.header {
 
 .site-title {
 	color: var(--nv-naples);
-	font-size: 1.375rem;
+	font-size: var(--nv-text-h3);
 	font-weight: 700;
 	letter-spacing: -0.01em;
 }

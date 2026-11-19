@@ -227,7 +227,7 @@ Spacing runs on a 4px step: `--nv-space-1` (4px) through `--nv-space-8` (64px), 
 - **Docs frame:** header, a 17rem left sidebar, a content area up to `--nv-wide` (52rem) and a right-hand "On this page" list. All share the ground. Hairlines (`--nv-rule`) separate them.
 - **Measure:** prose (paragraphs, lists, headings, asides) stops at `--nv-measure` (38rem, about 70 characters). Tables and code plates may use the whole content area.
 - **Contents list:** shown only when a page has at least one section heading; a page that is one block of text has none. A page without one keeps its column, and the header's search, at the same place as a page with one, so nothing shifts between pages.
-- **Header:** the `nuvem` wordmark left in Naples Yellow (1.375rem, 700), search in the middle, a Docs link and the GitHub icon right. A 1px Methyl rule runs under it on every page. Inside the docs, Docs is Naples at 650 with no underline, marking the section. Below 50rem on docs pages the two links move into the menu; the home page has no menu, so there they stay in the header.
+- **Header:** the `nuvem` wordmark left in Naples Yellow (`--nv-text-h3`, 21px, 700), search in the middle, a Docs link and the GitHub icon right. A 1px Methyl rule runs under it on every page. Inside the docs, Docs is Naples at 650 with no underline, marking the section. Below 50rem on docs pages the two links move into the menu; the home page has no menu, so there they stay in the header.
 - **One left edge:** headings, plates, tables and asides all hang from the column's left edge.
 - **Sections:** an `h2` opens with 2.25em of space above, a hairline and 1rem of padding.
 - **Plates:** 1.5rem (`--nv-space-5`) above and below.
