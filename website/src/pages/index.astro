@@ -11,7 +11,7 @@ import DemoRecording from '../components/landing/DemoRecording.astro';
 import TerminalFrame from '../components/landing/TerminalFrame.astro';
 import { demoPath } from '../lib/demo-assets.mjs';
 import { docHref } from '../lib/doc-links.mjs';
-import { REPO_BLOB_URL } from '../lib/docs-source.mjs';
+import { REPO_BLOB_URL, buildSidebar, firstPageUrl } from '../lib/docs-source.mjs';
 
 const INSTALL = 'brew install filipeaaoliveira/tap/nuvem';
 const pageTitle = 'nuvem: a terminal UI for Google Cloud';
@@ -25,6 +25,8 @@ const docs = {
 	firstRun: await docHref('getting-started/first-run.md'),
 	credentials: await docHref('troubleshooting/faq.md#does-nuvem-store-my-credentials'),
 	beforeChange: await docHref('reference/services/overview.md#before-a-change-runs'),
+	keys: await docHref('reference/keys.md'),
+	start: firstPageUrl(buildSidebar()),
 };
 
 /**
@@ -37,7 +39,7 @@ const capabilities = [
 		reach: [{ key: 'g' }],
 		name: 'Services',
 		href: 'reference/services/overview.md',
-		text: 'Compute Engine, GKE, Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager, persistent disks, Pub/Sub topics and subscriptions, BigQuery, VPC networks and subnets, firewall rules, service accounts and IAM policy. Each is a sortable list; Compute Engine, GKE, Cloud SQL, Cloud Run, Cloud Storage, Secret Manager and BigQuery also open to more detail.',
+		text: 'Sixteen of them, from Compute Engine, GKE and Cloud SQL to Pub/Sub, BigQuery and IAM. Each is a list you can sort, and seven open to more detail.',
 	},
 	{
 		reach: [{ key: '/' }],
@@ -115,7 +117,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		<section class="get-it">
 			<InstallCommand id="install-top" command={INSTALL} />
 			<p class="also">Homebrew on macOS and Linux. Or download a <a href={docs.release}>release binary</a>, or <a href={docs.source}>build from source</a>.</p>
-			<p class="next">Try it first with <code>nuvem --demo</code>: built-in sample data, no Google Cloud account. On your own projects nuvem needs the gcloud CLI, signed in; <a href={docs.firstRun}>First run</a> shows how.</p>
+			<p class="next">Try it first with <code>nuvem --demo</code>: sample data, no account. On your own projects it needs the gcloud CLI, signed in; see <a href={docs.firstRun}>First run</a>.</p>
 		</section>
 
 		<DemoRecording
@@ -142,14 +144,14 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 					))
 				}
 			</ul>
-			<p class="rest">Configurations, FinOps, related-resource jumps, themes and every key are in the <a href="/docs/">documentation</a>.</p>
+			<p class="rest">Configurations, FinOps, related-resource jumps and themes are in the <a href={docs.start}>documentation</a>, and <a href={docs.keys}>every key</a> has its own page.</p>
 			<TerminalFrame
 				id="palette-frame"
 				file={demoPath('frame')}
 				focus="commands"
 				description="nuvem's command palette open over a resource list, offering the commands for the selected row and the views it can open."
 			>
-				The command palette, as nuvem draws it. Open it with <kbd>:</kbd>
+				The command palette, as nuvem draws it. Open it with <kbd>:</kbd>.
 			</TerminalFrame>
 		</section>
 
@@ -157,7 +159,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		<section aria-labelledby="how">
 			<h2 id="how">How it works</h2>
 			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. A few reads, such as BigQuery, budgets and label filters, run the <code>bq</code> or <code>gcloud</code> command instead. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
-			<p>Lifecycle actions on Compute Engine and Cloud SQL go through the same client libraries. SSH, tunnels to Compute Engine, plugins and changes to your gcloud configurations run the <code>gcloud</code> CLI you already have, and Cloud SQL tunnels run <code>cloud-sql-proxy</code>. Before anything changes, a confirmation shows what is about to happen: the API call for a lifecycle action, the command line for the rest.</p>
+			<p>Lifecycle actions on Compute Engine and Cloud SQL go through the same client libraries. SSH, tunnels to Compute Engine, plugins and changes to your gcloud configurations run the <code>gcloud</code> CLI you already have, and Cloud SQL tunnels run <code>cloud-sql-proxy</code>. Before anything changes, a confirmation shows what is about to happen: the API call for a lifecycle action; the command line for SSH, tunnels, k9s, plugins and activating a configuration; the values themselves when you create or edit a configuration.</p>
 			<p>More in <a href={docs.beforeChange}>Before a change runs</a>, the <a href={docs.credentials}>questions about credentials</a> and the <a href={`${REPO_BLOB_URL}/SECURITY.md`}>security policy</a>.</p>
 		</section>
 
