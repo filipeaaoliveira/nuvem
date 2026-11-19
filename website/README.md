@@ -81,12 +81,21 @@ from the repository's `demo/` directory in place:
 - `demo/out/nuvem-demo.webm`, `nuvem-demo.mp4` and `nuvem-demo-poster.png`
   are the recording. The build copies them into `dist/_astro/` with a
   content hash and converts the poster to WebP.
-- `demo/frames/palette.html` is a screen of the app as colored text. The
-  build inlines it into the page. For screens narrower than 48rem, it also
-  inlines a crop of the command palette box alone, found by the box's title.
-  If a re-captured frame has no such box, the build says so.
+- `demo/frames/*.html` are screens of the app as colored text: Home,
+  Resources, a filtered list with a detail view, the command palette, a
+  Stop confirmation, BigQuery tables and help. The key tour inlines them. For
+  screens narrower than 64rem, it also inlines a crop of the box each screen
+  is about, found by the box's title. If a re-captured frame has no such
+  box, the build says so.
+- The service plate reads the services, their ids and their categories from
+  the table at the top of `docs/reference/services/overview.md`, and the
+  number of services with a detail view from the "What each service
+  supports" table on the same page (`src/lib/services-index.mjs`). The
+  build fails when a table cannot be read, when the first misses a page in
+  `docs/reference/services/`, or when a category has no color in
+  `src/components/landing/ServicePlate.astro`.
 
-To re-render either, run the scripts in `scripts/` (see `demo/README.md`) and
+To re-render the recording or the frames, run the scripts in `scripts/` (see `demo/README.md`) and
 rebuild. Nothing under `website/` changes. If one of these files is missing,
 the build stops and names the command to run (`src/lib/demo-assets.mjs`).
 
@@ -98,6 +107,26 @@ build fails on any pair below that (`src/lib/terminal-frame.mjs`).
 Links from the home page into the docs go through `docHref()` in
 `src/lib/doc-links.mjs`, so a renamed page or heading fails the build, as a
 broken link inside the docs does.
+
+### The sky check
+
+The home page's sky (its grounds, the cell edges between them, the clouds,
+stars and moon) is drawn by `src/lib/sky-cells.mjs`. Two rules keep it off
+the text: every line of text sits wholly on one ground with 12px of it all
+around, and every decoration stays 16px from text, tiles and the diagram.
+Layout alone cannot prove either, so a browser check does:
+
+```sh
+npm run build
+npm run check:sky        # or: node scripts/check-sky.mjs 360,1280
+```
+
+It serves `dist/`, drives Chrome or Chromium headless over the DevTools
+protocol (set `CHROME_PATH` if it is not found), and checks 19 widths from
+360 to 2560, plus the seams between grounds at four pixel ratios. It needs
+no dependency beyond Node and is not part of `npm run build`, so the hosted
+build does not need a browser. The repository's CI does not build the site,
+so run it locally after any change to the home page.
 
 ## Headers and the social card
 
@@ -113,7 +142,10 @@ an HTTP 301 to the first docs page on Cloudflare Pages
 (`src/lib/redirects.mjs`). The page Astro writes at `/docs/` for the same
 redirect stays, for `npm run preview` and other static hosts.
 
-`public/og.png` is the 1200 by 630 card that link previews show.
+`public/og.png` is the 1200 by 630 card that link previews show: the day
+sky, the cell wordmark, a dusk edge and the pitch. `npm run og` redraws it
+from `scripts/og-image.mjs` (it uses Chrome, as the sky check does, and
+sharp to compress the result).
 
 ## Layout
 
@@ -131,9 +163,15 @@ redirect stays, for `npm run preview` and other static hosts.
 | `src/routeData.ts` | Hides a one-entry contents list; no canonical on the 404 page |
 | `src/styles/tokens.css` | Colors, type, spacing: shared by every page |
 | `src/styles/docs.css` | The docs theme, mapped onto Starlight |
+| `src/styles/identity.css` | The color strip, the wordmark and the docs frame details that carry them |
+| `src/lib/services-index.mjs` | Reads the services tables for the home page's service plate |
+| `src/lib/sky-cells.mjs` | Draws the home page's sky in terminal cells: edges, clouds, stars, moon |
+| `scripts/check-sky.mjs` | The sky check: no edge across text, no decoration near it, no seam hairlines |
+| `scripts/og-image.mjs` | Draws `public/og.png` |
+| `src/assets/wordmark.svg` | The header wordmark |
 | `src/styles/code-theme.json` | Syntax colors for code blocks |
 | `src/components/` | Starlight overrides: one theme, `/` opens search, a Docs link in the header and the mobile menu, the site footer |
-| `src/components/landing/` | The home page's install plate, recording and terminal frame |
+| `src/components/landing/` | The home page's parts: install plate, recording, key tour, service plate, diagram, cloud and wordmark |
 | `src/pages/index.astro` | The home page |
 | `src/pages/404.astro` | The page for an address the site does not have |
 | `DESIGN.md` | The design system: palette, type, components |
