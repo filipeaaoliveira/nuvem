@@ -466,9 +466,12 @@ mobile-starlight-toc nav {
 	color: var(--nv-text-muted);
 }
 
-/* Keys: physical-looking caps, for a keyboard-first tool. */
+/* Keys: physical-looking caps, for a keyboard-first tool. Starlight puts a
+   top margin between adjacent elements, which would push a key that follows
+   a link or another key off its line. */
 .sl-markdown-content kbd {
 	display: inline-block;
+	margin-block: 0;
 	min-width: 1.6em;
 	padding: 0 0.4em;
 	border: 1px solid var(--nv-rule-strong);

@@ -129,4 +129,5 @@ rebuild. The site loads nothing from other origins. Keep it that way.
 | `src/components/` | Starlight overrides: one theme, `/` opens search, a Docs link in the header, the site footer |
 | `src/components/landing/` | The home page's install plate, recording and terminal frame |
 | `src/pages/index.astro` | The home page |
+| `src/pages/404.astro` | The page for an address the site does not have |
 | `DESIGN.md` | The design system: palette, type, components |

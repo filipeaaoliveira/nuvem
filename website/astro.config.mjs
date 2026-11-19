@@ -42,6 +42,8 @@ export default defineConfig({
 			markdown: { processedDirs: ['../docs'] },
 			sidebar,
 			routeMiddleware: './src/routeData.ts',
+			// src/pages/404.astro replaces Starlight's stock not-found page.
+			disable404Route: true,
 			components: {
 				ThemeProvider: './src/components/ThemeProvider.astro',
 				ThemeSelect: './src/components/ThemeSelect.astro',
