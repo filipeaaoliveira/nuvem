@@ -7,6 +7,7 @@ import docsMarkdown from './src/lib/markdown-docs.mjs';
 import { pluginCodePlates } from './src/lib/code-plates.mjs';
 import { docLinksIntegration } from './src/lib/doc-links.mjs';
 import { securityHeadersIntegration } from './src/lib/security-headers.mjs';
+import { redirectsIntegration } from './src/lib/redirects.mjs';
 import { demoAssetsIntegration } from './src/lib/demo-assets.mjs';
 import codeTheme from './src/styles/code-theme.json' with { type: 'json' };
 
@@ -17,7 +18,8 @@ const sidebar = buildSidebar();
 
 export default defineConfig({
 	site: 'https://nuvem.fyi',
-	// Until the docs have an index page, /docs/ opens the first page.
+	// Until the docs have an index page, /docs/ opens the first page. On
+	// Cloudflare Pages this is an HTTP redirect (src/lib/redirects.mjs).
 	redirects: hasDocsIndex() ? {} : { '/docs': firstPageUrl(sidebar) },
 	markdown: {
 		processor: satteri({ mdastPlugins: [docsMarkdown] }),
@@ -96,5 +98,6 @@ export default defineConfig({
 			},
 		}),
 		securityHeadersIntegration(),
+		redirectsIntegration(),
 	],
 });
