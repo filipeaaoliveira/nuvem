@@ -4,12 +4,10 @@
 // - Only the markup ansi2html writes is accepted: one `<pre>` holding text
 //   and flat `<span style="...">` runs. Anything else fails the build, so a
 //   frame can never carry a script or a link into the page.
-// - Two terminal colours are shown lighter than in the recordings. nuvem's
-//   muted text and borders use the terminal's "bright black", and its
-//   selected row uses the "blue" slot, which the recordings set to the page
-//   ground. Muted text on that row would read at 2.89:1. On the site, bright
-//   black becomes a lighter grey of the same family and the selected row a
-//   raised plate, so every run of text reads at 4.5:1 or better.
+// - One terminal colour is shown differently from the recordings. nuvem's
+//   selected row uses the terminal's "blue" slot, which the recordings set to
+//   the page ground. On the site the selected row becomes a raised plate, so
+//   it stays distinct from the page around the frame.
 // - Every text and background pair in the result is checked against 4.5:1.
 
 import { readFileSync } from 'node:fs';
@@ -18,7 +16,6 @@ import { REPO_ROOT } from './docs-source.mjs';
 
 /** Terminal colour (as the recordings draw it) -> colour on the site. */
 export const SITE_COLOURS = {
-	'#8c8178': '#afa69e', // bright black: borders and muted text
 	'#423b36': '#2c2622', // blue: the selected row (--nv-plate-raised)
 };
 
