@@ -5,22 +5,23 @@ sidebar:
   order: 1
 ---
 
+Start here when nuvem shows an error, or does not do what you expect.
+
 ## Find out what went wrong
 
 - The status line shows the last error in one sentence.
 - Home (`h`) shows each failing service with a category and a hint.
 - `Y` copies the full, sanitized detail of the last diagnostic to the
   clipboard. Tokens and keys are removed before it is shown or copied.
-- nuvem's own log is at the `log:` path `nuvem info` prints. Set `RUST_LOG=debug`
-  for more detail.
+- `nuvem info` prints the path of nuvem's own log on its `log:` line. For more
+  detail in that log, set `RUST_LOG=debug`.
 - `nuvem info` lists every config-file warning without starting the interface.
 
 ## Error categories
 
-When a call fails, nuvem names one of these categories with a hint. A
-**transient** failure is retried on the next background refresh; a
-**persistent** one waits until you press `r`, switch configuration or change
-scope.
+When a call fails, nuvem names one of these categories with a hint. nuvem
+retries a transient failure on the next background refresh. A persistent
+failure waits until you press `r`, switch configuration or change scope.
 
 | Category | Hint nuvem shows | Retried |
 | --- | --- | --- |
@@ -41,7 +42,8 @@ scope.
 
 ### nuvem exits with code 3
 
-stdin or stdout is not a terminal, for example in a pipe or a CI step. nuvem
+Standard input or standard output is not a terminal, for example in a pipe or
+a CI step. nuvem
 needs a terminal to draw on. `nuvem info` works without one. See
 [Command line](../reference/cli.md#exit-codes).
 
@@ -60,9 +62,9 @@ Your gcloud credentials expired. Run `gcloud auth login`, then press `r`.
 ### A list is empty
 
 An empty list with `[OK]` means the project has none of that resource. An
-empty list after a filter means the filter matched nothing; a malformed filter
-never empties the table and shows a `⚠` beside it instead. Label values are matched
-case-sensitively, so `-l env=Prod` does not find `prod`.
+empty list after a filter means the filter matched nothing. A malformed filter
+never empties the table. It shows a `⚠` beside the filter instead. Label
+values are matched case-sensitively, so `-l env=Prod` does not find `prod`.
 See [Filter a list](../guides/filter-a-list.md).
 
 ### My plugins do not appear
@@ -72,23 +74,25 @@ See [Filter a list](../guides/filter-a-list.md).
    `~/.config/nuvem/plugins.toml`.
 2. If it says `(0 loaded)`, the `warning:` lines say why.
 3. A file that any user can write is refused: run `chmod o-w` on it.
-4. A plugin appears only in the service named by its `scope`, only in a list
-   (not a detail pane) with a row selected, and only when the row has every
-   field its templates use. See
+4. A plugin appears only in the service named by its `scope`. It appears only
+   in a list, not a detail pane, and only with a row selected. The row must
+   also have every field the plugin's templates use. See
    [When a plugin is not offered](../plugins/overview.md#when-a-plugin-is-not-offered).
-5. nuvem reads the plugin file only at startup. Restart after editing it.
+5. nuvem reads the plugin file only at startup. After you edit it, restart
+   nuvem.
 
 ### My config change did nothing
 
 Run **Reload configuration** from the palette, or restart. `default_service`
-and the plugin file need a restart. Check the status line and `?` for config
-problems: a bad entry is dropped with a warning instead of stopping nuvem. See
+and the plugin file need a restart. Look for config problems on the status
+line and in help (`?`). nuvem drops a bad entry with a warning and keeps
+running. See
 [Config problems](../configuration/config-problems.md).
 
 ### Copying does nothing on Linux
 
-nuvem copies through `wl-copy`, `xclip` or `xsel`, in that order. Install one.
-The status line says when none was found.
+nuvem copies through `wl-copy`, `xclip` or `xsel`, and tries them in that
+order. Install one. If none is found, the status line says so.
 
 ### The screen says the terminal is too small
 

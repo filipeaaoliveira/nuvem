@@ -16,9 +16,10 @@ Only inside WSL. Process control uses POSIX APIs.
 
 ## Can nuvem change my resources without asking?
 
-No. Every change shows what it is about to do and waits for `Enter`: for a
-lifecycle action, the API call with its target, project and impact; for
-anything that runs `gcloud`, the command line. See
+No. Every change shows what it is about to do and waits for you to confirm.
+For a lifecycle action, the confirmation shows the API call with its target,
+project and impact. For anything that runs `gcloud`, it shows the command
+line. See
 [Before a change runs](../reference/services/overview.md#before-a-change-runs).
 `--read-only` refuses them all.
 
