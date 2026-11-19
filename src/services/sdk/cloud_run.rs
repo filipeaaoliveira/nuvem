@@ -226,10 +226,10 @@ fn name_and_region(full_name: &str) -> (String, String) {
 ///
 /// A state with no mapping above is still a *stated* readiness, and the CLI
 /// path carries the word its own document used inside the variant. The
-/// services table paints that payload -- `project_resource_list` renders the
-/// status as `format!("{:?}", …)`, so `Unknown("STATE_UNSPECIFIED")` and
-/// `Unknown("Unknown")` are two different cells on screen, not two spellings
-/// of one. Carrying the raw v2 token there would make the STATUS cell of a
+/// services table paints that payload through `CloudRunServiceStatus::label`,
+/// so `Unknown("STATE_UNSPECIFIED")` and `Unknown("Unknown")` are two
+/// different cells on screen (`State unspecified` and `Unknown`), not two
+/// spellings of one. Carrying the raw v2 token there would make the STATUS cell of a
 /// service read differently depending on which backend filled it, which is the
 /// same thing [`condition_status`] exists to prevent one pane over; so the
 /// same translation is applied, and the payload is the Knative word on both

@@ -556,14 +556,10 @@ impl ResourcesState {
     }
 }
 
+/// The status as the table paints it, for the Home counts and the filter
+/// alike, so what is counted and searched is what is on screen.
 fn cloud_run_status_label(status: &CloudRunServiceStatus) -> String {
-    match status {
-        CloudRunServiceStatus::Ready => "Ready".to_string(),
-        CloudRunServiceStatus::NotReady => "Not ready".to_string(),
-        CloudRunServiceStatus::Reconciling => "Reconciling".to_string(),
-        CloudRunServiceStatus::Failed => "Failed".to_string(),
-        CloudRunServiceStatus::Unknown(_) => "Unknown".to_string(),
-    }
+    nuvem_domain::gcp::text::sanitize_display_text(&status.label())
 }
 
 fn cloud_run_service_matches_filter(service: &CloudRunService, filter: &CompiledFilter) -> bool {

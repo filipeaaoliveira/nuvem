@@ -698,16 +698,18 @@ fn instance_matches_filter(instance: &ComputeInstance, filter: &CompiledFilter) 
 
 /// The values the `/` filter searches for one row.
 ///
-/// Status contributes its *display label* plus, for
-/// [`ResourceStatus::Unknown`], the raw status string it carries — never the
-/// `{:?}` rendering. The Debug shell (`Unknown("REPAIRING")`) appears in no
-/// raw gcloud field and in no entry of the compute service's `OPAQUE_LABELS`,
-/// so a filter matching the shell alone would slip through the server-side
-/// pushdown gate and drop the row. The label is enumerated in
-/// `OPAQUE_LABELS`, and the raw string is stored verbatim from the JSON
-/// `status` field (see `parse_status` in `crate::services::resources::compute`)
-/// which is itself pushed, so both satisfy the never-drop-a-row premise
-/// documented in `crate::services::resources::list_filter`.
+/// Status contributes its *display label* plus, for an unrecognised status,
+/// the raw string it carries. The label of a known status is enumerated in
+/// `OPAQUE_LABELS`. The label of an unrecognised one is that raw string with
+/// its case changed and `_` and `-` read as spaces (see
+/// `nuvem_domain::gcp::resource::readable_api_value`), and the raw string is
+/// stored verbatim from the JSON `status` field (see `parse_status` in
+/// `crate::services::resources::compute`), which is itself pushed. A term the
+/// pushdown admits holds only ASCII letters, digits and `.` `_` `-`, matches
+/// case-insensitively, and has `.` as its one wildcard; so any such term that
+/// matches the label matches the raw string at the same offset, which keeps
+/// the never-drop-a-row premise documented in
+/// `crate::services::resources::list_filter`.
 fn searchable_fields(instance: &ComputeInstance) -> Vec<String> {
     let mut fields = vec![
         instance.name.clone(),
@@ -744,16 +746,8 @@ fn compare_instances(
     }
 }
 
-/// Status label used for the compute status-count summary: `Unknown` collapses
-/// to a bare label so every unrecognised status groups into one bucket. Kept
-/// distinct from `batch::resource_status_label`, which preserves the raw value
-/// for per-row display.
+/// The status as the table paints it, for the Home counts, so a count names
+/// what the rows say.
 fn status_count_label(status: &ResourceStatus) -> String {
-    match status {
-        ResourceStatus::Running => "Running".to_string(),
-        ResourceStatus::Stopped => "Stopped".to_string(),
-        ResourceStatus::Suspended => "Suspended".to_string(),
-        ResourceStatus::Pending => "Pending".to_string(),
-        ResourceStatus::Unknown(_) => "Unknown".to_string(),
-    }
+    nuvem_domain::gcp::text::sanitize_display_text(&status.label())
 }

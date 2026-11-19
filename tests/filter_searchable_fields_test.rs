@@ -115,8 +115,8 @@ fn gke_unknown_status_exposes_no_debug_shell() {
 fn gke_unknown_status_still_matches_label_and_raw_value() {
     let row = gke_row(GkeClusterStatus::Unknown("DEGRADED".into()));
     assert!(
-        Gke::matches_filter(&row, &compiled("unknown")),
-        "the display label must stay searchable"
+        Gke::matches_filter(&row, &compiled("^degraded$")),
+        "the display label, `Degraded`, must stay searchable as painted"
     );
     assert!(
         Gke::matches_filter(&row, &compiled("degraded")),
@@ -151,8 +151,8 @@ fn cloud_sql_unknown_status_exposes_no_debug_shell() {
 fn cloud_sql_unknown_status_still_matches_label_and_raw_value() {
     let row = cloud_sql_row(CloudSqlStatus::Unknown("SUSPENDED_BY_BILLING".into()));
     assert!(
-        CloudSql::matches_filter(&row, &compiled("unknown")),
-        "the display label must stay searchable"
+        CloudSql::matches_filter(&row, &compiled("by billing")),
+        "the display label, `Suspended by billing`, must stay searchable as painted"
     );
     assert!(
         CloudSql::matches_filter(&row, &compiled("suspended_by_billing")),
