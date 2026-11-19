@@ -1874,6 +1874,12 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
 /// identity priority is shown, and no header is cut. All of it is exempt once
 /// one column is left standing.
 ///
+/// And a column of short identifiers (`ColumnFit::Whole`: a tier, an engine)
+/// is shown whole or not at all however long its values run: at 138 columns
+/// Cloud SQL read `db-custom-4-163…` and `SQL Server 2019 Stan…`, because
+/// "short" was a measure of the demo's values rather than a property of the
+/// column.
+///
 /// And no cell is cut while the row has room to spare: if the planned line is
 /// narrower than the table, every shown column holds its widest cell whole.
 /// IAM's MEMBER and the service accounts' EMAIL used to stop at their preferred
@@ -1882,98 +1888,242 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
 /// No two rows paint the same while more than one column is shown. An IAM
 /// member holding two roles is two bindings, and with ROLE dropped they read
 /// as one row twice.
+///
+/// All of it holds in wide mode (`w`) too, over the columns actually drawn
+/// (`drawn_columns`), and the lists a row opens into are walked as well as
+/// each service's own: a Cloud Storage bucket and its folder, a BigQuery
+/// dataset's tables and a table's columns. The drawn line never exceeds the
+/// table, because ratatui squeezes a line that does and cuts its cells with
+/// no marker: wide Cloud SQL read `orders-db-repli`. And on screen, at 80, 120
+/// and 138 columns, every drawn cell of the first row is painted whole or
+/// ends in `…`.
 #[tokio::test(flavor = "multi_thread")]
 async fn no_demo_table_cuts_a_short_column_at_any_width() {
-    use nuvem::ui::shared::table::{display_width, plan_table};
+    use nuvem::app::projection::ColumnFit;
+    use nuvem::ui::shared::table::{
+        MARK_COLUMN_RESERVED_WIDTH, ROW_SELECT_SYMBOL, display_width, drawn_columns, plan_table,
+    };
     const SHORT: u16 = 16;
+    const MAX_DEPTH: usize = 3;
+    // The columns whose values are long by nature, and so the only ones that
+    // may be cut: URLs, lists (traffic splits, replica regions, attached
+    // instances, firewall targets and ranges), labels, key paths and free
+    // text. Every other column holds a short identifier. Pinned here because
+    // the walk below reads `fit` off the catalogue, and a test that took the
+    // catalogue's word for which columns may be cut would pass a cut tier.
+    const LONG_VALUED: &[(ResourceServiceKind, &str)] = &[
+        (ResourceServiceKind::CloudRunServices, "url"),
+        (ResourceServiceKind::CloudRunServices, "traffic"),
+        (ResourceServiceKind::SecretManagerSecrets, "replication"),
+        (ResourceServiceKind::SecretManagerSecrets, "labels"),
+        (ResourceServiceKind::CloudFunctions, "url"),
+        (ResourceServiceKind::PersistentDisks, "attached"),
+        (ResourceServiceKind::PubSubSubscriptions, "labels"),
+        (ResourceServiceKind::PubSubTopics, "kms_key"),
+        (ResourceServiceKind::PubSubTopics, "labels"),
+        (ResourceServiceKind::FirewallRules, "targets"),
+        (ResourceServiceKind::FirewallRules, "source_or_dest"),
+        (ResourceServiceKind::IamServiceAccounts, "display_name"),
+        (ResourceServiceKind::BigQueryDatasets, "labels"),
+        (ResourceServiceKind::BigQueryDatasets, "description"),
+        (ResourceServiceKind::IamPolicy, "condition"),
+    ];
 
     for kind in ResourceServiceKind::ALL {
-        let session = demo_session_showing(kind).await;
-        let table = project_resource_list(&session.app().root.resources)
-            .table
-            .unwrap_or_else(|| panic!("{kind:?} paints no table"));
-        let content = |c: usize| {
-            table
-                .rows
-                .iter()
-                .map(|row| display_width(&row.cells[c].text))
-                .chain([display_width(table.columns[c].header)])
-                .max()
-                .unwrap_or(0)
-                .min(table.columns[c].preferred_width)
-        };
-        let whole = |c: usize| {
-            table
-                .rows
-                .iter()
-                .map(|row| display_width(&row.cells[c].text))
-                .chain([display_width(table.columns[c].header)])
-                .max()
-                .unwrap_or(0)
-        };
-        for width in 20..=200u16 {
-            let plan = plan_table(&table, width, false);
-            let shown: Vec<_> = plan.columns.iter().filter(|c| c.visible).collect();
-            let line: u16 = shown.iter().map(|c| c.width).sum::<u16>()
-                + 2 * u16::try_from(shown.len().saturating_sub(1)).expect("few columns");
-            if line < width {
-                for column in &shown {
-                    assert!(
-                        column.width >= whole(column.index),
-                        "{kind:?} at {width}: {} is cut at {} with {} columns unused",
-                        table.columns[column.index].header,
-                        column.width,
-                        width - line
-                    );
+        let mut session = demo_session_showing(kind).await;
+        for depth in 0..=MAX_DEPTH {
+            if depth > 0 {
+                let before = project_resource_list(&session.app().root.resources).table;
+                session
+                    .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+                    .await;
+                drain(&mut session).await;
+                let after = project_resource_list(&session.app().root.resources).table;
+                // A detail is not a list, and a row that opens nothing ends
+                // the walk.
+                if session.app().root.resources.is_showing_detail() || after == before {
+                    break;
                 }
             }
-            // Rows may read alike only where two readable columns do not fit.
-            if width >= SHORT + 2 + SHORT {
-                let painted: Vec<Vec<String>> = table
+            let table = project_resource_list(&session.app().root.resources)
+                .table
+                .unwrap_or_else(|| panic!("{kind:?} level {depth} paints no table"));
+            if table.rows.is_empty() {
+                break;
+            }
+            for spec in &table.columns {
+                assert_eq!(
+                    spec.fit == ColumnFit::Cut,
+                    LONG_VALUED.contains(&(kind, spec.key)),
+                    "{kind:?} level {depth}: {} is {:?}",
+                    spec.header,
+                    spec.fit
+                );
+            }
+            let content = |c: usize| {
+                table
                     .rows
                     .iter()
-                    .map(|row| {
-                        shown
-                            .iter()
-                            .map(|c| row.cells[c.index].text.clone())
-                            .collect()
-                    })
-                    .collect();
-                for (i, row) in painted.iter().enumerate() {
+                    .map(|row| display_width(&row.cells[c].text))
+                    .chain([display_width(table.columns[c].header)])
+                    .max()
+                    .unwrap_or(0)
+                    .min(table.columns[c].preferred_width)
+            };
+            let whole = |c: usize| {
+                table
+                    .rows
+                    .iter()
+                    .map(|row| display_width(&row.cells[c].text))
+                    .chain([display_width(table.columns[c].header)])
+                    .max()
+                    .unwrap_or(0)
+            };
+            for wide in [false, true] {
+                let mode = if wide { "wide" } else { "narrow" };
+                for width in 20..=200u16 {
+                    let plan = plan_table(&table, width, wide);
+                    let shown = drawn_columns(&table, &plan, width);
+                    let line: u16 = shown.iter().map(|c| c.width).sum::<u16>()
+                        + 2 * u16::try_from(shown.len().saturating_sub(1)).expect("few columns");
                     assert!(
-                        !painted[..i].contains(row),
-                        "{kind:?} at {width}: two rows paint as {row:?}"
+                        line <= width,
+                        "{kind:?} level {depth} {mode} at {width}: the drawn line is {line} \
+                         wide, so ratatui squeezes it and cuts with no marker"
                     );
+                    if line < width {
+                        for column in &shown {
+                            assert!(
+                                column.width >= whole(column.index),
+                                "{kind:?} level {depth} {mode} at {width}: {} is cut at {} \
+                                 with {} columns unused",
+                                table.columns[column.index].header,
+                                column.width,
+                                width - line
+                            );
+                        }
+                    }
+                    // Rows may read alike only where two readable columns do not fit.
+                    if width >= SHORT + 2 + SHORT {
+                        let painted: Vec<Vec<String>> = table
+                            .rows
+                            .iter()
+                            .map(|row| {
+                                shown
+                                    .iter()
+                                    .map(|c| row.cells[c.index].text.clone())
+                                    .collect()
+                            })
+                            .collect();
+                        for (i, row) in painted.iter().enumerate() {
+                            assert!(
+                                !painted[..i].contains(row),
+                                "{kind:?} level {depth} {mode} at {width}: two rows paint as {row:?}"
+                            );
+                        }
+                    }
+                    if shown.len() <= 1 {
+                        continue;
+                    }
+                    let identity = shown
+                        .iter()
+                        .min_by_key(|c| (table.columns[c.index].priority, c.index))
+                        .expect("a column is shown");
+                    let identity_priority = table.columns[identity.index].priority;
+                    let droppable_shown = shown
+                        .iter()
+                        .any(|c| table.columns[c.index].priority != identity_priority);
+                    for column in &shown {
+                        let spec = &table.columns[column.index];
+                        let header = display_width(spec.header);
+                        let wants = if column.index == identity.index && droppable_shown {
+                            // The identity column is never cut while another column
+                            // could have been dropped instead.
+                            content(column.index)
+                        } else if spec.priority != identity_priority && spec.fit == ColumnFit::Whole
+                        {
+                            // A short identifier is whole or not shown at all.
+                            whole(column.index)
+                        } else {
+                            content(column.index).min(SHORT).max(header)
+                        };
+                        assert!(
+                            column.width >= wants,
+                            "{kind:?} level {depth} {mode} at {width}: {} is {} wide where it \
+                             reads at {wants}",
+                            spec.header,
+                            column.width
+                        );
+                    }
                 }
-            }
-            if shown.len() <= 1 {
-                continue;
-            }
-            let identity = plan
-                .columns
-                .iter()
-                .filter(|c| c.visible)
-                .min_by_key(|c| (table.columns[c.index].priority, c.index))
-                .expect("a column is shown");
-            let identity_priority = table.columns[identity.index].priority;
-            let droppable_shown = shown
-                .iter()
-                .any(|c| table.columns[c.index].priority != identity_priority);
-            for column in shown {
-                let header = display_width(table.columns[column.index].header);
-                let wants = if column.index == identity.index && droppable_shown {
-                    // The identity column is never cut while another column
-                    // could have been dropped instead.
-                    content(column.index)
-                } else {
-                    content(column.index).min(SHORT).max(header)
-                };
-                assert!(
-                    column.width >= wants,
-                    "{kind:?} at {width}: {} is {} wide where it reads at {wants}",
-                    table.columns[column.index].header,
-                    column.width
-                );
+
+                // On screen: the first row's drawn cells are painted whole, or
+                // cut with the marker, never clipped.
+                let was_wide = session.app().root.resources.is_wide_columns();
+                if was_wide != wide {
+                    session
+                        .dispatch_action(Action::Resources(ResourcesAction::ToggleWideColumns))
+                        .await;
+                }
+                for (cols, rows) in [(80u16, 24u16), (120, 35), (138, 34)] {
+                    let frame = screen(&session, cols, rows);
+                    let lines: Vec<&str> = frame.lines().collect();
+                    let top = lines
+                        .iter()
+                        .position(|line| line.contains("┌Resources / "))
+                        .unwrap_or_else(|| panic!("{kind:?} level {depth}: no table\n{frame}"));
+                    let chars: Vec<char> = lines[top].chars().collect();
+                    let corner = lines[top]
+                        .find("┌Resources / ")
+                        .expect("the table's corner");
+                    let left = lines[top][..corner].chars().count();
+                    let right = (left + 1..chars.len())
+                        .find(|&x| chars[x] == '┐')
+                        .expect("the table's other corner");
+                    let inner = u16::try_from(right - left - 1).expect("a terminal width");
+                    let reserved = display_width(ROW_SELECT_SYMBOL)
+                        + if table.show_mark_column {
+                            MARK_COLUMN_RESERVED_WIDTH
+                        } else {
+                            0
+                        };
+                    let available = inner.saturating_sub(reserved);
+                    let plan = plan_table(&table, available, wide);
+                    let row = lines
+                        .iter()
+                        .skip(top)
+                        .find(|line| line.chars().skip(left).take(2).collect::<String>() == "│>")
+                        .unwrap_or_else(|| panic!("{kind:?} level {depth}: no row\n{frame}"));
+                    let painted: String =
+                        row.chars().skip(left + 1).take(right - left - 1).collect();
+                    for column in drawn_columns(&table, &plan, available) {
+                        let text = &table.rows[0].cells[column.index].text;
+                        let expected = if display_width(text) <= column.width {
+                            text.clone()
+                        } else {
+                            let mut kept = String::new();
+                            for c in text.chars() {
+                                if display_width(&format!("{kept}{c}")) + 1 > column.width {
+                                    break;
+                                }
+                                kept.push(c);
+                            }
+                            format!("{kept}…")
+                        };
+                        assert!(
+                            painted.contains(&expected),
+                            "{kind:?} level {depth} {mode} at {cols}x{rows}: {} paints {:?} \
+                             nowhere in {painted:?}",
+                            table.columns[column.index].header,
+                            expected
+                        );
+                    }
+                }
+                if session.app().root.resources.is_wide_columns() != was_wide {
+                    session
+                        .dispatch_action(Action::Resources(ResourcesAction::ToggleWideColumns))
+                        .await;
+                }
             }
         }
     }

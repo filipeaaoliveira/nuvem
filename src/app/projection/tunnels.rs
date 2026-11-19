@@ -16,8 +16,8 @@ use std::time::{Duration, Instant};
 use nuvem_domain::gcp::text::sanitize_display_text;
 
 use crate::app::projection::table::{
-    Cell, CellAlign, NO_COLUMN, RowCounts, SortDirection, SortSpec, StatusSemantic, TableColumn,
-    TableModel, TableRow,
+    Cell, CellAlign, ColumnFit, NO_COLUMN, RowCounts, SortDirection, SortSpec, StatusSemantic,
+    TableColumn, TableModel, TableRow,
 };
 use crate::app::state::root::RootState;
 use crate::app::state::tunnels::{TunnelEntry, TunnelStatus};
@@ -185,6 +185,7 @@ fn tunnel_columns() -> Vec<TableColumn> {
             priority: 0,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "kind",
@@ -194,6 +195,7 @@ fn tunnel_columns() -> Vec<TableColumn> {
             priority: 1,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "local",
@@ -203,6 +205,7 @@ fn tunnel_columns() -> Vec<TableColumn> {
             priority: 2,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "target",
@@ -212,6 +215,7 @@ fn tunnel_columns() -> Vec<TableColumn> {
             priority: 3,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "age",
@@ -221,6 +225,7 @@ fn tunnel_columns() -> Vec<TableColumn> {
             priority: 4,
             align: CellAlign::Right,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "message",
@@ -230,6 +235,7 @@ fn tunnel_columns() -> Vec<TableColumn> {
             priority: 5,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Cut,
         },
     ]
 }

@@ -34,8 +34,8 @@ pub use logging::{
     LoggingWorkspaceProjection, project_logging,
 };
 pub use table::{
-    Cell, CellAlign, NO_COLUMN, RowCounts, SortDirection, SortSpec, StatusSemantic, TableColumn,
-    TableModel, TableRow,
+    Cell, CellAlign, ColumnFit, NO_COLUMN, RowCounts, SortDirection, SortSpec, StatusSemantic,
+    TableColumn, TableModel, TableRow,
 };
 pub use tunnels::{
     TUNNELS_EMPTY_MESSAGE, TunnelsBodyState, TunnelsWorkspaceProjection, project_tunnels,
@@ -2397,6 +2397,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 0,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "size",
@@ -2406,6 +2407,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 2,
             align: CellAlign::Right,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "class",
@@ -2415,6 +2417,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 3,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "updated",
@@ -2424,6 +2427,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 1,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "encryption",
@@ -2433,6 +2437,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 4,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "content-type",
@@ -2442,6 +2447,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 5,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "retention",
@@ -2451,6 +2457,7 @@ fn storage_object_columns() -> Vec<TableColumn> {
             priority: 6,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
     ]
 }

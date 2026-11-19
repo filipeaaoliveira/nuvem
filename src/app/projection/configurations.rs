@@ -13,8 +13,8 @@
 use nuvem_domain::gcp::configuration::GcloudConfiguration;
 
 use super::table::{
-    Cell, CellAlign, NO_COLUMN, RowCounts, SortDirection, SortSpec, TableColumn, TableModel,
-    TableRow,
+    Cell, CellAlign, ColumnFit, NO_COLUMN, RowCounts, SortDirection, SortSpec, TableColumn,
+    TableModel, TableRow,
 };
 use crate::app::state::configurations::ConfigurationsState;
 
@@ -95,6 +95,7 @@ fn configuration_columns() -> Vec<TableColumn> {
             priority: 0,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "account",
@@ -104,6 +105,7 @@ fn configuration_columns() -> Vec<TableColumn> {
             priority: 1,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "project",
@@ -113,6 +115,7 @@ fn configuration_columns() -> Vec<TableColumn> {
             priority: 2,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "region",
@@ -122,6 +125,7 @@ fn configuration_columns() -> Vec<TableColumn> {
             priority: 3,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "zone",
@@ -131,6 +135,7 @@ fn configuration_columns() -> Vec<TableColumn> {
             priority: 4,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
     ]
 }
