@@ -128,16 +128,16 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 				{
 					capabilities.map((item) => (
 						<li>
-							<span class="reach">
-								<span class="sr-only">{reachLabel(item.reach)} </span>
-								{item.reach.map((r) =>
-									r.key ? <kbd>{r.key}</kbd> : r.flag ? <code>{r.flag}</code> : <span class="word"> {r.word} </span>,
-								)}
-							</span>
-							<span class="body">
+							<span class="head">
+								<span class="reach">
+									<span class="sr-only">{reachLabel(item.reach)} </span>
+									{item.reach.map((r) =>
+										r.key ? <kbd>{r.key}</kbd> : r.flag ? <code>{r.flag}</code> : <span class="word"> {r.word} </span>,
+									)}
+								</span>
 								<a href={item.href}>{item.name}</a>
-								<span class="text">{item.text}</span>
 							</span>
+							<span class="text">{item.text}</span>
 						</li>
 					))
 				}
@@ -153,6 +153,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 			</TerminalFrame>
 		</section>
 
+		<div class="closing">
 		<section aria-labelledby="how">
 			<h2 id="how">How it works</h2>
 			<p>nuvem reads Google Cloud through the official Google Cloud client libraries for Rust, with a short-lived access token that gcloud issues for the configuration you chose. A few reads, such as BigQuery, budgets and label filters, run the <code>bq</code> or <code>gcloud</code> command instead. The token stays in memory and is never written to disk, so nuvem stores no credentials of its own.</p>
@@ -165,6 +166,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 			<InstallCommand id="install-bottom" command={INSTALL} />
 			<p class="also">Every method, and what nuvem needs, is on the <a href={docs.install}>Install</a> page.</p>
 		</section>
+		</div>
 	</div>
 </StarlightPage>
 
@@ -172,7 +174,13 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 	/* The hero is Starlight's; here it is centred, with the install block under it. */
 	main:has(.nv-landing) .hero {
 		display: block;
-		padding-block: var(--nv-space-5) var(--nv-space-3);
+		padding-block: 0;
+	}
+
+	/* Keep the hero, the install block and the recording close, so the
+	   recording starts in the first viewport of a laptop screen. */
+	main:has(.nv-landing) .sl-container > .sl-markdown-content {
+		margin-top: var(--nv-space-5);
 	}
 
 	main:has(.nv-landing) .hero .stack {
@@ -199,7 +207,7 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 	}
 
 	main:has(.nv-landing) .hero .tagline {
-		max-width: 44rem;
+		max-width: 58rem;
 		color: var(--nv-text);
 		font-size: var(--nv-text-lead);
 		line-height: 1.55;
@@ -253,6 +261,14 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		text-align: center;
 	}
 
+	.get-it > p {
+		max-width: 60rem;
+	}
+
+	.get-it > p + p {
+		margin-top: 0;
+	}
+
 	.also,
 	.next {
 		color: var(--nv-text-muted);
@@ -279,17 +295,36 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		letter-spacing: -0.01em;
 	}
 
+	/* How it works and the closing install, side by side on wide screens. */
+	.closing {
+		display: grid;
+		gap: var(--nv-space-8) var(--nv-space-7);
+		margin-top: var(--nv-space-8);
+	}
+
+	@media (min-width: 64rem) {
+		.closing {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.closing > section {
+		margin-top: 0;
+	}
+
+	.closing .also {
+		margin-top: var(--nv-space-3);
+	}
+
 	section > p + p {
 		margin-top: var(--nv-space-4);
 	}
 
-	/* What you can do: each capability, reached by its key or flag. The
-	   key column is as wide as its widest entry, so longer flags or larger
-	   text spacing widen it instead of overflowing. */
+	/* What you can do: each capability is a row whose title line starts with
+	   the key or flag that reaches it, on the same baseline as the link. */
 	.keyed {
 		display: grid;
-		grid-template-columns: max-content minmax(0, 1fr);
-		column-gap: var(--nv-space-4);
+		column-gap: var(--nv-space-7);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -297,25 +332,27 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 
 	.keyed li {
 		display: grid;
-		grid-column: 1 / -1;
-		grid-template-columns: subgrid;
+		align-content: start;
+		gap: var(--nv-space-1);
 		padding-block: var(--nv-space-3);
 		border-bottom: 1px solid var(--nv-rule);
 	}
 
 	@media (min-width: 64rem) {
 		.keyed {
-			grid-template-columns: max-content minmax(0, 1fr) var(--nv-space-5) max-content minmax(0, 1fr);
-			column-gap: var(--nv-space-4);
+			grid-template-columns: 1fr 1fr;
 		}
+	}
 
-		.keyed li:nth-child(odd) {
-			grid-column: 1 / span 2;
-		}
+	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--nv-space-1) var(--nv-space-3);
+	}
 
-		.keyed li:nth-child(even) {
-			grid-column: 4 / span 2;
-		}
+	.head a {
+		font-weight: 650;
 	}
 
 	.nv-landing .rest {
@@ -362,31 +399,9 @@ const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : reach.filter((r) => r.k
 		text-align: center;
 	}
 
-	.body {
-		display: grid;
-		align-content: start;
-		gap: var(--nv-space-1);
-	}
-
-	.body a {
-		justify-self: start;
-		font-weight: 650;
-	}
-
 	.text {
 		color: var(--nv-text-muted);
 		font-size: var(--nv-text-body-sm);
 		line-height: 1.55;
-	}
-
-	@media (max-width: 30rem) {
-		.keyed {
-			display: block;
-		}
-
-		.keyed li {
-			display: grid;
-			gap: var(--nv-space-2);
-		}
 	}
 </style>

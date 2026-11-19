@@ -23,7 +23,7 @@ typography:
     letterSpacing: "-0.02em"
   display-home:
     fontFamily: "Schibsted Grotesk Variable, sans-serif"
-    fontSize: "clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem)"
+    fontSize: "clamp(2.125rem, 1.5rem + 2.4vw, 3.25rem)"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.025em"
@@ -52,7 +52,7 @@ typography:
     lineHeight: 1.65
   lead:
     fontFamily: "Schibsted Grotesk Variable, sans-serif"
-    fontSize: "clamp(1.0625rem, 1rem + 0.3vw, 1.25rem)"
+    fontSize: "clamp(1.0625rem, 1rem + 0.2vw, 1.125rem)"
     fontWeight: 400
     lineHeight: 1.55
   body-sm:
@@ -208,8 +208,8 @@ On the plate, the code colours measure: off-white 15.04:1, Coral 7.64:1, Methyl 
 - **Page title** (700, `--nv-text-h1`, 32px to 42px fluid, line height 1.2, -0.02em): one per page, in Naples Yellow, balanced wrap.
 - **Section heading** (650, `--nv-text-h2`, 26px): off-white, with a hairline above and 1rem of padding.
 - **Subheading** (650, `--nv-text-h3`, 21px; `--nv-text-h4`, 18px): off-white, -0.01em.
-- **Home title** (700, `--nv-text-display`, 34px to 56px, line height 1.08, -0.025em): the home page's one title, in Naples Yellow.
-- **Lead** (400, `--nv-text-lead`, 17px to 20px, line height 1.55): the home page's pitch, under its title.
+- **Home title** (700, `--nv-text-display`, 34px to 52px, line height 1.08, -0.025em): the home page's one title, in Naples Yellow.
+- **Lead** (400, `--nv-text-lead`, 17px to 18px, line height 1.55): the home page's pitch, under its title.
 - **Body** (400, `--nv-text-body`, 17px, line height `--nv-leading-body` 1.65): within `--nv-measure` (68ch). The docs column is 38rem, about 70 characters.
 - **Small body** (400, `--nv-text-body-sm`, 15px): table cells, the home page's list detail and key caps.
 - **Small** (400, `--nv-text-small`, 14px): sidebar, table of contents, captions, aside titles.
@@ -304,15 +304,15 @@ Every page ends with a hairline and two lines of muted 14px text: the licence an
 
 ## Home page
 
-The home page is a Starlight splash page, so the header, search, skip link and colophon are the docs' own. It opens with a centred hero: the title, the pitch and the install block, then the other ways to install and the first step, also centred. The recording follows at the full content width, and everything after it hangs from the column's left edge as in the docs. The space between the install block and the recording is kept tight so the recording starts in the first viewport of a 1440 by 900 screen.
+The home page is a Starlight splash page, so the header, search, skip link and colophon are the docs' own. It opens with a centred hero: the title, the pitch and the install block, then the other ways to install and the first step, each on one line where the screen allows. The recording follows at the full content width, and everything after it hangs from the recording's left edge. The hero is kept compact so that at least 300px of the recording shows in the first viewport of a 1280 by 720 screen.
 
-- **Title:** the one Naples title, larger than a docs title (`--nv-text-display`), centred and balanced, one line from 1024px up. The pitch below it is off-white in `--nv-text-lead`, centred within 44rem.
-- **Install plate:** a plate up to 40rem wide holding one line: the command, with the Naples `$` prompt drawn by CSS, and the Copy button beside it. When the command is wider than the plate, as on a phone, it scrolls sideways inside its own box with the Methyl scroll cue, the button stays on the line, and the box becomes a tab stop; it is not a tab stop when it fits. The button is at least 44px square, Coral text with a strong-rule outline; after a copy its label reads Copied in Naples for two seconds, and a hidden status line announces the result. Without JavaScript the button is not shown and the command is plain selectable text.
+- **Title:** the one Naples title, larger than a docs title (`--nv-text-display`), centred and balanced, one line from 1024px up. The pitch below it is off-white in `--nv-text-lead`, centred within 58rem, two lines on a laptop screen.
+- **Install plate:** a plate up to 40rem wide: the command, with the Naples `$` prompt drawn by CSS, and the Copy button beside it. When the command is wider than its space, as on a phone, it wraps after a `/` or at a space (`<wbr>` marks the slashes, so copying is unaffected), the prompt hangs, and the whole command stays visible; nothing scrolls. If even the wrapped command leaves no room for the button, the button drops under it at full width. The button is at least 44px square, Coral text with a strong-rule outline; after a copy its label reads Copied in Naples for two seconds, and a hidden status line announces the result. Without JavaScript the button is not shown and the command is plain selectable text.
 - **Plate buttons** (Copy, Pause/Play): 14px, 650 weight, at least 32px tall (Copy 44px), Coral on the plate (7.64:1), strong-rule outline (5.58:1). Hover turns the outline Coral.
 - **Recording plate:** the recording of `nuvem --demo` at the full content width, under a caption strip that names the command and holds the Pause/Play control, with a muted caption below saying what it shows, that the data is sample data, and linking to the video file so a phone can open it full size. Width and height are set, so nothing moves when it loads. It loads nothing before the page has loaded, starts muted and looping once it is on screen, and pauses off screen. It starts by itself only above 48rem, without `prefers-reduced-motion` and without the browser's data saver; otherwise the poster shows, the control reads Play, and the video is not downloaded until it is pressed. On a phone its terminal text would be too small to read, so the readable view of the tool there is the terminal frame below. This is the page's only motion.
 - **Terminal frame:** a screen of nuvem as text, on a plate with a caption strip. It scales to fill the plate and stops at 11px. Below 48rem the plate shows only the box the frame is about (the palette), cut from the frame at build time and set at 10px or more, so the subject fits a 360px screen. Text that still does not fit scrolls sideways inside the plate with the Methyl scroll cue, and only then is the plate a tab stop. Bright black and the selected-row colour are lightened for the site (see `src/lib/terminal-frame.mjs`), so all its text clears 4.5:1.
-- **Key column:** a short list of what someone deciding to install should know, about eight rows; the docs carry the rest, and a line after the list says so. Each row has the key or flag that reaches it on the left, as an off-white key cap (15px, 650) or code, then a Coral link to its docs page and one muted line. A key sequence is written with a muted "then" between the caps. A visually hidden "Key:", "Keys:" or "Flag:" precedes the column, so a screen reader does not read a bare letter before each link. The key column is as wide as its widest entry, shared by every row, so larger text spacing widens it instead of overflowing. Rows are divided by hairlines and sit two to a row from 64rem up. Below 30rem the key moves above its text.
-- **Sections** open with the docs' section heading: a hairline, 1rem of padding, 26px at 650. 64px separates them.
+- **Key list:** a short list of what someone deciding to install should know, about eight rows; the docs carry the rest, and a line after the list links to them and to the keys reference. Each row's title line starts with the key or flag that reaches it, as an off-white key cap (15px, 650) or code, on the same baseline as the Coral link to its docs page; one muted line of detail sits below. A key sequence is written with a muted "then" between the caps. A visually hidden "Key:", "Keys:" or "Flag:" precedes the caps, so a screen reader does not read a bare letter before each link. Rows are divided by hairlines and sit two to a row from 64rem up.
+- **Sections** open with the docs' section heading: a hairline, 1rem of padding, 26px at 650. 64px separates them. From 64rem up, How it works and the closing Install sit side by side in two equal columns, so the closing install plate hangs from the right column's left edge.
 
 ## Do's and Don'ts
 
