@@ -663,12 +663,23 @@ fn palette_reference_documents_every_command() {
         !logged.is_empty(),
         "the reducer probe found no service with a log scope, so it is probing wrongly"
     );
+    // `CommandDescriptor::all` generates a logs-for-selection command for
+    // exactly the services the reducer can scope logs to, so nothing is
+    // filtered out here: a command that can only refuse does not exist.
+    let generated: Vec<_> = CommandDescriptor::all()
+        .into_iter()
+        .filter_map(|command| match command {
+            CommandDescriptor::OpenLogsForSelected(kind) => Some(kind),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        generated, logged,
+        "the logs-for-selection commands must be exactly the services `L` \
+         can scope logs to"
+    );
     let real: BTreeMap<String, BTreeSet<String>> = CommandDescriptor::all()
         .into_iter()
-        .filter(|command| match command {
-            CommandDescriptor::OpenLogsForSelected(kind) => logged.contains(kind),
-            _ => true,
-        })
         .map(|command| {
             (
                 command.label().into_owned(),

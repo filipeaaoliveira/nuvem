@@ -104,7 +104,14 @@ impl CommandDescriptor {
     pub fn all() -> Vec<Self> {
         let mut all = Self::UNIT_ALL.to_vec();
         all.extend(ResourceServiceKind::ALL.map(Self::GoToService));
-        all.extend(ResourceServiceKind::ALL.map(Self::OpenLogsForSelected));
+        // Only the services whose rows have logs: a command for the others
+        // could only ever refuse.
+        all.extend(
+            ResourceServiceKind::ALL
+                .into_iter()
+                .filter(|kind| crate::app::service_capabilities::supports_selection_logs(*kind))
+                .map(Self::OpenLogsForSelected),
+        );
         all
     }
 
@@ -294,19 +301,12 @@ impl CommandDescriptor {
             // money question, and the operator is unlikely to arrive at it
             // by typing the word "recommender".
             Self::GoToFinOps => &["finops", "cost", "costs", "savings", "budget", "spend"],
-            Self::GoToService(ResourceServiceKind::ComputeInstances) => {
-                &["gce", "compute", "instances"]
-            }
-            Self::GoToService(ResourceServiceKind::GkeClusters) => &["gke", "clusters"],
-            Self::GoToService(ResourceServiceKind::CloudSql) => {
-                &["cloud sql", "sql", "database", "postgres", "mysql"]
-            }
-            Self::GoToService(ResourceServiceKind::CloudRunServices) => {
-                &["run", "serverless", "cloud run"]
-            }
-            Self::GoToService(ResourceServiceKind::CloudStorage) => {
-                &["gcs", "storage", "bucket", "buckets"]
-            }
+            // The same names the sidebar search answers to, from the one table
+            // both read: a word that finds a service in one place finds it in
+            // the other.
+            Self::GoToService(kind) => service_registry::service_id_for_resource(kind)
+                .map(|id| service_registry::descriptor(id).aliases)
+                .unwrap_or(&[]),
             Self::RefreshCurrentView => &["refresh", "reload"],
             Self::ReloadConfig => &["reload config", "config reload"],
             Self::ShowPluginOutput => &["plugin output", "output"],
@@ -1275,32 +1275,12 @@ mod tests {
             CommandDescriptor::OpenLogsForSelectedCloudRunRevision,
             CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::SecretManagerSecrets),
             CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::CloudFunctions),
-            // Generated for every kind, and read-only like the rest. Persistent
-            // disks produce no logs, so `context_commands` never offers this
-            // one — see the negative assertion in `reducer_command_test`.
-            CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::PersistentDisks),
             CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::PubSubTopics),
             CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::PubSubSubscriptions),
             CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::BigQueryDatasets),
-            // Generated like the disks one, and equally never offered:
-            // service accounts do not produce logs.
-            CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::IamServiceAccounts),
-            // Generated alike and equally never offered: a policy binding is a
-            // grant, not a log source.
-            CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::IamPolicy),
-            // Generated alike and equally never offered: flow logs and
-            // firewall hit logs are attributed to the subnetwork, never to the
-            // network, so a network-scoped query could only return zero rows.
-            CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::VpcNetworks),
-            // Offered, unlike the networks one: this is where flow logs and
-            // firewall hit logs actually live.
+            // Where flow logs and firewall hit logs actually live: they are
+            // attributed to the subnetwork, never to the network or the rule.
             CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::VpcSubnets),
-            // Generated alike and never offered, for the networks reason one
-            // step further: a rule's hits are logged against the subnetwork
-            // the traffic crossed, with the rule named in the payload, so a
-            // rule-scoped query returns zero rows — which on a DENY rule reads
-            // as "nothing was blocked".
-            CommandDescriptor::OpenLogsForSelected(ResourceServiceKind::FirewallRules),
             CommandDescriptor::GoHome,
             CommandDescriptor::GoToConfigurations,
             CommandDescriptor::GoToTunnels,
@@ -1370,8 +1350,7 @@ mod tests {
         );
     }
 
-    /// Every service reachable from `ResourceServiceKind::ALL` has a log
-    /// descriptor — that the variant exists, not that the palette offers it.
+    /// A log descriptor exists for exactly the services whose rows have logs.
     ///
     /// Whether the palette actually lists the entry is a property of
     /// `context_commands`, whose per-service guards this cannot see; the
@@ -1380,22 +1359,20 @@ mod tests {
     /// (tests/reducer_command_test.rs).
     ///
     /// This walks `ALL` rather than naming services, because naming them is
-    /// the defect this pins against. Adding a service forces 71 match sites
-    /// across 13 files and `command.rs` is in none of them, so when a slice
-    /// added Secret Manager the `L` keybinding gained its arm — that is a
-    /// match the compiler checks — and the hand-written descriptor list gained
-    /// nothing.
-    ///
-    /// It passes at the commit that introduced it: the list was complete by
-    /// then. It is a regression pin, not a bug detector.
+    /// the defect this pins against: when a slice added Secret Manager the `L`
+    /// keybinding gained its arm, a match the compiler checks, and a
+    /// hand-written descriptor list gained nothing. The other half is the
+    /// opposite defect: a descriptor for persistent disks, service accounts,
+    /// policy bindings, VPC networks or firewall rules is a command that can
+    /// only refuse, and the palette reference used to list all five.
     #[test]
-    fn every_service_has_a_log_descriptor() {
+    fn exactly_the_services_with_logs_have_a_log_descriptor() {
         let all = CommandDescriptor::all();
         for kind in ResourceServiceKind::ALL {
-            assert!(
+            assert_eq!(
                 all.contains(&CommandDescriptor::OpenLogsForSelected(kind)),
-                "{kind:?} has no log descriptor, so no palette entry can exist \
-                 for it and the only way to reach its logs is the L keybinding"
+                crate::app::service_capabilities::supports_selection_logs(kind),
+                "{kind:?}: a log descriptor exists exactly when its rows have logs"
             );
         }
     }

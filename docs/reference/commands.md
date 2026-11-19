@@ -34,27 +34,28 @@ label changes to say so, for example `Stop 3 marked GCE instances`. See
 
 ## Services
 
-One command per service opens it in Resources. Your own `[aliases]` also
-match these commands.
+One command per service opens it in Resources. Each answers to the same
+aliases as the Resources sidebar search, listed in [All services](services/overview.md);
+your own `[aliases]` also match these commands.
 
 | Command | Aliases | Offered | Mutating |
 | --- | --- | --- | --- |
-| GCE instances | `gce`, `compute`, `instances` | always | no |
-| GKE clusters | `gke`, `clusters` | always | no |
+| GCE instances | `gce`, `compute engine`, `instances` | always | no |
+| GKE clusters | `gke`, `kubernetes`, `clusters` | always | no |
 | Cloud SQL | `cloud sql`, `sql`, `database`, `postgres`, `mysql` | always | no |
-| Cloud Run | `run`, `serverless`, `cloud run` | always | no |
+| Cloud Run | `run`, `serverless` | always | no |
 | Cloud Storage | `gcs`, `storage`, `bucket`, `buckets` | always | no |
-| Secret Manager | none | always | no |
-| Cloud Functions | none | always | no |
-| Persistent disks | none | always | no |
-| Pub/Sub topics | none | always | no |
-| Pub/Sub subscriptions | none | always | no |
-| BigQuery datasets | none | always | no |
-| Service accounts | none | always | no |
-| IAM policy | none | always | no |
-| VPC networks | none | always | no |
-| VPC subnets | none | always | no |
-| Firewall rules | none | always | no |
+| Secret Manager | `secret`, `secrets`, `secret manager`, `sm` | always | no |
+| Cloud Functions | `functions`, `gcf`, `cloud functions` | always | no |
+| Persistent disks | `disks`, `pd`, `persistent disks`, `orphans` | always | no |
+| Pub/Sub topics | `pubsub`, `pub/sub`, `topics`, `pubsub topics`, `pubsub-topics` | always | no |
+| Pub/Sub subscriptions | `subscriptions`, `subs`, `pubsub subscriptions`, `pubsub-subscriptions` | always | no |
+| BigQuery datasets | `bigquery`, `bq`, `datasets`, `bigquery-datasets` | always | no |
+| Service accounts | `iam`, `sa`, `service accounts`, `service-accounts` | always | no |
+| IAM policy | `iam policy`, `iam-policy`, `policy`, `bindings`, `roles` | always | no |
+| VPC networks | `vpc`, `networks`, `vpc networks`, `vpc-networks` | always | no |
+| VPC subnets | `subnets`, `subnetworks`, `vpc subnets`, `vpc-subnets` | always | no |
+| Firewall rules | `firewall`, `firewalls`, `fw`, `firewall-rules` | always | no |
 
 ## Configurations
 
