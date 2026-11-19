@@ -93,7 +93,9 @@ const inDocs = Astro.url.pathname.startsWith(`/${DOCS_ROUTE}/`);
 			--__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
 		}
 
-		:global(:root:not([data-has-toc])) {
+		/* Docs pages reserve the contents column whether or not they have
+		   one (see docs.css), so the search sits in the same place on each. */
+		:global(:root:not([data-has-toc]):not([data-has-sidebar])) {
 			--__toc-width: 0rem;
 		}
 	}
