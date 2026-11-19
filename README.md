@@ -83,7 +83,8 @@ quit.
   `L` opens the logs of the selected resource in most services.
 - Switches between your gcloud configurations, and edits the project, region
   and zone of the active one (`c`).
-- Runs plugins: your own `gcloud` commands, against the selected row.
+- Runs plugins, which are `gcloud` commands you define, against the selected
+  row.
 
 Before nuvem changes a cloud resource, it shows what it is about to do and
 waits for you to confirm. For a lifecycle action, the confirmation names the
@@ -104,7 +105,7 @@ configurations run `gcloud`, and Cloud SQL tunnels run `cloud-sql-proxy`.
 
 ## Documentation
 
-Good places to start are
+Start with
 [Install](https://nuvem.fyi/docs/getting-started/install/),
 [First run](https://nuvem.fyi/docs/getting-started/first-run/),
 [Keys](https://nuvem.fyi/docs/reference/keys/) and

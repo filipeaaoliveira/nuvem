@@ -5,26 +5,25 @@ a working development setup and what a change needs before it can merge.
 
 ## Development setup
 
-The toolchain is pinned in `rust-toolchain.toml`; `rustup` picks it up
-automatically, including the `rustfmt` and `clippy` components. Beyond that
-you need:
+The toolchain is pinned in `rust-toolchain.toml`. `rustup` picks it up
+automatically, including the `rustfmt` and `clippy` components. You also need:
 
-- `gcloud` (the Google Cloud CLI) on your `PATH` for manual testing — reads go
+- `gcloud` (the Google Cloud CLI) on your `PATH` for manual testing. Reads go
   through the native client libraries, but their token comes from
   `gcloud config config-helper`. Configuration changes, SSH, IAP and SSH
-  tunnels, plugins and k9s's `get-credentials` step run `gcloud`; a Cloud SQL
+  tunnels, plugins and k9s's `get-credentials` step run `gcloud`. A Cloud SQL
   tunnel runs `cloud-sql-proxy`, and k9s runs itself. Lifecycle actions go
-  through the client libraries. The test suite does not need any of them.
-- A C compiler and `cmake`: the TLS stack under the Google Cloud clients builds
-  native code.
-- `cargo-nextest` (`cargo install cargo-nextest --locked`) — CI runs the suite
+  through the client libraries. The test suite needs none of these tools.
+- A C compiler and `cmake`, because the TLS stack under the Google Cloud
+  clients builds native code.
+- `cargo-nextest` (`cargo install cargo-nextest --locked`). CI runs the suite
   under nextest because some tests need per-process isolation.
-- `shellcheck` if you touch a shell script (`scripts/`, `packaging/homebrew/`).
-- `cargo-deny` (`cargo install cargo-deny --locked`) if you touch
-  dependencies; CI runs it on every push.
+- `shellcheck` if you change a shell script (`scripts/`, `packaging/homebrew/`).
+- `cargo-deny` (`cargo install cargo-deny --locked`) if you change
+  dependencies. CI runs it on every push.
 
-The `*_evidence.rs` tests always assert; set `NUVEM_EVIDENCE_DIR=<dir>` to
-also have them write their rendered frames and transcripts there.
+The `*_evidence.rs` tests always assert. To also have them write their
+rendered frames and transcripts to a directory, set `NUVEM_EVIDENCE_DIR=<dir>`.
 
 ## Before you open a PR
 
@@ -42,47 +41,49 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo nextest run --all && cargo test --doc --all
 ```
 
-CI runs the same checks plus two it does not: `cargo doc` under `-D warnings`
-and `cargo deny check`. A change that passes `scripts/check-fast.sh` locally
-and builds its docs cleanly should pass CI.
+CI runs the same checks plus two that the script does not: `cargo doc` under
+`-D warnings` and `cargo deny check`. If a change passes
+`scripts/check-fast.sh` locally and builds its docs cleanly, we expect it to
+pass CI.
 
 How much verification a change needs depends on what it puts at risk:
 
-- **Source behaviour unchanged** (docs, comments, config, test-only, CI
-  plumbing): the gates plus CI are the whole requirement.
-- **Behaviour changed, blast radius local** (one subsystem): the gates plus a
-  review pass.
-- **Behaviour changed, blast radius wide or sensitive** (new feature, security
-  property, cross-cutting refactor): the above plus a deeper review.
+- Source behaviour unchanged (docs, comments, config, test-only, CI
+  plumbing): the gates and CI are the whole requirement.
+- Behaviour changed, with a local blast radius (one subsystem): the gates and
+  a review pass.
+- Behaviour changed, with a wide or sensitive blast radius (new feature,
+  security property, cross-cutting refactor): the gates and a deeper review.
 
-Features ship as small stacked PRs: four small PRs each review in minutes,
-where the same work in one branch takes hours.
+Features ship as small stacked PRs. Four small PRs each take minutes to
+review, and the same work in one branch takes hours.
 
-A few conventions the gates enforce or the docs rely on:
+The gates enforce these conventions, or the docs rely on them:
 
-- **No clippy warnings.** CI runs, and `--workspace` is load-bearing — without
-  it a warning in `crates/nuvem-domain` goes unlinted:
+- No clippy warnings. CI runs the command that follows. Keep `--workspace`:
+  without it, a warning in `crates/nuvem-domain` is never linted.
 
   ```bash
   cargo clippy --workspace --all-targets --all-features -- -D warnings
   ```
-- **Tests for domain logic live in `crates/nuvem-domain`.** The crate's own
-  test binary is what pins its behaviour, so it can be checked on its own.
-- **New integration test files must be mounted in `tests/suite.rs`** (or the
-  domain crate's `tests/suite.rs`). Auto-discovered per-file test targets are
-  deliberately off; the file header there explains why.
-- **`ARCHITECTURE.md` is machine-checked.** Its module tree is verified in both
-  directions against the source tree by `tests/architecture_layout_test.rs`,
-  so moving or adding modules means updating the doc in the same change.
-- **Commit messages** follow conventional-commit style
-  (`fix(ui): …`, `test(domain): …`), as in the existing history.
+- Tests for domain logic live in `crates/nuvem-domain`. The crate's own test
+  binary pins its behaviour, so you can check it on its own.
+- A new integration test file must be mounted in `tests/suite.rs` (or the
+  domain crate's `tests/suite.rs`). Per-file test targets are turned off on
+  purpose, and the header of that file explains why.
+- `ARCHITECTURE.md` is checked by a test. `tests/architecture_layout_test.rs`
+  compares its module tree with the source tree in both directions. If you move
+  or add a module, update the document in the same change.
+- A commit message has a short subject written as a plain sentence, for
+  example `Keep the row count when a filter matches nothing`, as in the
+  existing history.
 
 ## Design decisions
 
 Decisions that shape the architecture, and the evidence behind them, live in
 [docs/decisions](docs/decisions). `ARCHITECTURE.md` describes how the code is
-arranged today; a decision record says why an alternative was taken or refused,
-so a question that was already settled is not re-litigated from a worse premise.
+arranged today. A decision record says why an alternative was taken or refused,
+so that nobody reopens a settled question from a weaker starting point.
 
 ## Releasing
 
@@ -94,10 +95,10 @@ the secrets the release workflow expects, and what to check afterwards.
 Open a GitHub issue. For anything that looks like a security problem, see
 [SECURITY.md](SECURITY.md) instead of filing a public issue.
 
-When reporting a rendering bug, the terminal size and the output of
-`nuvem info` make it much easier to reproduce. The built-in demo mode
-(`nuvem --demo`, see README) reproduces most UI behaviour without any Google
-Cloud project.
+For a rendering bug, include the terminal size and the output of
+`nuvem info`. Both make the bug much easier to reproduce. The built-in demo
+mode (`nuvem --demo`, see the [README](README.md)) reproduces most UI
+behaviour without any Google Cloud project.
 
 ## License
 

@@ -18,8 +18,8 @@ All notable changes to nuvem are documented here. The format follows
   configuration. The token is held in memory only. BigQuery is read through
   `bq`.
 - Start, stop, reset, suspend, resume, restart and failover on single or
-  marked rows, through the client libraries; switching configuration or
-  project through the `gcloud` CLI. Each change asks for confirmation and
+  marked rows, through the client libraries. Switching configuration or
+  project goes through the `gcloud` CLI. Each change asks for confirmation and
   first shows what it will do: the API call for a lifecycle action, the
   command line for a `gcloud` command.
 - Cloud Logging scoped to a resource or the whole project, with a live tail,
