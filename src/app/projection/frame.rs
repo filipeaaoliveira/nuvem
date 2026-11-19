@@ -18,7 +18,7 @@ use crate::app::state::configurations::{
 };
 use crate::app::state::navigator::NavigatorFocus;
 use crate::app::state::plugins;
-use crate::app::state::resources::StorageView;
+use crate::app::state::resources::{BigQueryView, ResourcesState, StorageView};
 use crate::app::state::root::{RootState, Workspace};
 use crate::app::state::system::OperationPhase;
 use crate::config::hotkeys::KeyOverrides;
@@ -194,8 +194,9 @@ fn a_mode_owns_the_keyboard(root: &RootState) -> bool {
         || root.logging.filter_active
 }
 
-/// What a settled status line calls the view on screen: the service, or its
-/// detail, in Resources, and the workspace anywhere else.
+/// What a settled status line calls the view on screen: the service, the
+/// list drilled into below it, or a detail, in Resources, and the workspace
+/// anywhere else.
 fn view_status_label(root: &RootState) -> String {
     match root.workspace {
         Workspace::Home => "Home".to_string(),
@@ -208,9 +209,62 @@ fn view_status_label(root: &RootState) -> String {
             if root.resources.is_showing_detail() {
                 format!("{service} detail")
             } else {
-                service.to_string()
+                drilled_list_name(&root.resources).unwrap_or_else(|| service.to_string())
             }
         }
+    }
+}
+
+/// The name of the list on screen when it is one a row was opened into
+/// rather than the service's own list: a Cloud Storage bucket or folder, a
+/// BigQuery dataset's tables or a table's columns. `None` on a service's own
+/// list.
+///
+/// The list pane's title is `Resources / ` and this name, and the settled
+/// status line is this name, so the two cannot disagree about which list is
+/// open. Before, the line kept saying `BigQuery datasets` over a table's
+/// columns.
+pub fn drilled_list_name(resources: &ResourcesState) -> Option<String> {
+    match resources.active_service() {
+        ResourceServiceKind::CloudStorage => match resources.storage().view() {
+            StorageView::Buckets | StorageView::BucketDetail => None,
+            StorageView::ObjectBrowser | StorageView::ObjectDetail => {
+                let storage = resources.storage();
+                let bucket = storage
+                    .browser_bucket()
+                    .map(|bucket| sanitize_display_text(&bucket.name))
+                    .unwrap_or_default();
+                let prefix = sanitize_display_text(&storage.current_prefix());
+                Some(format!("gs://{bucket}/{prefix}"))
+            }
+        },
+        // `bigquery_tables_dataset` and `bigquery_schema_table` are `Some` for
+        // as long as their view is on screen (see `set_view`), so the
+        // fallbacks are unreachable rather than states with a rendering.
+        ResourceServiceKind::BigQueryDatasets => match resources.bigquery_view() {
+            BigQueryView::Datasets => None,
+            BigQueryView::Tables => {
+                let dataset = resources
+                    .bigquery_tables_dataset()
+                    .map(|dataset| sanitize_display_text(&dataset.dataset_id))
+                    .unwrap_or_else(|| "dataset".to_string());
+                Some(format!("BigQuery {dataset}"))
+            }
+            BigQueryView::Schema => {
+                let table = resources
+                    .bigquery_schema_table()
+                    .map(|table| {
+                        format!(
+                            "{}.{}",
+                            sanitize_display_text(&table.dataset_id),
+                            sanitize_display_text(&table.table_id)
+                        )
+                    })
+                    .unwrap_or_else(|| "table".to_string());
+                Some(format!("BigQuery {table}"))
+            }
+        },
+        _ => None,
     }
 }
 
@@ -569,14 +623,35 @@ fn resource_metadata(
         );
     }
 
+    // A list opened from a row extends the path with what was opened, so the
+    // breadcrumb names the list on screen. An object's detail keeps the
+    // bucket and folders it was opened from, as a table's columns keep the
+    // dataset.
+    let storage_view = resources.storage().view();
     if resources.active_service() == ResourceServiceKind::CloudStorage
-        && resources.storage().view() == StorageView::ObjectBrowser
+        && matches!(
+            storage_view,
+            StorageView::ObjectBrowser | StorageView::ObjectDetail
+        )
     {
         if let Some(bucket) = resources.storage().browser_bucket() {
             breadcrumbs.push(sanitize_display_text(&bucket.name));
         }
         for segment in resources.storage().browser_prefix_path() {
             breadcrumbs.push(sanitize_display_text(segment.trim_end_matches('/')));
+        }
+    }
+    if resources.active_service() == ResourceServiceKind::BigQueryDatasets {
+        let view = resources.bigquery_view();
+        if view != BigQueryView::Datasets
+            && let Some(dataset) = resources.bigquery_tables_dataset()
+        {
+            breadcrumbs.push(sanitize_display_text(&dataset.dataset_id));
+        }
+        if view == BigQueryView::Schema
+            && let Some(table) = resources.bigquery_schema_table()
+        {
+            breadcrumbs.push(sanitize_display_text(&table.table_id));
         }
     }
 
@@ -594,10 +669,17 @@ fn resource_metadata(
             ResourceServiceKind::CloudRunServices => {
                 resources.cloud_run_detail_target_name().map(str::to_string)
             }
-            ResourceServiceKind::CloudStorage => resources
-                .storage()
-                .detail_target_name()
-                .map(sanitize_display_text),
+            // An object is named below the folders the path already shows.
+            ResourceServiceKind::CloudStorage => {
+                let prefix = resources.storage().current_prefix();
+                resources.storage().detail_target_name().map(|name| {
+                    let name = match storage_view {
+                        StorageView::ObjectDetail => name.strip_prefix(&prefix).unwrap_or(name),
+                        _ => name,
+                    };
+                    sanitize_display_text(name)
+                })
+            }
             ResourceServiceKind::SecretManagerSecrets => {
                 resources.secret_detail_target_name().map(str::to_string)
             }
