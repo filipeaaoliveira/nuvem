@@ -2828,15 +2828,15 @@ async fn a_poll_leaves_the_status_line_alone() {
     async fn poll_quietly(session: &mut RuntimeSession, at: &str) {
         let before = line(session);
         session.poll_active_resource().await;
-        assert!(
-            session.effect_tasks_in_flight() > 0,
-            "{at}: the poll started nothing, so it proves nothing"
-        );
         assert_eq!(
             line(session),
             before,
             "{at}: the poll's start rewrote the line"
         );
+        // Counted from the results rather than from the tasks still running:
+        // a fast read has finished, and left its result queued, before this
+        // line is reached.
+        let mut results = 0usize;
         let deadline = Instant::now() + SETTLE_TIMEOUT;
         loop {
             let in_flight = session.effect_tasks_in_flight();
@@ -2845,6 +2845,7 @@ async fn a_poll_leaves_the_status_line_alone() {
                 Ok(true)
             );
             if progressed {
+                results += 1;
                 assert_eq!(
                     line(session),
                     before,
@@ -2855,6 +2856,10 @@ async fn a_poll_leaves_the_status_line_alone() {
             }
             assert!(Instant::now() < deadline, "{at}: the poll did not settle");
         }
+        assert!(
+            results > 0,
+            "{at}: the poll brought nothing back, so it proves nothing"
+        );
     }
 
     for kind in ResourceServiceKind::ALL {
