@@ -8,17 +8,17 @@ sidebar:
 The `[aliases]` table adds your own names for services. An alias works in
 two places:
 
-- the service sidebar search (`/` with the sidebar focused);
-- the command palette (`:`), where it finds the command that opens the
+- The service sidebar search (`/` with the sidebar focused).
+- The command palette (`:`), where it finds the command that opens the
   service.
 
-The two places do not match the same built-in names today:
+The two places match different built-in names:
 
 - The sidebar search matches each service's label, its category, and every
   alias in the **Aliases** column of [Services](../reference/services/overview.md).
 - The command palette matches each command's label and its own palette
   aliases. Only five services have palette aliases: GCE instances, GKE
-  clusters, Cloud SQL, Cloud Storage and Cloud Run; see
+  clusters, Cloud SQL, Cloud Storage and Cloud Run. See
   [Palette commands](../reference/commands.md#services). For the others, type
   part of the label: `:secret` finds **Secret Manager**, but `:sm` does not.
 
@@ -38,12 +38,13 @@ vocabulary `[columns]` and `[[jumps]]` use: a service id such as `compute` or
 
 ## Rules
 
-- An alias is stored lowercased and trimmed. An empty alias is dropped with a
-  warning.
-- A value that names no service drops that alias with a warning.
-- An alias that is already a built-in alias of a *different* service is
-  dropped with a warning: `sql = "gke"` cannot take `sql` away from Cloud SQL.
-  Repeating a built-in alias for the same service is harmless and kept.
-- Each bad entry is dropped on its own; the rest of the table still applies.
+- nuvem stores an alias lowercased and trimmed. It drops an empty alias with
+  a warning.
+- If a value names no service, nuvem drops that alias with a warning.
+- If an alias is already a built-in alias of a *different* service, nuvem
+  drops it with a warning: `sql = "gke"` cannot take `sql` away from Cloud
+  SQL. An alias that repeats a built-in alias of the same service is
+  harmless, and nuvem keeps it.
+- nuvem drops each bad entry on its own. The rest of the table still applies.
 
 [Reload configuration](reload.md) applies alias changes without a restart.

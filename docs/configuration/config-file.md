@@ -5,17 +5,18 @@ sidebar:
   order: 1
 ---
 
-nuvem reads an optional, versioned TOML configuration file for personal
+nuvem reads an optional, versioned TOML configuration file. It holds your
 presentation and navigation preferences: refresh cadence, the startup
 service, sidebar visibility, theme, extra service aliases, rebindable
 hotkeys, each service's table columns and default sort, and the
 related-resource jumps `J` offers. Nothing in this file can run a command.
+
 Executable declarations live in a separate file,
-[`plugins.toml`](../plugins/overview.md), which nuvem reads only from your platform
-config directory (or an explicit
-`--plugins <path>`) and never from the directory a `--config` path points at —
-so a `config.toml` you were handed, synced, or checked into a repository cannot
-bring commands with it.
+[`plugins.toml`](../plugins/overview.md). nuvem reads it only from your
+platform config directory or from an explicit `--plugins <path>`. It never
+reads it from the directory a `--config` path points at. A `config.toml` that
+you were handed, synced, or checked into a repository thus cannot bring
+commands with it.
 
 ## Where it lives
 
@@ -24,11 +25,11 @@ bring commands with it.
 | Linux | `~/.config/nuvem/config.toml` (or `$XDG_CONFIG_HOME/nuvem/config.toml`) |
 | macOS | `~/Library/Application Support/nuvem/config.toml` |
 
-To read a different file, pass `--config <path>`. The file is optional: with
-no file, every setting keeps its built-in default.
+To read a different file, pass `--config <path>`. The file is optional. If
+there is no file, every setting keeps its built-in default.
 
 nuvem refuses a file that is not an ordinary file (a named pipe, a directory)
-or is larger than 1 MiB, and reports why. A symbolic link is followed, so
+or is larger than 1 MiB, and reports why. nuvem follows a symbolic link, so
 dotfile managers work.
 
 ## Precedence
@@ -41,12 +42,12 @@ flags. A flag always wins. Two settings exist in both places:
 | `general.poll_interval_secs` | `--poll-interval` | The flag wins. |
 | `general.read_only` | `--read-only` | Either one turns read-only on. Neither can turn it off. |
 
-Every other flag has no config key; see [Command line](../reference/cli.md).
+Every other flag has no config key. See [Command line](../reference/cli.md).
 
 ## Check what nuvem read
 
-Run `nuvem info` to see the resolved config, plugin, log, and cache paths plus
-the active theme, without starting the TUI:
+Run `nuvem info` to see the resolved config, plugin, log, and cache paths and
+the active theme. It does not start the TUI:
 
 ```
 nuvem 0.1.0
@@ -59,11 +60,11 @@ theme:   default
 
 `config:` reports `loaded`, `not found`, or `error: <message>` for a file that
 exists but failed to parse. `plugins:` reports `not found` for a file that is
-absent — the normal case — or how many entries loaded from one that is
-present, so a file nuvem never opened is distinguishable from one that
-declares nothing. Any field-level warnings (see
-[Config problems](config-problems.md)) are also printed to stderr and listed
-under `nuvem info`.
+absent, which is the normal case. For a file that is present, it reports how
+many entries loaded. You can thus tell a file nuvem never opened from one
+that declares nothing. nuvem also prints any field-level warnings (see
+[Config problems](config-problems.md)) to stderr and lists them under
+`nuvem info`.
 
 ## Full example
 
@@ -112,8 +113,8 @@ label = "Network of {name}"     # picker wording; default "<tab> of <name>"
 
 ## Keys
 
-Every key the file accepts. `<service>` is a service id from
-[Services](../reference/services/overview.md); `<action>` is a hotkey action.
+The table lists every key the file accepts. `<service>` is a service id from
+[Services](../reference/services/overview.md). `<action>` is a hotkey action.
 
 | Key | Type | Default | Allowed values | Details |
 | --- | --- | --- | --- | --- |
@@ -141,9 +142,9 @@ Every key the file accepts. `<service>` is a service id from
 | `jumps[].select` | string | none | `targets-this-instance` | [Jump rules](jump-rules.md) |
 | `plugins` | none | none | Not allowed here. Plugins belong in `plugins.toml`; nuvem warns and ignores them. | [Plugins](../plugins/overview.md) |
 
-Any other key is reported as unknown and ignored; the rest of the file still
-applies. A misspelled key such as `poll_interval_sec` is reported the same
-way.
+nuvem reports any other key as unknown and ignores it. The rest of the file
+still applies. A misspelled key such as `poll_interval_sec` is reported the
+same way.
 
 `general.default_service`, the starting gcloud configuration and the plugin
 file take effect only at startup. Every other key can be applied with
