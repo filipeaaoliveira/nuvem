@@ -1986,8 +1986,13 @@ pub static IAM_POLICY_COLUMNS: &[ColumnDef<IamPolicyRowProjection, IamPolicySort
             // `projects/p/roles/custom.name` is the long spelling; the role is
             // carried verbatim, so the column has to have room for it rather
             // than eliding a custom role into its predefined twin.
+            //
+            // Priority 0 beside MEMBER: a binding is a member *and* a role,
+            // and a member holding two roles reads as one row twice when this
+            // column is dropped. `plan_table` keeps every column at the
+            // identity priority, and still gives MEMBER its room first.
             preferred_width: 40,
-            priority: 1,
+            priority: 0,
             align: CellAlign::Left,
             sortable: true,
         },
