@@ -128,6 +128,26 @@ pub fn fit_text(value: &str, width: usize) -> String {
     format!("{fitted}...")
 }
 
+/// Lays `hints` out joined by `separator` in `width` columns, each hint whole
+/// or not at all.
+///
+/// The hints are in priority order and go from the end. A line that lost any
+/// ends in the overflow marker, so it never reads as the whole list, and the
+/// hints it keeps are never cut: `Esc/q re...` names half a key and none of
+/// what it does. Where not even the first hint fits beside the marker, the
+/// marker is all that is left.
+pub fn fit_hints(hints: &[&str], separator: &str, width: usize) -> String {
+    let whole = hints.join(separator);
+    if UnicodeWidthStr::width(whole.as_str()) <= width {
+        return whole;
+    }
+    (1..hints.len())
+        .rev()
+        .map(|kept| format!("{} {OVERFLOW_MARKER}", hints[..kept].join(separator)))
+        .find(|line| UnicodeWidthStr::width(line.as_str()) <= width)
+        .unwrap_or_else(|| fit_text(OVERFLOW_MARKER, width))
+}
+
 fn status_style(phase: OperationPhase) -> Style {
     match phase {
         OperationPhase::Idle | OperationPhase::Healthy => theme::status_healthy(),

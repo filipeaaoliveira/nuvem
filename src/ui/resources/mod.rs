@@ -21,8 +21,8 @@ use crate::app::state::resources::{
 use crate::services::runtime::session::RuntimeSession;
 use crate::ui::service_navigator::render_service_navigator;
 use crate::ui::shared::components::{
-    bordered_block, empty_state, error_state, error_state_item, fit_spans, fit_text, loading_line,
-    loading_state, modal_block, stale_state, tab_line,
+    bordered_block, empty_state, error_state, error_state_item, fit_hints, fit_spans, fit_text,
+    loading_line, loading_state, modal_block, stale_state, tab_line,
 };
 use crate::ui::shared::picker::viewport_window;
 use crate::ui::shared::table::{
@@ -1602,9 +1602,18 @@ fn detail_scroll(requested: u16, line_count: usize, area: Rect) -> u16 {
     )
 }
 
-/// The detail pane's key hint. The field keys sit before the Esc hint so they
-/// survive first when a narrow pane clips the line.
-const DETAIL_HEADER_HINT: &str = "[ and ] tabs   n/p field   y copy   Esc/q return to list";
+/// The detail pane's key hints, in priority order. The line keeps each one
+/// whole or drops it from the end (see `fit_hints`), so the field keys sit
+/// before the Esc hint, which the footer also carries as Back.
+const DETAIL_HEADER_HINTS: [&str; 4] = [
+    "[ and ] tabs",
+    "n/p field",
+    "y copy",
+    "Esc/q return to list",
+];
+
+/// What separates two of [`DETAIL_HEADER_HINTS`] on the line.
+const DETAIL_HEADER_HINT_SEPARATOR: &str = "   ";
 
 /// The index, into the body's `lines`, of the field the cursor selects — the
 /// line the pane highlights and the one `y` copies.
@@ -1703,7 +1712,11 @@ fn detail_header_lines(
     vec![
         ratatui::text::Line::from(fit_text(&title, width)),
         tabs,
-        ratatui::text::Line::from(fit_text(DETAIL_HEADER_HINT, width)),
+        ratatui::text::Line::from(fit_hints(
+            &DETAIL_HEADER_HINTS,
+            DETAIL_HEADER_HINT_SEPARATOR,
+            width,
+        )),
         ratatui::text::Line::from(String::new()),
     ]
 }
@@ -2972,15 +2985,16 @@ mod tests {
     #[test]
     fn the_detail_header_hint_names_the_field_keys() {
         let session = RuntimeSession::new_for_test(app_with_open_compute_detail());
+        let detail_header_hint = DETAIL_HEADER_HINTS.join(DETAIL_HEADER_HINT_SEPARATOR);
         let rows = rendered_rows(&session);
         assert!(
             rows.iter()
-                .any(|(text, _)| text.contains(DETAIL_HEADER_HINT)),
+                .any(|(text, _)| text.contains(&detail_header_hint)),
             "expected the hint line on screen, got: {:?}",
             rows.iter().map(|(text, _)| text).collect::<Vec<_>>()
         );
-        assert!(DETAIL_HEADER_HINT.contains("n/p"));
-        assert!(DETAIL_HEADER_HINT.contains('y'));
+        assert!(detail_header_hint.contains("n/p"));
+        assert!(detail_header_hint.contains('y'));
     }
 
     /// The overlay may not paint as an open-but-empty box. Whenever the chrome
