@@ -1819,8 +1819,18 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
 /// whole content (header included) fits in a short width is shown whole or
 /// not at all, and a long column is cut no shorter than that width. Walked for
 /// every service's demo table at every width from 20 to 200. The identity
-/// column is held to more: it is shown whole while any other column is shown,
-/// and no header is cut. All of it is exempt once one column is left standing.
+/// column is held to more: it is shown whole while any column outside the
+/// identity priority is shown, and no header is cut. All of it is exempt once
+/// one column is left standing.
+///
+/// And no cell is cut while the row has room to spare: if the planned line is
+/// narrower than the table, every shown column holds its widest cell whole.
+/// IAM's MEMBER and the service accounts' EMAIL used to stop at their preferred
+/// widths with blank space to their right.
+///
+/// No two rows paint the same while more than one column is shown. An IAM
+/// member holding two roles is two bindings, and with ROLE dropped they read
+/// as one row twice.
 #[tokio::test(flavor = "multi_thread")]
 async fn no_demo_table_cuts_a_short_column_at_any_width() {
     use nuvem::ui::shared::table::{display_width, plan_table};
@@ -1841,9 +1851,50 @@ async fn no_demo_table_cuts_a_short_column_at_any_width() {
                 .unwrap_or(0)
                 .min(table.columns[c].preferred_width)
         };
+        let whole = |c: usize| {
+            table
+                .rows
+                .iter()
+                .map(|row| display_width(&row.cells[c].text))
+                .chain([display_width(table.columns[c].header)])
+                .max()
+                .unwrap_or(0)
+        };
         for width in 20..=200u16 {
             let plan = plan_table(&table, width, false);
             let shown: Vec<_> = plan.columns.iter().filter(|c| c.visible).collect();
+            let line: u16 = shown.iter().map(|c| c.width).sum::<u16>()
+                + 2 * u16::try_from(shown.len().saturating_sub(1)).expect("few columns");
+            if line < width {
+                for column in &shown {
+                    assert!(
+                        column.width >= whole(column.index),
+                        "{kind:?} at {width}: {} is cut at {} with {} columns unused",
+                        table.columns[column.index].header,
+                        column.width,
+                        width - line
+                    );
+                }
+            }
+            // Rows may read alike only where two readable columns do not fit.
+            if width >= SHORT + 2 + SHORT {
+                let painted: Vec<Vec<String>> = table
+                    .rows
+                    .iter()
+                    .map(|row| {
+                        shown
+                            .iter()
+                            .map(|c| row.cells[c.index].text.clone())
+                            .collect()
+                    })
+                    .collect();
+                for (i, row) in painted.iter().enumerate() {
+                    assert!(
+                        !painted[..i].contains(row),
+                        "{kind:?} at {width}: two rows paint as {row:?}"
+                    );
+                }
+            }
             if shown.len() <= 1 {
                 continue;
             }
@@ -1853,9 +1904,13 @@ async fn no_demo_table_cuts_a_short_column_at_any_width() {
                 .filter(|c| c.visible)
                 .min_by_key(|c| (table.columns[c.index].priority, c.index))
                 .expect("a column is shown");
+            let identity_priority = table.columns[identity.index].priority;
+            let droppable_shown = shown
+                .iter()
+                .any(|c| table.columns[c.index].priority != identity_priority);
             for column in shown {
                 let header = display_width(table.columns[column.index].header);
-                let wants = if column.index == identity.index {
+                let wants = if column.index == identity.index && droppable_shown {
                     // The identity column is never cut while another column
                     // could have been dropped instead.
                     content(column.index)

@@ -139,6 +139,13 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     let survivor = (0..n)
         .min_by_key(|&c| (model.columns[c].priority, c))
         .unwrap_or(0);
+    // A catalog can give a second column the identity priority when the first
+    // does not tell rows apart on its own: an IAM member holding two roles is
+    // two bindings, and with ROLE dropped they read as one row twice. Such a
+    // column is dropped last, having the lowest priority, and before it goes
+    // the survivor is cut toward a readable width; only the survivor starts
+    // at its whole target.
+    let identity = |c: usize| model.columns[c].priority == model.columns[survivor].priority;
 
     // Each column starts at the width it reads at, not at its floor, and the
     // drops below are decided at those widths:
@@ -172,6 +179,18 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
             .filter(|&c| visible[c] && c != survivor)
             .max_by_key(|&c| (model.columns[c].priority, c));
         match victim {
+            // Before a second identity column goes, the survivor gives up
+            // what it holds beyond a readable width: two readable halves of a
+            // binding tell rows apart, one whole half does not.
+            Some(c) if identity(c) => {
+                let excess = masked_line_width(&widths, &visible) - available_width;
+                let spare = widths[survivor].saturating_sub(READABLE_WIDTH);
+                if spare >= excess {
+                    widths[survivor] -= excess;
+                } else {
+                    visible[c] = false;
+                }
+            }
             Some(c) => visible[c] = false,
             None => break,
         }
@@ -190,6 +209,19 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
         }
         let want = target(c).saturating_sub(widths[c]);
         let grant = want.min(slack);
+        widths[c] += grant;
+        slack -= grant;
+    }
+
+    // Whatever is still free goes to columns whose content is cut, past their
+    // preferred width, in the same priority order. A preferred width is where
+    // a column stops taking room from its neighbours; with none left to take
+    // from, a cut name beside blank columns is waste, not restraint.
+    for &c in &order {
+        if slack == 0 {
+            break;
+        }
+        let grant = content[c].saturating_sub(widths[c]).min(slack);
         widths[c] += grant;
         slack -= grant;
     }
