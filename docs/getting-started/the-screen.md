@@ -14,9 +14,9 @@ same frame:
 | Part | What it shows |
 | --- | --- |
 | Header (two rows) | The active gcloud configuration and project first. The account, service, region and zone follow when the terminal has room. |
-| Breadcrumb | Where you are: the workspace, then the service, then the open resource. |
+| Breadcrumb | Where you are: the workspace, then the service, then the open resource. In BigQuery it also names the dataset and table you opened, and in Cloud Storage the bucket, folders and object. |
 | Body | The workspace itself: a list, a detail pane, a dashboard. |
-| Status line | A status marker and the time of the last refresh. While something loads, or after a warning or an error, it names that operation. Otherwise it names the view on screen. |
+| Status line | A status marker and the time of the last refresh. While something you started loads, or after a warning or an error, it names that operation. Otherwise it names the view on screen, such as an opened BigQuery dataset (`BigQuery analytics`) or Cloud Storage folder (`gs://dev-project-assets/css/`). |
 | Footer | The keys that do something in the current view, most useful first. On a narrow terminal, the least useful keys are left out whole, and a key never shows without its label. Press `?` for all of them. |
 
 The configuration, account, project, region and zone in the header are the
@@ -37,10 +37,13 @@ color, including under the `no-color` theme:
 | Marker | Meaning |
 | --- | --- |
 | `[OK]` | Idle, or the last operation succeeded |
-| `[LOAD]` | A first load is in flight |
-| `[SYNC]` | A refresh is in flight. The rows on screen are still the previous ones |
+| `[LOAD]` | A list's first load is in flight |
+| `[SYNC]` | A refresh you started with `r` is in flight. The rows on screen are still the previous ones |
 | `[STALE]` | A load or refresh failed. What is on screen can be out of date |
 | `[ERR]` | The operation failed |
+
+A background refresh leaves the status line as it was while it runs. If it
+fails, the status line reports the failure.
 
 ## Workspaces
 

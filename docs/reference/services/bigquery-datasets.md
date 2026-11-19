@@ -52,6 +52,10 @@ list to the datasets. `-` and `Backspace` do the same as `Esc`, as they do in
 the Cloud Storage object browser. Leaving a level drops what it had listed,
 and entering it again asks for it again.
 
+The breadcrumb names the dataset you opened, and then the table. The status
+line names the list on screen as its pane title does, such as
+`BigQuery analytics` for a dataset's tables.
+
 The tables view has six columns. TABLE, TYPE and CREATED come from
 `bq ls <dataset>`. The listing also reports each row's labels and its dataset
 and project IDs, which have no column (see the labels paragraph further down).

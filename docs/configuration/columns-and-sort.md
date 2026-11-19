@@ -123,18 +123,23 @@ nothing to configure, and it ignores the block.
 columns exist for you, and `w` decides how many of them fit right now. Narrow
 columns (the default) drop columns until the row fits, and report the hidden
 count in the [tools line](../getting-started/the-screen.md) as `+N cols (w)`.
-With narrow columns:
+With narrow columns, each column gives way according to what it holds:
 
-- A column whose values are short, such as a status or a region, is shown
-  whole or dropped, never cut short.
-- A column with long values is cut to no fewer than 16 characters before
-  another column is dropped to make room.
+- A short identifier, such as a status, a region, a tier, an engine or a
+  timestamp, is shown whole or dropped, never cut.
+- A value that is long by nature, such as a URL, a list of regions or
+  targets, labels, a key path or free text, can be cut with `…`. It is cut
+  only once the row has no free width left to give it.
 - `name` is shown whole for as long as any other column can be dropped
   instead.
 - No column header is cut.
 
-Wide columns keep every column in the list, and mark the row `▸ more` when it
-overruns the terminal.
+Wide columns are drawn from the left, each at the width it reads at. When the
+row is wider than the terminal, nuvem stops at the first column that does not
+fit. That column is cut with `…` if its values can be cut, and otherwise it is
+left out with every column after it. The tools line then shows `▸ more` for
+the columns that did not fit. In a narrow pane, wide columns can therefore
+show fewer columns than narrow columns do.
 
 The two interact in one place. If a service's `columns` list is configured,
 narrow columns drop your rightmost column first and work leftwards. The one

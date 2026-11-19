@@ -34,7 +34,9 @@ the list opens sorted by. See [Columns and sort](../configuration/columns-and-so
 ## Open a detail and go back
 
 In a resource list, select an item and press `Enter` to load a read-only
-detail view. Use `[` and `]` to move across the service's detail tabs.
+detail view. Use `[` and `]` to move across the service's detail tabs. A row of
+key hints sits under the tabs. On a narrow pane it drops whole hints from the
+end and ends in ` ...`, so no hint is cut in half.
 
 `Esc` goes back to the prior view:
 
