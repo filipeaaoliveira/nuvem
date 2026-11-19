@@ -37,7 +37,7 @@ A binary path without a `/` is looked up on your `PATH`. Binary paths,
 `--batch-concurrency`, `--log-file` and `--configuration` have no config-file
 key.
 
-`--config`, `--plugins`, `--demo` and `--read-only` may also follow a
+`--config`, `--plugins`, `--demo` and `--read-only` can also follow a
 subcommand, as in `nuvem info --config ./dev.toml`.
 
 ## Commands
@@ -74,7 +74,7 @@ in `not found` or `<n> loaded`. Each config warning follows on its own
 
 Code `3` is the one to branch on in a script or CI job: it means nuvem ran
 without a terminal, not that anything broke. These codes do not change between
-releases; a new kind of failure gets a new code.
+releases. A new kind of failure gets a new code.
 
 ## Files
 
@@ -96,5 +96,5 @@ releases; a new kind of failure gets a new code.
 
 Every command nuvem runs (`gcloud`, `bq`, `k9s`, `kubectl`,
 `cloud-sql-proxy`, and plugins) inherits your environment. Reads through the
-Google Cloud client libraries do not use gcloud's `proxy/*` properties; they
+Google Cloud client libraries do not use gcloud's `proxy/*` properties. They
 need direct HTTPS access to `*.googleapis.com`.
