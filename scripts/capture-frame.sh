@@ -3,20 +3,20 @@
 #
 # Usage: scripts/capture-frame.sh <screen>... | --all
 #
-# Screens: home, resources, detail, palette, help. Each is written to
-# demo/frames/<screen>.html as a single <pre> fragment (see
+# Screens: home, resources, detail, palette, help, confirm, bigquery. Each is
+# written to demo/frames/<screen>.html as a single <pre> fragment (see
 # scripts/ansi2html.py). --all captures every screen.
 #
 # Needs tmux and python3. The nuvem binary comes from NUVEM_BIN (a path or a
 # command on PATH), or else target/release/nuvem, or else target/debug/nuvem.
-# FRAME_COLS and FRAME_ROWS set the terminal size; the default, 121x34, is the
+# FRAME_COLS and FRAME_ROWS set the terminal size; the default, 138x34, is the
 # grid demo/tour.tape records.
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 out="$root/demo/frames"
-screens=(home resources detail palette help)
-cols=${FRAME_COLS:-121}
+screens=(home resources detail palette help confirm bigquery)
+cols=${FRAME_COLS:-138}
 rows=${FRAME_ROWS:-34}
 
 die() {
@@ -37,15 +37,20 @@ usage() {
 # key, so each one lands after the previous screen has drawn.
 keys_for() {
   case $1 in
-    # Home after visiting two services, so the inventory has counts in it.
-    home) echo "g : r u n Enter : s q l Enter h" ;;
-    # Cloud SQL with the service navigator open beside the list.
-    resources) echo "g Tab j j Enter Tab" ;;
-    # A Cloud Run service's detail, with the navigator hidden to give the
-    # detail pane room.
-    detail) echo "g : r u n Enter v / o r d e r s Enter Enter" ;;
+    # Home as the app opens: every service's inventory is already loaded.
+    home) echo "" ;;
+    # GCE instances with the service navigator beside the list.
+    resources) echo "g" ;;
+    # An instance's detail, with the navigator hidden to give the detail pane
+    # room.
+    detail) echo "g v / w e b Enter Enter" ;;
     palette) echo "g :" ;;
     help) echo "g ?" ;;
+    # Stop, from the palette, up to the confirmation that shows the API call.
+    confirm) echo "g v / w e b Enter : s t o p Enter" ;;
+    # A BigQuery dataset's tables, reached by the palette's bq alias, with
+    # the navigator hidden so every column fits.
+    bigquery) echo "g v : b q Enter Enter" ;;
     *) return 1 ;;
   esac
 }
@@ -95,7 +100,9 @@ for screen in "$@"; do
     exit 1
   fi
   read -ra keys <<<"$(keys_for "$screen")"
-  for key in "${keys[@]}"; do
+  # Home takes no keys; the guard keeps an empty array legal under set -u in
+  # bash 3.2, which macOS ships.
+  for key in ${keys[@]+"${keys[@]}"}; do
     "${ctl[@]}" send-keys -t frame "$key"
     sleep 0.5
   done

@@ -41,14 +41,37 @@ scripts/render-demo.sh
 ```
 
 This runs `tour.tape` and writes the GIF, both videos and the poster to
-`demo/out/`. It takes about two minutes, most of it VHS encoding. The script
+`demo/out/`. It takes a minute or two, most of it VHS encoding. The script
 checks each file against its size budget before copying anything into
 `demo/out/`: 3 MB for the GIF and 1.5 MB for each video. A file over budget
 fails the run and leaves the committed files as they were. If you lengthen the
-tour, keep it under 25 seconds.
+tour, keep it under 30 seconds.
 
-The recording is 1280 by 760 pixels, which at the tape's 16 px font is a
-terminal of 121 columns by 34 rows.
+The recording is 1444 by 760 pixels, which at the tape's 16 px font is a
+terminal of 138 columns by 34 rows. 138 columns is the narrowest terminal
+where nothing in the tour is cut: the context line under the title is 138
+characters long on the BigQuery screens, and narrower terminals end it with
+`...`. At this width Cloud SQL, Cloud Run and Secret Manager still shorten
+some cells with `…`, so the tour does not visit them. 34 rows fit every line
+of Home.
+
+The poster is a screenshot the tape takes on the GCE instances list, not the
+first frame.
+
+### Off camera
+
+Three things happen while VHS is hidden, so they never reach a frame:
+
+- Starting the app. The shell prompt and the launcher's path stay out of the
+  recording.
+- Keys that repaint most of the screen, such as opening a view or a dialog.
+  Each is followed by a short pause before VHS shows the screen again. A
+  terminal caught mid-repaint shows half of each screen, and such a frame
+  reads as a glitch. Typing in the filter and the palette stays on camera.
+- The way back Home. The tape quits the app and starts it again before
+  showing Home, so the last frame is the same as the first and the loop has no
+  seam. Without the restart, Home would show a count trend beside the
+  services the tour loaded, and an older "Updated" time.
 
 ### Isolation
 
@@ -68,15 +91,17 @@ The tape asks for `JetBrains Mono,Menlo,DejaVu Sans Mono,monospace`. This is
 a CSS font list: the terminal uses the first font in it that is installed,
 character by character. The fallback is intended. All three named fonts
 cover the box-drawing characters nuvem draws with and have nearly the same
-advance width at 16 px, so the terminal stays 121 by 34 whichever one is
-used, and only the letterforms differ. Requiring one font would stop anyone
+advance width at 16 px, so the terminal stays 138 by 34 whichever one is
+used, and only the letterforms differ. With Menlo, any width from 1441 to
+1451 pixels gives 138 columns; 1444 leaves room on both sides for a font
+whose advance is slightly different. Requiring one font would stop anyone
 without it from rendering at all. The committed recordings use Menlo. If you
 want them to look the same on every machine, install JetBrains Mono before
 rendering.
 
-To change the tour, edit `tour.tape`. Its comments name each step. Leave a
-second or more on each screen: the recording is for someone seeing nuvem for
-the first time.
+To change the tour, edit `tour.tape`. Its comments name each step. The
+recording is for someone seeing nuvem for the first time, so leave at least
+two seconds on a list, and two and a half on a detail view, a dialog or help.
 
 ## Capture a frame for the docs
 
@@ -86,17 +111,19 @@ scripts/capture-frame.sh detail help     # several
 scripts/capture-frame.sh --all           # every screen
 ```
 
-The screens are `home`, `resources`, `detail`, `palette` and `help`. Each one
-is written to `demo/frames/<screen>.html` as a single `<pre>` element with
-inline colours, ready to paste into a page. `FRAME_COLS` and `FRAME_ROWS`
-change the terminal size; the default, 121 by 34, matches the recordings.
+The screens are `home`, `resources`, `detail`, `palette`, `help`, `confirm`
+(the confirmation before stopping an instance) and `bigquery` (a dataset's
+tables). Each one is written to `demo/frames/<screen>.html` as a single
+`<pre>` element with inline colours, ready to paste into a page. `FRAME_COLS`
+and `FRAME_ROWS` change the terminal size; the default, 138 by 34, matches the
+recordings.
 
 The script starts the demo in a private tmux server, whose socket lives in a
 scratch directory that is removed when the script exits. It presses the keys
 listed for that screen in `keys_for` and passes `tmux capture-pane -e` output
 to `scripts/ansi2html.py`. If the app exits before the screen is captured,
-the script stops and prints the app's stderr. To add a screen, add a line to `keys_for` and its name
-to `screens`.
+the script stops and prints the app's stderr. To add a screen, add a line to
+`keys_for` and its name to `screens`.
 
 `ansi2html.py` also works on its own:
 
