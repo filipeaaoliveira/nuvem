@@ -11,8 +11,8 @@ use nuvem_domain::gcp::text_filter::TextFilterSyntax;
 
 use crate::app::projection::format_last_refresh;
 use crate::app::projection::table::{
-    Cell, CellAlign, RowCounts, SortDirection, SortSpec, StatusSemantic, TableColumn, TableModel,
-    TableRow,
+    Cell, CellAlign, ColumnFit, RowCounts, SortDirection, SortSpec, StatusSemantic, TableColumn,
+    TableModel, TableRow,
 };
 use crate::app::state::logging::{LoggingState, LoggingStatus, TailState};
 use crate::app::state::root::RootState;
@@ -257,6 +257,7 @@ fn log_columns() -> Vec<TableColumn> {
             priority: 0,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "severity",
@@ -266,6 +267,7 @@ fn log_columns() -> Vec<TableColumn> {
             priority: 1,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "resource",
@@ -275,6 +277,7 @@ fn log_columns() -> Vec<TableColumn> {
             priority: 2,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "message",
@@ -284,6 +287,7 @@ fn log_columns() -> Vec<TableColumn> {
             priority: 3,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Cut,
         },
     ]
 }

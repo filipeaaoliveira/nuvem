@@ -19,6 +19,26 @@ pub struct TableColumn {
     pub priority: u8,
     pub align: CellAlign,
     pub sortable: bool,
+    /// How the column gives way when the table is too narrow for it.
+    pub fit: ColumnFit,
+}
+
+/// How a column gives way when its table is too narrow for it.
+///
+/// Decided per column by what its values are, not by how long the demo's
+/// happen to be: `db-custom-4-16384` and `SQL Server 2019 Standard` are a
+/// tier and an engine, and a cut one (`db-custom-4-163…`) names a different
+/// tier or none, while a URL or a list of regions is long by nature and its
+/// head still says what it is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColumnFit {
+    /// A short identifier — a tier, an engine, a region, a status, a
+    /// timestamp. Shown whole or dropped, never cut.
+    Whole,
+    /// A value that is long by nature — a URL, a list, free text. It may be
+    /// cut, always with the `…` marker, and only once the table has no free
+    /// width left to give it.
+    Cut,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,6 +1,6 @@
 use nuvem::app::projection::table::{
-    Cell, CellAlign, CellKind, RowCounts, SortDirection, SortSpec, StatusSemantic, TableColumn,
-    TableModel, TableRow,
+    Cell, CellAlign, CellKind, ColumnFit, RowCounts, SortDirection, SortSpec, StatusSemantic,
+    TableColumn, TableModel, TableRow,
 };
 
 fn col(key: &'static str, header: &'static str, min: u16, pref: u16, prio: u8) -> TableColumn {
@@ -12,6 +12,7 @@ fn col(key: &'static str, header: &'static str, min: u16, pref: u16, prio: u8) -
         priority: prio,
         align: CellAlign::Left,
         sortable: true,
+        fit: ColumnFit::Whole,
     }
 }
 
@@ -73,6 +74,7 @@ fn gce_columns() -> Vec<TableColumn> {
             priority: 0,
             align: CellAlign::Left,
             sortable: true,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "status",
@@ -82,6 +84,7 @@ fn gce_columns() -> Vec<TableColumn> {
             priority: 1,
             align: CellAlign::Left,
             sortable: true,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "zone",
@@ -91,6 +94,7 @@ fn gce_columns() -> Vec<TableColumn> {
             priority: 2,
             align: CellAlign::Left,
             sortable: true,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "machine-type",
@@ -100,6 +104,7 @@ fn gce_columns() -> Vec<TableColumn> {
             priority: 3,
             align: CellAlign::Left,
             sortable: true,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "internal-ip",
@@ -109,6 +114,7 @@ fn gce_columns() -> Vec<TableColumn> {
             priority: 4,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
         TableColumn {
             key: "external-ip",
@@ -118,6 +124,7 @@ fn gce_columns() -> Vec<TableColumn> {
             priority: 5,
             align: CellAlign::Left,
             sortable: false,
+            fit: ColumnFit::Whole,
         },
     ]
 }

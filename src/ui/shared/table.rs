@@ -15,7 +15,7 @@ use unicode_truncate::UnicodeTruncateStr;
 use unicode_width::UnicodeWidthStr;
 
 use crate::app::projection::table::{
-    CellAlign, CellKind, SortDirection, StatusSemantic, TableModel,
+    CellAlign, CellKind, ColumnFit, SortDirection, StatusSemantic, TableModel,
 };
 use crate::ui::theme;
 
@@ -112,9 +112,35 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
         content[c].clamp(model.columns[c].min_width, model.columns[c].preferred_width)
     };
 
+    // The column with the smallest priority value is protected from dropping,
+    // and that column is NAME in every table; see below.
+    let survivor = (0..n)
+        .min_by_key(|&c| (model.columns[c].priority, c))
+        .unwrap_or(0);
+    let identity = |c: usize| model.columns[c].priority == model.columns[survivor].priority;
+    // A short identifier is shown whole or not at all (`ColumnFit::Whole`):
+    // its width is its widest cell, header included, whatever its preferred
+    // width says. The identity columns keep their own rule below.
+    let whole = |c: usize| !identity(c) && model.columns[c].fit == ColumnFit::Whole;
+
     if wide {
-        let widths: Vec<u16> = (0..n).map(target).collect();
-        let overflow = masked_line_width(&widths, &vec![true; n]) > available_width;
+        // Every column, at the width it reads at: a short identifier whole, a
+        // long value at its preferred width and then, while the row has room
+        // left, toward its whole content. What does not fit the row is not
+        // squeezed here — `drawn_columns` decides what is drawn of it.
+        let mut widths: Vec<u16> = (0..n)
+            .map(|c| if whole(c) { content[c] } else { target(c) })
+            .collect();
+        let all = vec![true; n];
+        let mut order: Vec<usize> = (0..n).collect();
+        order.sort_by_key(|&c| (model.columns[c].priority, c));
+        let mut slack = available_width.saturating_sub(masked_line_width(&widths, &all));
+        for &c in &order {
+            let grant = content[c].saturating_sub(widths[c]).min(slack);
+            widths[c] += grant;
+            slack -= grant;
+        }
+        let overflow = masked_line_width(&widths, &all) > available_width;
         return TablePlan {
             columns: (0..n)
                 .map(|c| ColumnLayout {
@@ -136,16 +162,13 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     // position with NAME pinned to 0 wherever the user put it
     // (`projection::columns::apply_display_priorities`). So no configured
     // column list can leave the operator with rows they cannot tell apart.
-    let survivor = (0..n)
-        .min_by_key(|&c| (model.columns[c].priority, c))
-        .unwrap_or(0);
+    //
     // A catalog can give a second column the identity priority when the first
     // does not tell rows apart on its own: an IAM member holding two roles is
     // two bindings, and with ROLE dropped they read as one row twice. Such a
     // column is dropped last, having the lowest priority, and before it goes
     // the survivor is cut toward a readable width; only the survivor starts
     // at its whole target.
-    let identity = |c: usize| model.columns[c].priority == model.columns[survivor].priority;
 
     // Each column starts at the width it reads at, not at its floor, and the
     // drops below are decided at those widths:
@@ -153,11 +176,14 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     // - the identity column starts at its whole target, so a lower-priority
     //   column is dropped before a name is cut (`oauth-client-s…` beside a
     //   column nobody needed);
-    // - a column whose whole content is short — a status, a region — starts
-    //   at its full width, because `Runna…` says less than the column a drop
-    //   would have removed;
-    // - a column with long content starts at `READABLE_WIDTH`, enough to
-    //   recognise a value, and grows from there below;
+    // - a short identifier (`ColumnFit::Whole`) — a status, a region, a
+    //   tier, an engine — starts at its whole content and never gives any of
+    //   it up, because `Runna…` or `db-custom-4-163…` says less than the
+    //   column a drop would have removed, or names a different value;
+    // - a column with long values (`ColumnFit::Cut`) starts at
+    //   `READABLE_WIDTH`, enough to recognise a value, or at its full width
+    //   where its values happen to be shorter, and grows from there below,
+    //   so it is cut only once no free width is left;
     // - no column starts narrower than its header, so a header is never cut.
     //
     // So a narrow table drops low-priority columns before it truncates
@@ -165,6 +191,9 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     let readable = |c: usize| -> u16 {
         if c == survivor {
             return target(c);
+        }
+        if whole(c) {
+            return content[c];
         }
         let header = display_width(model.columns[c].header);
         target(c)
@@ -252,6 +281,95 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     }
 }
 
+/// The columns [`render_table`] draws for `plan` in `available_width` (the
+/// width `plan_table` was given), at the widths it draws them.
+///
+/// The plan's visible columns, whenever they fit. A wide plan can be wider
+/// than the row, and handing ratatui more than fits makes it shrink every
+/// column to squeeze the line in, which cuts cells with no marker
+/// (`orders-db-repli`). So an overflowing plan is drawn from the left
+/// instead: each column at its planned width while it fits; then the first
+/// that does not is cut with the marker if its values may be cut
+/// (`ColumnFit::Cut`, or a second identity column) and the room left is at
+/// least the width it reads at, and otherwise neither it nor any column after
+/// it is drawn. The tools row
+/// says `▸ more`. Room left over then goes to drawn columns whose values are
+/// cut, so nothing is cut beside blank space. The first column is drawn
+/// whatever its width, cut if it must be, because a row of nothing names
+/// nothing.
+pub fn drawn_columns(
+    model: &TableModel,
+    plan: &TablePlan,
+    available_width: u16,
+) -> Vec<ColumnLayout> {
+    let visible = plan.columns.iter().filter(|column| column.visible);
+    if !plan.overflow {
+        return visible.copied().collect();
+    }
+    let content = content_widths(model);
+    let reads_at = |c: usize| {
+        let spec = &model.columns[c];
+        content[c]
+            .min(spec.min_width.max(READABLE_WIDTH))
+            .max(display_width(spec.header))
+    };
+    let identity_priority = model.columns.iter().map(|spec| spec.priority).min();
+    let mut drawn: Vec<ColumnLayout> = Vec::new();
+    let mut used: u16 = 0;
+    for column in visible {
+        let gap = if drawn.is_empty() { 0 } else { GAP };
+        let mut room = available_width.saturating_sub(used.saturating_add(gap));
+        let spec = &model.columns[column.index];
+        let identity = Some(spec.priority) == identity_priority;
+        // A second identity column is what tells rows apart (an IAM member
+        // holding two roles), so the identity columns drawn before it give up
+        // what they hold beyond a readable width to make room for it, as they
+        // do in `plan_table`.
+        if identity && !drawn.is_empty() && column.width > room {
+            let mut need = (used + gap + reads_at(column.index)).saturating_sub(available_width);
+            for earlier in drawn
+                .iter_mut()
+                .filter(|earlier| Some(model.columns[earlier.index].priority) == identity_priority)
+            {
+                let spare = earlier.width.saturating_sub(reads_at(earlier.index));
+                let take = spare.min(need);
+                earlier.width -= take;
+                used -= take;
+                need -= take;
+            }
+            room = available_width.saturating_sub(used.saturating_add(gap));
+        }
+        if column.width <= room {
+            drawn.push(*column);
+            used = used.saturating_add(gap + column.width);
+            continue;
+        }
+        let cuttable = (spec.fit == ColumnFit::Cut || identity) && room >= reads_at(column.index);
+        let first = drawn.is_empty();
+        if (first || cuttable) && room > 0 {
+            drawn.push(ColumnLayout {
+                width: room,
+                ..*column
+            });
+            used = available_width;
+        }
+        // Past a first column wider than the row, only a second identity
+        // column can still be drawn, by taking width back from it.
+        if !first {
+            break;
+        }
+    }
+    let mut slack = available_width.saturating_sub(used);
+    for column in &mut drawn {
+        let grant = content[column.index]
+            .saturating_sub(column.width)
+            .min(slack);
+        column.width += grant;
+        slack -= grant;
+    }
+    drawn
+}
+
 pub fn status_marker(semantic: StatusSemantic) -> &'static str {
     match semantic {
         StatusSemantic::Healthy => "OK",
@@ -326,8 +444,14 @@ fn fit_cell(text: &str, width: u16, align: CellAlign) -> String {
 }
 
 pub fn render_table(frame: &mut Frame<'_>, area: Rect, model: &TableModel, plan: &TablePlan) {
-    let visible: Vec<&ColumnLayout> = plan.columns.iter().filter(|c| c.visible).collect();
     let show_mark = model.show_mark_column;
+    let reserved = if show_mark {
+        display_width(ROW_SELECT_SYMBOL).saturating_add(MARK_COLUMN_RESERVED_WIDTH)
+    } else {
+        display_width(ROW_SELECT_SYMBOL)
+    };
+    let drawn = drawn_columns(model, plan, area.width.saturating_sub(reserved));
+    let visible: Vec<&ColumnLayout> = drawn.iter().collect();
     let lead = usize::from(show_mark);
     let mut constraints: Vec<Constraint> = Vec::with_capacity(visible.len() + lead);
     if show_mark {
