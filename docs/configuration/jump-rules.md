@@ -142,17 +142,17 @@ fields that do not come from the row. A GCE instance's list row carries no
 network at all. The
 values live on the detail pane, so a rule that names any of them resolves once
 that pane is open and fetched, and offers nothing from the list. `J` tells
-this case apart from a missing value. It says **needs network, which
-is on this GCE instance's detail — open it and try again**. For an instance
+this case apart from a missing value. It says `needs network, which
+is on this GCE instance's detail — open it and try again`. For an instance
 whose fetched pane has no network interface, it says the ordinary
-**has no value for**. An instance with several interfaces reports its first,
+`has no value for`. An instance with several interfaces reports its first,
 the same one `{internal_ip}` and `{external_ip}` come from.
 
 `{subnetwork_region}` exists because `{subnetwork}` does not identify a subnet
 on its own. An auto-mode network calls every one of its subnets `default`, one
 per region, so a rule keyed on the name alone names as many rows as the
 project has regions. The region is read out of the subnetwork's self-link, from
-the segment following `regions`, **not** by stripping the last part off the
+the segment following `regions`, not by stripping the last part off the
 instance's `{zone}`. Stripping the zone gives the right answer on most
 topologies, but nothing in the API guarantees that an instance's subnet is in
 the region its zone belongs to. A link that names no region leaves the field
@@ -190,7 +190,7 @@ location = "{zone}"
 label = "Node pools of the {name} cluster"
 ```
 
-A `[[jumps]]` array **replaces the built-in set**. It does not merge with it,
+A `[[jumps]]` array replaces the built-in set. It does not merge with it,
 so that you can remove a built-in jump. This is why the example repeats the
 Network rule. Without any `[[jumps]]` entry, you get the built-in rules (the
 table under [Related-resource jumps](../guides/related-resource-jumps.md)).
@@ -214,7 +214,7 @@ startup status line, all of them on stderr and under `nuvem info`. Reload (`:` �
 A valid rule can still have nothing to offer for a particular row. No config
 check can know that *this* instance has no external IP. If the rule's `name`
 or `location` renders empty for the selected row, that rule is
-**not offered for that row**. The other rules still are. If nothing at all
+not offered for that row. The other rules still are. If nothing at all
 resolves, the picker stays closed, and the status line names the rule and the
 field:
 
@@ -224,7 +224,7 @@ Jump "compute:network" needs external_ip, which this GCE instance has no value f
 
 A `label` is wording, not identity, so it is treated differently. If a label
 does not render for the selected row, it
-**falls back to the built-in wording** (`"<tab> of <name>"`), and the jump is
+falls back to the built-in wording (`"<tab> of <name>"`), and the jump is
 still offered.
 
 The rendered `name` and `location` must also look like GCP resource names
@@ -243,7 +243,7 @@ fail the check outright, so such a rule is offered for some rows and refused
 for others.
 
 A jump that *is* offered lands only on a resource
-**already in the destination service's loaded list**, matched on both its
+already in the destination service's loaded list, matched on both its
 name and its zone/region. The picker never fetches a resource that is not in
 the list. If there is no such row, the status line says which case it is:
 

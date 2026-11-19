@@ -27,10 +27,11 @@ is scoped to:
 `l` widens to the project, and `L` narrows to the selection. The help overlay
 (`?`) states this difference on both entries.
 
-`L` covers all eleven services — the selected GCE instance, GKE cluster, Cloud
-SQL instance, Cloud Run service, Cloud Storage bucket, secret, Cloud Function, Pub/Sub topic, Pub/Sub subscription, BigQuery dataset, or VPC subnet — and resolves the
-target from the view rather than from the raw list cursor. Inside a Cloud Run revision, it scopes to that revision, not to its
-service. Inside the Cloud Storage object browser, it scopes to the bucket you
+`L` covers all eleven services: the selected GCE instance, GKE cluster, Cloud
+SQL instance, Cloud Run service, Cloud Storage bucket, secret, Cloud Function,
+Pub/Sub topic, Pub/Sub subscription, BigQuery dataset, or VPC subnet. It
+resolves the target from the view rather than from the raw list cursor.
+Inside a Cloud Run revision, it scopes to that revision, not to its service. Inside the Cloud Storage object browser, it scopes to the bucket you
 are browsing. With a detail pane open, it follows the pane, not the list
 cursor that can still move behind it. If nothing resolves, for example because
 the list is empty or no gcloud context is active, the status line says so and
