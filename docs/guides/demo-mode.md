@@ -20,6 +20,11 @@ Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager,
 persistent disks, Pub/Sub, BigQuery, VPC, IAM, Cloud Logging and FinOps. The
 data uses fixture names such as `dev-project`.
 
+Demo mode opens on [Home](home-overview.md) with every service already listed
+and gcloud already checked, so the first screen shows the inventory rather
+than sixteen `Not loaded` rows. Against a real project Home never loads a list
+on its own; demo mode does because its lists cost nothing.
+
 Commands that would change something — activating a configuration, starting or
 stopping an instance — succeed without doing anything.
 
@@ -39,12 +44,12 @@ stopping an instance — succeed without doing anything.
 - In BigQuery, every dataset shows the same sample tables, and every table
   opens the same sample schema.
 - FinOps asks about the locations of rows you have already listed, as it does
-  against a real project. Open GCE instances and Persistent disks in Resources
-  before you open FinOps; until then its cards read `not probed`.
+  against a real project. Demo mode lists every service as it opens, so FinOps
+  has its locations from the start.
 
 A few reads always go through a command-line tool rather than a Google Cloud
 client library: BigQuery (`bq`), FinOps budgets, gcloud's own configuration
-list, and label-filtered lists. In demo mode recorded output answers them
+list and account check, and label-filtered lists. In demo mode recorded output answers them
 instead of the tool.
 
 Demo mode is useful for trying nuvem, recording demos and screenshots, and

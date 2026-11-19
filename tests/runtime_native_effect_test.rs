@@ -388,7 +388,7 @@ async fn a_demo_session_never_asks_gcloud_for_credentials() {
     let unexpected: Vec<&String> = spawned.difference(&expected).collect();
     assert!(
         unexpected.is_empty(),
-        "a demo walk spawned a command outside the two argvs the remaining CLI \
+        "a demo walk spawned a command outside the argvs the remaining CLI \
          reads make, which means a service routed to its gcloud arm instead of \
          its native client: {unexpected:?}\n\
          \n\
@@ -410,13 +410,15 @@ async fn a_demo_session_never_asks_gcloud_for_credentials() {
 
 /// The complete set of commands a `--demo` walk of every service may spawn.
 ///
-/// Two, and each survives for a reason recorded in
+/// Three. The first two survive for a reason recorded in
 /// `docs/decisions/0001-native-sdk-for-read-paths.md`. `bq ls` is the dataset
 /// listing: `google-cloud-bigquery` is the one crate of the set still pre-1.0,
 /// and `bq` already inherits the configuration guarantee through
 /// `CLOUDSDK_ACTIVE_CONFIG_NAME`. `gcloud config configurations list` is how
 /// nuvem discovers which configurations exist at all, which is a gcloud-local
-/// concept with no API behind it.
+/// concept with no API behind it. `gcloud auth list` is Home's health probe,
+/// which a demo session runs as it opens so its first screen says gcloud is
+/// available; the probe asks about gcloud itself, so it has no client.
 ///
 /// Everything else in the walk reads through a fixture-backed client, and this
 /// set is what holds that: a `load_*` that falls back to its
@@ -428,6 +430,7 @@ async fn a_demo_session_never_asks_gcloud_for_credentials() {
 const EVERY_ARGV_A_DEMO_WALK_MAY_SPAWN: &[&str] = &[
     "bq --format=prettyjson --project_id=dev-project ls -d -n 500",
     "gcloud config configurations list --format=json",
+    "gcloud --configuration dev auth list --format=json",
 ];
 
 /// The other side of it: a session that is not in demo does build them.
