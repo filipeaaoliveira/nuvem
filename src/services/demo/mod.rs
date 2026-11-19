@@ -117,7 +117,10 @@ impl CommandRunner for DemoCommandRunner {
 
         match command.program {
             CommandProgram::Gcloud => gcloud_fixture(args, self.corpus),
-            CommandProgram::Bq => bq_fixture(args),
+            CommandProgram::Bq => match self.corpus {
+                Corpus::Captures => bq_fixture(args),
+                Corpus::Showcase => showcase_bq(args),
+            },
         }
     }
 }
@@ -255,6 +258,11 @@ fn is_bq_tables_listing(args: &[String]) -> bool {
 
 /// The gcloud fixtures. Only reached for [`CommandProgram::Gcloud`].
 fn gcloud_fixture(args: &[String], corpus: Corpus) -> Result<CommandOutput, CommandError> {
+    if corpus == Corpus::Showcase
+        && let Some(answer) = showcase_gcloud(args)
+    {
+        return answer;
+    }
     // Specific `list`/`describe` matches are checked first so the
     // broader mutating fallbacks below never shadow them.
     if matches(args, &["config", "configurations", "list"]) {
@@ -557,6 +565,129 @@ fn gcloud_fixture(args: &[String], corpus: Corpus) -> Result<CommandOutput, Comm
     }
 
     Err(no_fixture(CommandProgram::Gcloud, args))
+}
+
+/// The showcase answers for the gcloud reads whose showcase document differs
+/// from the capture by more than its rows: a `describe` answers the row it
+/// names, and a listing scoped to one parent answers that parent's rows.
+///
+/// Reads with no showcase document in the CLI's shape — Cloud Run and Cloud
+/// Storage, whose showcase is in the client library's shape — answer the
+/// unrouted-argv error rather than a capture, so nothing outside the showcase
+/// reaches a demo screen; the demo session reads both through their clients.
+/// `None` hands the argv on to the arms shared by both corpora.
+fn showcase_gcloud(args: &[String]) -> Option<Result<CommandOutput, CommandError>> {
+    const INSTANCES: &str = include_str!("../../../tests/fixtures/demo/gce_instances.json");
+    const CLUSTERS: &str = include_str!("../../../tests/fixtures/demo/gke_clusters.json");
+    const SQL: &str = include_str!("../../../tests/fixtures/demo/cloudsql_instances.json");
+    const SQL_USERS: &str = include_str!("../../../tests/fixtures/demo/cloudsql_users.json");
+    const SECRETS: &str = include_str!("../../../tests/fixtures/demo/secrets.json");
+    const VERSIONS: &str = include_str!("../../../tests/fixtures/demo/secret_versions.json");
+    const POLICY: &str = include_str!("../../../tests/fixtures/demo/iam_policy.json");
+    const ENTRIES: &str = include_str!("../../../tests/fixtures/demo/log_entries.json");
+
+    let after = |word: &str| {
+        args.iter()
+            .skip_while(|arg| arg.as_str() != word)
+            .skip(1)
+            .find(|arg| !arg.starts_with('-'))
+            .cloned()
+            .unwrap_or_default()
+    };
+    let described = |listing: &str| -> Result<CommandOutput, CommandError> {
+        let wanted = after("describe");
+        let rows: Vec<serde_json::Value> = serde_json::from_str(listing).unwrap_or_default();
+        rows.into_iter()
+            .find(|row| {
+                row.get("name")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|name| name.rsplit('/').next() == Some(wanted.as_str()))
+            })
+            .map(|row| fixture(&row.to_string()))
+            .ok_or_else(|| no_fixture(CommandProgram::Gcloud, args))
+    };
+    Some(if matches(args, &["compute", "instances", "describe"]) {
+        described(INSTANCES)
+    } else if matches(args, &["container", "clusters", "describe"]) {
+        described(CLUSTERS)
+    } else if matches(args, &["sql", "instances", "list"]) {
+        Ok(fixture(SQL))
+    } else if matches(args, &["sql", "instances", "describe"]) {
+        described(SQL)
+    } else if matches(args, &["sql", "users", "list"]) {
+        Ok(fixture(SQL_USERS))
+    } else if matches(args, &["secrets", "versions", "list"]) {
+        let rows: Vec<serde_json::Value> = serde_json::from_str(VERSIONS).unwrap_or_default();
+        let secret = format!("/secrets/{}/versions/", after("list"));
+        let mine: Vec<serde_json::Value> = rows
+            .into_iter()
+            .filter(|row| {
+                row.get("name")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|name| name.contains(&secret))
+            })
+            .collect();
+        Ok(fixture(&serde_json::Value::Array(mine).to_string()))
+    } else if matches(args, &["secrets", "describe"]) {
+        described(SECRETS)
+    } else if matches(args, &["projects", "get-iam-policy"]) {
+        Ok(fixture(POLICY))
+    } else if matches(args, &["logging", "read"]) {
+        Ok(fixture(ENTRIES))
+    } else if matches(args, &["run"]) || matches(args, &["storage"]) {
+        Err(no_fixture(CommandProgram::Gcloud, args))
+    } else {
+        return None;
+    })
+}
+
+/// The showcase `bq` answers: the sample project's datasets, each dataset's
+/// own tables, and each table's own document, by the reference the argv
+/// names. The same three argv shapes as [`bq_fixture`] and its predicates.
+fn showcase_bq(args: &[String]) -> Result<CommandOutput, CommandError> {
+    const DATASETS: &str = include_str!("../../../tests/fixtures/demo/bigquery_datasets.json");
+    const TABLES: &str = include_str!("../../../tests/fixtures/demo/bigquery_tables.json");
+    const SHOWS: &str = include_str!("../../../tests/fixtures/demo/bigquery_table_show.json");
+
+    let tail = args.last().map(String::as_str).unwrap_or_default();
+    let without_project = |reference: &str| {
+        reference
+            .split_once(':')
+            .map_or(reference, |(_, rest)| rest)
+            .to_string()
+    };
+    if matches(args, &["ls", "-d"]) {
+        return Ok(fixture(DATASETS));
+    }
+    if is_bq_tables_listing(args) {
+        let dataset = without_project(tail);
+        let rows: Vec<serde_json::Value> = serde_json::from_str(TABLES).unwrap_or_default();
+        let mine: Vec<serde_json::Value> = rows
+            .into_iter()
+            .filter(|row| {
+                row.pointer("/tableReference/datasetId")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(dataset.as_str())
+            })
+            .collect();
+        return Ok(fixture(&serde_json::Value::Array(mine).to_string()));
+    }
+    if is_bq_table_show(args) {
+        let wanted = without_project(tail);
+        let rows: Vec<serde_json::Value> = serde_json::from_str(SHOWS).unwrap_or_default();
+        return rows
+            .into_iter()
+            .find(|row| {
+                row.get("id")
+                    .and_then(serde_json::Value::as_str)
+                    .map(without_project)
+                    .as_deref()
+                    == Some(wanted.as_str())
+            })
+            .map(|row| fixture(&row.to_string()))
+            .ok_or_else(|| no_fixture(CommandProgram::Bq, args));
+    }
+    Err(no_fixture(CommandProgram::Bq, args))
 }
 
 /// The `recommender recommendations list` answer, chosen by the recommender the

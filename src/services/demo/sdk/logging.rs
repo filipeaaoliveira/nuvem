@@ -17,9 +17,13 @@ use google_cloud_logging_v2::client::LoggingServiceV2;
 use google_cloud_logging_v2::model;
 
 use super::envelope;
+use crate::services::demo::Corpus;
 
 /// The entries capture: `gcloud logging read --format=json`.
 const ENTRIES: &str = include_str!("../../../../tests/fixtures/log_entries.json");
+
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_ENTRIES: &str = include_str!("../../../../tests/fixtures/demo/log_entries.json");
 
 /// Answers `list_log_entries` from the capture.
 ///
@@ -28,7 +32,9 @@ const ENTRIES: &str = include_str!("../../../../tests/fixtures/log_entries.json"
 /// for the same two entries. `ListLogEntries` has no poller, and both service
 /// methods funnel into this one call.
 #[derive(Debug, Default)]
-pub struct LoggingStub;
+pub struct LoggingStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_logging_v2::stub::LoggingServiceV2 for LoggingStub {
     async fn list_log_entries(
@@ -38,12 +44,18 @@ impl google_cloud_logging_v2::stub::LoggingServiceV2 for LoggingStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::ListLogEntriesResponse>>
     {
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "entries", ENTRIES,
+            "entries",
+            self.corpus.pick(ENTRIES, SHOWCASE_ENTRIES),
         )?))
     }
 }
 
 /// The client `SdkLoggingService::from_fixtures` is built from.
 pub fn client() -> LoggingServiceV2 {
-    LoggingServiceV2::from_stub(LoggingStub)
+    client_of(Corpus::Captures)
+}
+
+/// The client over either corpus.
+pub fn client_of(corpus: Corpus) -> LoggingServiceV2 {
+    LoggingServiceV2::from_stub(LoggingStub { corpus })
 }

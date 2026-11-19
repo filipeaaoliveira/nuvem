@@ -51,6 +51,7 @@ use google_cloud_sql_v1::client::{SqlInstancesService, SqlOperationsService, Sql
 use google_cloud_sql_v1::model;
 
 use super::{envelope, named};
+use crate::services::demo::Corpus;
 
 /// The instances capture: `gcloud sql instances list --format=json`.
 const INSTANCES: &str = include_str!("../../../../tests/fixtures/cloudsql_instances.json");
@@ -63,6 +64,11 @@ const INSTANCE_DETAIL: &str =
 /// The users capture: `gcloud sql users list --format=json`.
 const USERS: &str = include_str!("../../../../tests/fixtures/cloudsql_users.json");
 
+/// What `nuvem --demo` lists: see [`Corpus::Showcase`].
+const SHOWCASE_INSTANCES: &str =
+    include_str!("../../../../tests/fixtures/demo/cloudsql_instances.json");
+const SHOWCASE_USERS: &str = include_str!("../../../../tests/fixtures/demo/cloudsql_users.json");
+
 /// The operation every lifecycle action answers: already `Done`, and carrying
 /// no error. See the module docs for why it is both.
 fn finished() -> model::Operation {
@@ -74,7 +80,9 @@ fn finished() -> model::Operation {
 /// Answers the listing, the detail pane and the three mutating methods from
 /// the captures.
 #[derive(Debug, Default)]
-pub struct InstancesStub;
+pub struct InstancesStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_sql_v1::stub::SqlInstancesService for InstancesStub {
     /// One page: `next_page_token` is left at its empty default, so the item
@@ -87,7 +95,8 @@ impl google_cloud_sql_v1::stub::SqlInstancesService for InstancesStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::InstancesListResponse>>
     {
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "items", INSTANCES,
+            "items",
+            self.corpus.pick(INSTANCES, SHOWCASE_INSTANCES),
         )?))
     }
 
@@ -101,7 +110,9 @@ impl google_cloud_sql_v1::stub::SqlInstancesService for InstancesStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::DatabaseInstance>>
     {
         let instance: model::DatabaseInstance = named(
-            &[INSTANCE_DETAIL, INSTANCES],
+            &self
+                .corpus
+                .documents(&[INSTANCE_DETAIL, INSTANCES], &[SHOWCASE_INSTANCES]),
             |name| name == request.instance,
             &format!("Cloud SQL instance `{}`", request.instance),
         )?;
@@ -138,7 +149,9 @@ impl google_cloud_sql_v1::stub::SqlInstancesService for InstancesStub {
 
 /// Answers the users tab from the capture.
 #[derive(Debug, Default)]
-pub struct UsersStub;
+pub struct UsersStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_sql_v1::stub::SqlUsersService for UsersStub {
     async fn list(
@@ -148,7 +161,8 @@ impl google_cloud_sql_v1::stub::SqlUsersService for UsersStub {
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::UsersListResponse>>
     {
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "items", USERS,
+            "items",
+            self.corpus.pick(USERS, SHOWCASE_USERS),
         )?))
     }
 }
@@ -174,9 +188,14 @@ impl google_cloud_sql_v1::stub::SqlOperationsService for OperationsStub {
 
 /// The three clients `SdkCloudSqlService::from_fixtures` is built from.
 pub fn clients() -> (SqlInstancesService, SqlUsersService, SqlOperationsService) {
+    clients_of(Corpus::Captures)
+}
+
+/// The clients over either corpus.
+pub fn clients_of(corpus: Corpus) -> (SqlInstancesService, SqlUsersService, SqlOperationsService) {
     (
-        SqlInstancesService::from_stub(InstancesStub),
-        SqlUsersService::from_stub(UsersStub),
+        SqlInstancesService::from_stub(InstancesStub { corpus }),
+        SqlUsersService::from_stub(UsersStub { corpus }),
         SqlOperationsService::from_stub(OperationsStub),
     )
 }

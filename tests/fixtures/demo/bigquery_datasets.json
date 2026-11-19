@@ -1,0 +1,7 @@
+[
+{"datasetReference":{"datasetId":"analytics","projectId":"dev-project"},"friendlyName":"Product analytics","id":"dev-project:analytics","kind":"bigquery#dataset","labels":{"env":"dev"},"location":"EU","type":"DEFAULT"},
+{"datasetReference":{"datasetId":"billing_export","projectId":"dev-project"},"friendlyName":"Cloud Billing export","id":"dev-project:billing_export","kind":"bigquery#dataset","labels":{"env":"dev"},"location":"EU","type":"DEFAULT"},
+{"datasetReference":{"datasetId":"events_raw","projectId":"dev-project"},"friendlyName":"Raw application events","id":"dev-project:events_raw","kind":"bigquery#dataset","labels":{"env":"dev"},"location":"EU","type":"DEFAULT"},
+{"datasetReference":{"datasetId":"marketing","projectId":"dev-project"},"friendlyName":"Campaign reporting","id":"dev-project:marketing","kind":"bigquery#dataset","labels":{"env":"dev"},"location":"EU","type":"DEFAULT"},
+{"datasetReference":{"datasetId":"ml_features","projectId":"dev-project"},"friendlyName":"Feature store tables","id":"dev-project:ml_features","kind":"bigquery#dataset","labels":{"env":"dev"},"location":"US","type":"DEFAULT"}
+]

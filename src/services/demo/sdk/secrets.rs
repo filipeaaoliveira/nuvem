@@ -13,7 +13,7 @@
 use google_cloud_secretmanager_v1::client::SecretManagerService;
 use google_cloud_secretmanager_v1::model;
 
-use super::{envelope, named, short_name};
+use super::{envelope, named, rows_under, short_name};
 use crate::services::demo::Corpus;
 
 /// The secrets capture: `gcloud secrets list --format=json`.
@@ -24,6 +24,8 @@ const VERSIONS: &str = include_str!("../../../../tests/fixtures/secret_versions.
 
 /// The detail capture: `gcloud secrets describe --format=json`, one secret.
 const SECRET_DETAIL: &str = include_str!("../../../../tests/fixtures/secret_detail.json");
+const SHOWCASE_VERSIONS: &str =
+    include_str!("../../../../tests/fixtures/demo/secret_versions.json");
 
 /// What `nuvem --demo` lists: see [`Corpus::Showcase`].
 const SHOWCASE_SECRETS: &str = include_str!("../../../../tests/fixtures/demo/secrets.json");
@@ -54,13 +56,22 @@ impl google_cloud_secretmanager_v1::stub::SecretManagerService for SecretsStub {
 
     async fn list_secret_versions(
         &self,
-        _request: model::ListSecretVersionsRequest,
+        request: model::ListSecretVersionsRequest,
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<
         google_cloud_gax::response::Response<model::ListSecretVersionsResponse>,
     > {
+        let versions = match self.corpus {
+            // One secret's versions answer every secret, as they always have
+            // for the captures.
+            Corpus::Captures => VERSIONS.to_string(),
+            // Each secret lists its own versions, as the API does.
+            Corpus::Showcase => {
+                rows_under(SHOWCASE_VERSIONS, &format!("{}/versions/", request.parent))?
+            }
+        };
         Ok(google_cloud_gax::response::Response::from(envelope(
-            "versions", VERSIONS,
+            "versions", &versions,
         )?))
     }
 

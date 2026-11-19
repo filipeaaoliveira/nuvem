@@ -72,6 +72,7 @@ const BUCKET_DETAIL: &str = include_str!("../../../../tests/fixtures/gcs_bucket_
 
 /// What `nuvem --demo` lists: see [`Corpus::Showcase`].
 const SHOWCASE_BUCKETS: &str = include_str!("../../../../tests/fixtures/demo/gcs_buckets_v2.json");
+const SHOWCASE_OBJECTS: &str = include_str!("../../../../tests/fixtures/demo/gcs_objects_v2.json");
 
 /// The object listing, re-shaped: v2 `Object` rows mirroring
 /// `tests/fixtures/gcs_objects.json` (`gcloud storage objects list
@@ -94,8 +95,12 @@ const OBJECT_DETAIL: &str = include_str!("../../../../tests/fixtures/gcs_object_
 /// `SdkStorageService::load_object_page` always sets one, but a stub that
 /// silently ignored the field would answer a shape the live service never
 /// answers for that request.
-fn object_page(prefix: &str, delimiter: &str) -> Result<model::ListObjectsResponse, Error> {
-    let rows: Vec<model::Object> = serde_json::from_str(OBJECTS).map_err(Error::deser)?;
+fn object_page(
+    objects: &str,
+    prefix: &str,
+    delimiter: &str,
+) -> Result<model::ListObjectsResponse, Error> {
+    let rows: Vec<model::Object> = serde_json::from_str(objects).map_err(Error::deser)?;
 
     let mut prefixes: BTreeSet<String> = BTreeSet::new();
     let mut objects = Vec::new();
@@ -174,7 +179,15 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
         // bucket, and the bucket names its own project. It is a literal in the
         // template and is not looked up.
         parent_matches(&request.parent, "projects/_/buckets/*")?;
+        let objects = match self.corpus {
+            // One listing answers every bucket, as it always has for the
+            // captures.
+            Corpus::Captures => OBJECTS.to_string(),
+            // Each bucket lists its own objects, as the API does.
+            Corpus::Showcase => of_bucket(SHOWCASE_OBJECTS, &request.parent)?,
+        };
         Ok(google_cloud_gax::response::Response::from(object_page(
+            &objects,
             &request.prefix,
             &request.delimiter,
         )?))
@@ -188,12 +201,24 @@ impl google_cloud_storage::stub::StorageControl for ControlStub {
         _options: google_cloud_gax::options::RequestOptions,
     ) -> google_cloud_gax::Result<google_cloud_gax::response::Response<model::Object>> {
         let object: model::Object = named(
-            &[OBJECT_DETAIL, OBJECTS],
+            &self
+                .corpus
+                .documents(&[OBJECT_DETAIL, OBJECTS], &[SHOWCASE_OBJECTS]),
             |name| name == request.object,
             &format!("object `{}`", request.object),
         )?;
         Ok(google_cloud_gax::response::Response::from(object))
     }
+}
+
+/// The rows of an object listing that belong to `bucket`, as JSON.
+fn of_bucket(listing: &str, bucket: &str) -> Result<String, Error> {
+    let rows: Vec<serde_json::Value> = serde_json::from_str(listing).map_err(Error::deser)?;
+    let mine: Vec<serde_json::Value> = rows
+        .into_iter()
+        .filter(|row| row.get("bucket").and_then(serde_json::Value::as_str) == Some(bucket))
+        .collect();
+    serde_json::to_string(&mine).map_err(Error::ser)
 }
 
 /// The client `SdkStorageService::from_fixtures` is built from.
