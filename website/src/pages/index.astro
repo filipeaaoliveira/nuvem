@@ -164,12 +164,15 @@ const more = [
 ];
 for (const item of more) item.href = await docHref(item.href);
 
+/** The longest key or flag, in characters: the help list's key column is this wide. */
+const keyColumn = Math.max(...more.flatMap((item) => item.reach.map((r) => (r.key ?? r.flag).length)));
+
 /** Spoken before the key column, so a screen reader hears "Key: l", not "l". */
 const reachLabel = (reach) => (reach[0].flag ? 'Flag:' : 'Key:');
 
 /*
  * The sky. Edges are drawn on 12-pixel cells, 160 cells wide (1920 pixels),
- * and repeat sideways; phones show the same drawing at 6-pixel cells.
+ * drawn twice side by side; phones show the same drawing at 6-pixel cells.
  */
 const EDGE_CELL = 12;
 // Each edge is only as tall as the clear space kept for it, so no edge can
@@ -180,16 +183,25 @@ const dusk = skyline({ w: 160, h: 7, seed: 4, r: [2, 4.4], solid: 3 });
 const nightfall = skyline({ w: 160, h: 8, seed: 9, r: [2, 4.5] });
 const closing = skyline({ w: 160, h: 8, seed: 17, r: [2, 4.6] });
 const sky = {
-	'--sky-dusk': cssUrl(edgeSvg(dusk, EDGE_CELL, COLORS.naples)),
 	'--sky-dusk-h': `${dusk.length * EDGE_CELL}px`,
-	'--sky-fall': cssUrl(fringeSvg(nightfall, EDGE_CELL, COLORS.naples)),
 	'--sky-fall-h': `${(nightfall.length + 2) * EDGE_CELL}px`,
-	'--sky-close': cssUrl(edgeSvg(closing, EDGE_CELL, COLORS.ink)),
 	'--sky-close-h': `${closing.length * EDGE_CELL}px`,
 	// Day clouds beside the title: a large one cropped by the page edge, a small one.
 	'--sky-day-large': cssUrl(cloudSvg('large', 6, COLORS.text, COLORS.coral)),
 	'--sky-day-small': cssUrl(cloudSvg('small', 4, COLORS.text, COLORS.coral)),
 };
+/*
+ * The edges as inline SVG, two drawings side by side (3840 pixels wide, or
+ * 1920 on a phone), crisp at any pixel ratio: a background image would be
+ * resampled at a fractional position and blur the cells' edges.
+ */
+const edges = {
+	dusk: [edgeSvg(dusk, EDGE_CELL, COLORS.naples, 2), edgeSvg(dusk, EDGE_CELL / 2, COLORS.naples, 2)],
+	fall: [fringeSvg(nightfall, EDGE_CELL, COLORS.naples, 2), fringeSvg(nightfall, EDGE_CELL / 2, COLORS.naples, 2)],
+	close: [edgeSvg(closing, EDGE_CELL, COLORS.ink, 2), edgeSvg(closing, EDGE_CELL / 2, COLORS.ink, 2)],
+};
+const edgeMarkup = ([wide, narrow]) => wide.replace('<svg ', '<svg class="edge-wide" ') + narrow.replace('<svg ', '<svg class="edge-narrow" ');
+
 const skyStyle = Object.entries(sky)
 	.map(([k, v]) => `${k}: ${v}`)
 	.join('; ');
@@ -232,7 +244,7 @@ const dot = (color) => starSvg('dot', 4, color);
 		</div>
 
 		<div class="dusk">
-			<div class="sky-edge dusk-edge" aria-hidden="true"></div>
+			<div class="sky-edge dusk-edge" aria-hidden="true" set:html={edgeMarkup(edges.dusk)} />
 			<DemoRecording
 				description="A tour of nuvem --demo on its built-in sample data: Home, a resource list, a filter, a detail view, a Stop confirmation, BigQuery tables and help."
 			/>
@@ -255,13 +267,13 @@ const dot = (color) => starSvg('dot', 4, color);
 				{/* Set as nuvem sets its own help overlay: a framed list of keys. */}
 				<section class="help" aria-labelledby="more-title">
 					<h3 class="help-title" id="more-title">Also in nuvem</h3>
-					<dl class="help-keys">
+					<dl class="help-keys" style={`--key-ch: ${keyColumn}`}>
 						{
 							more.map((item) => (
 								<div class="help-row">
 									<dt>
 										<span class="sr-only">{reachLabel(item.reach)} </span>
-										{item.reach.map((r) => (r.key ? <kbd>{r.key}</kbd> : <code>{r.flag}</code>))}
+										<span class="help-key">{item.reach.map((r) => (r.key ? <kbd>{r.key}</kbd> : <code>{r.flag}</code>))}</span>
 										<a href={item.href}>{item.name}</a>
 									</dt>
 									<dd>{item.text}</dd>
@@ -275,7 +287,7 @@ const dot = (color) => starSvg('dot', 4, color);
 		</div>
 
 		<div class="night">
-			<div class="sky-edge fall-edge" aria-hidden="true"></div>
+			<div class="sky-edge fall-edge" aria-hidden="true" set:html={edgeMarkup(edges.fall)} />
 			{/* A row kept free of text for the first stars of the night. */}
 			<div class="deco-row stars-row" aria-hidden="true">
 				<span class="star" data-deco style="left: 8%; top: 30%" set:html={dot(COLORS.text)} />
@@ -330,7 +342,7 @@ const dot = (color) => starSvg('dot', 4, color);
 			</div>
 
 			<section class="closing" aria-labelledby="install">
-				<div class="sky-edge close-edge" aria-hidden="true"></div>
+				<div class="sky-edge close-edge" aria-hidden="true" set:html={edgeMarkup(edges.close)} />
 				<div class="mark">
 					<Wordmark ink="var(--nv-naples)" offset="var(--nv-coral)" />
 					<p class="entry" lang="pt"><b>nuvem</b> <span class="ipa">/ˈnu.vẽj/</span> <span class="pos" lang="en">noun, Portuguese:</span> <span lang="en">cloud.</span></p>
@@ -629,16 +641,51 @@ const dot = (color) => starSvg('dot', 4, color);
 		font-size: var(--nv-text-body-sm);
 	}
 
-	/* An edge of the sky: a full-width strip of cells, repeated sideways and
-	   shown at whole pixels. Phones show the same drawing at half the cell. */
+	/* An edge of the sky: a full-width strip of cells, centered and wider
+	   than any screen (the panel clips the rest), shown at whole pixels.
+	   Phones show the same drawing at half the cell. */
 	.sky-edge {
 		position: absolute;
 		left: 50%;
 		z-index: -1;
 		width: 100vw;
 		margin-left: -50vw;
-		background-repeat: repeat-x;
 		pointer-events: none;
+	}
+
+	.sky-edge :global(svg) {
+		position: absolute;
+		left: 50%;
+		display: block;
+		max-width: none;
+	}
+
+	.sky-edge :global(.edge-wide) {
+		margin-left: -1920px;
+	}
+
+	.sky-edge :global(.edge-narrow) {
+		display: none;
+		margin-left: -960px;
+	}
+
+	@media (max-width: 48rem) {
+		.sky-edge :global(.edge-wide) {
+			display: none;
+		}
+
+		.sky-edge :global(.edge-narrow) {
+			display: block;
+		}
+	}
+
+	.dusk-edge :global(svg),
+	.close-edge :global(svg) {
+		bottom: 0;
+	}
+
+	.fall-edge :global(svg) {
+		top: 0;
 	}
 
 	/* Dusk: Naples rises as cloud tops in the gap above the recording and
@@ -668,9 +715,6 @@ const dot = (color) => starSvg('dot', 4, color);
 	.dusk-edge {
 		bottom: calc(100% - var(--seam));
 		height: var(--sky-dusk-h);
-		background-image: var(--sky-dusk);
-		background-size: 1920px var(--sky-dusk-h);
-		background-position: center bottom;
 	}
 
 	/* On a phone the edge is 42px and the flat yellow starts 30px down, so
@@ -683,7 +727,6 @@ const dot = (color) => starSvg('dot', 4, color);
 
 		.dusk-edge {
 			height: calc(var(--sky-dusk-h) / 2);
-			background-size: 960px calc(var(--sky-dusk-h) / 2);
 		}
 	}
 
@@ -838,15 +881,20 @@ const dot = (color) => starSvg('dot', 4, color);
 		}
 	}
 
+	/* One key column, as wide as the longest key, so every name starts at
+	   the same place. */
 	.help-row dt {
-		display: flex;
+		display: grid;
+		grid-template-columns: calc(var(--key-ch) * 1ch) auto;
+		justify-content: start;
 		align-items: baseline;
-		gap: var(--nv-space-3);
+		column-gap: var(--nv-space-3);
 		font-family: var(--nv-font-mono);
 		font-size: var(--nv-text-body-sm);
 	}
 
 	.help-row dd {
+		max-width: 60ch;
 		margin: 0;
 		color: var(--nv-text-muted);
 		font-size: var(--nv-text-body-sm);
@@ -915,15 +963,11 @@ const dot = (color) => starSvg('dot', 4, color);
 	.fall-edge {
 		top: -6px;
 		height: var(--sky-fall-h);
-		background-image: var(--sky-fall);
-		background-size: 1920px var(--sky-fall-h);
-		background-position: center top;
 	}
 
 	@media (max-width: 48rem) {
 		.fall-edge {
 			height: calc(var(--sky-fall-h) / 2);
-			background-size: 960px calc(var(--sky-fall-h) / 2);
 		}
 	}
 
@@ -1125,15 +1169,11 @@ const dot = (color) => starSvg('dot', 4, color);
 	.close-edge {
 		bottom: -6px;
 		height: var(--sky-close-h);
-		background-image: var(--sky-close);
-		background-size: 1920px var(--sky-close-h);
-		background-position: center bottom;
 	}
 
 	@media (max-width: 48rem) {
 		.close-edge {
 			height: calc(var(--sky-close-h) / 2);
-			background-size: 960px calc(var(--sky-close-h) / 2);
 		}
 	}
 
