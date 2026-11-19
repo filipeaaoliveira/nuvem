@@ -5,6 +5,10 @@ sidebar:
   order: 9
 ---
 
+Reload configuration reads `config.toml` again while nuvem runs, so most
+changes apply without a restart. This page lists what a reload applies and
+what still needs a restart.
+
 ## Reload
 
 1. Edit `config.toml` and save it.
@@ -38,8 +42,8 @@ When a setting that needs a restart has changed, the status line ends with
 `restart required for:` and names it, for example
 `restart required for: plugins`.
 
-Command-line flags keep the values nuvem started with: reload reads the same
-flags again.
+Reload applies the command-line flags nuvem started with again, so a flag
+still wins over the file.
 
 ## When the file is broken
 

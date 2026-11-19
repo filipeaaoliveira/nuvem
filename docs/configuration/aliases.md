@@ -21,8 +21,6 @@ Both places match the built-in aliases in the **Aliases** column of
 - The command palette matches each command's label and every alias, but not
   the category. See [Palette commands](../reference/commands.md#services).
 
-An alias you add in `[aliases]` works in both places.
-
 ```toml
 [aliases]
 vms = "gce"
@@ -31,7 +29,7 @@ warehouse = "bigquery"
 ```
 
 The key is the new name. The value names an existing service, in the same
-vocabulary `[columns]` and `[[jumps]]` use: a service id such as `compute` or
+vocabulary `[columns]` and `[[jumps]]` use: a service ID such as `compute` or
 `vpc-networks`, one of its built-in aliases, or its label such as
 `"Cloud SQL"`. Matching is case-insensitive.
 

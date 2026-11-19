@@ -46,7 +46,7 @@ following table spells each service the canonical way:
 A `to` with no `:` in it names a service list, not a detail tab. The jump
 switches to that service's table and puts the cursor on the row that `name`
 resolves to. Fifteen of the sixteen services are legal list destinations,
-including the twelve that have no detail tabs at all. You can write
+including the twelve whose tabs a jump cannot name. You can write
 `to = "vpc-networks"` and `to = "secrets"`, for example:
 
 ```toml
@@ -60,8 +60,9 @@ Cloud Storage has no detail tabs. Its `Enter` opens an object browser, not a
 tabbed pane. `to = "storage:objects"` thus names nothing, and a rule that
 writes it is reported as such, not as an unknown tab. `to = "storage"` is a
 legal list destination. Secret Manager, Cloud Functions and Pub/Sub topics are
-the same shape. They have no `DetailTab` spelling, so no `"<service>:<tab>"`
-destination, but they are list destinations like every other service. Cloud
+the same shape. A jump cannot name a tab of theirs, so they have no
+`"<service>:<tab>"` destination, but they are list destinations like every
+other service. Cloud
 Functions has no detail pane at all, by design. The reason is recorded with
 the function list under
 [Cloud Functions](../reference/services/cloud-functions.md).
@@ -94,25 +95,20 @@ nuvem computes the set from the instance, and no template names it, so there
 is no single row for either key to point at. An empty result is an answer (no
 rule governs this instance), not a row that has gone.
 
-The narrowed table intersects with `/`, so you can still filter inside it, and
-the header says which instance it is narrowed to. It does not narrow by
+You can still filter the narrowed table with `/`, and the header says which
+instance it is narrowed to. It does not narrow by
 whether a rule is in force. A DENY rule and a disabled rule both still target
 the instance, so both stay in the list. `select` is
 only defined from `compute` to `firewall-rules`. nuvem rejects any other
 pairing at load.
 
-A rule to a list whose rows are identified by name alone, such as a VPC
-network, a secret or a topic, must not carry a `location`. If it does, nuvem
-rejects it at load with that reason: the row identity has no location half for
-it to match.
-
 `secrets`, `pubsub-topics`, `pubsub-subscriptions`, `service-accounts`,
 `iam-policy`, `vpc-networks` and `firewall-rules` are the services with no
-location field at all.
-A secret, a topic, a subscription, a service account, the project policy, a
-VPC network and a firewall rule are all global. `{location}` has nothing to
-render for them. A `location` template on one of those rules is rejected with
-that reason, and never silently renders an empty string.
+location field at all. A secret, a topic, a subscription, a service account,
+the project policy, a VPC network and a firewall rule are all global, so their
+rows are identified by name alone. A rule to one of these lists must not
+carry a `location`. If it does, nuvem rejects it at load with that reason, and
+the template never silently renders an empty string.
 
 `name`, `location` and `label` are templates: literal text with `{field}`
 placeholders filled from the row you press `J` on. The fields that exist
@@ -244,8 +240,10 @@ for others.
 
 A jump that *is* offered lands only on a resource
 already in the destination service's loaded list, matched on both its
-name and its zone/region. The picker never fetches a resource that is not in
-the list. If there is no such row, the status line says which case it is:
+name and its zone/region. The picker never fetches a single resource into
+existence to land on. At most, it starts loading a list that was never loaded,
+the first case below. If there is no such row, the status line says which
+case it is:
 
 ```
 Loading GKE clusters, so web-01-cluster cannot be opened yet — try again once they arrive
@@ -258,7 +256,7 @@ web-01-cluster is no longer available
 - The second is a list that is not loaded and is not being fetched: a load
   that failed *in this configuration*, waiting on the retry backoff.
   A failure inherited from a configuration you have since left does not count.
-  That backend was not called here, so the jump fetches.
+  That load never ran in this configuration, so the jump fetches.
 - The third is a list that is loaded and does not have that row in it.
 
 The cross-service rule in the example thus lands only once the GKE list is

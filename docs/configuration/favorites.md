@@ -6,12 +6,12 @@ sidebar:
 ---
 
 `[favorites]` takes three optional keys, each a list of strings: `projects`,
-`regions`, and `zones`. A `projects` entry is matched against the project id.
+`regions`, and `zones`. A `projects` entry is matched against the project ID.
 A `regions` or `zones` entry is matched against the region or zone name.
 
-The configuration context picker lists favorited rows first. To open it,
-press `Ctrl-Space` on the Project, Region, or Zone field while you edit the
-active context. Favorited rows keep the order they already had in the
+The context picker lists favorited rows first. To open it, press
+`Ctrl-Space` on the Project, Region, or Zone field while you edit the active
+context. Favorited rows keep the order they already had in the
 underlying list, not the order they were written in `[favorites]`. Each
 favorited row is marked with a leading `*`.
 
