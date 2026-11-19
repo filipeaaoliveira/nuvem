@@ -8,12 +8,13 @@
 // - Inline code breaks only at spaces, never inside a token such as
 //   `--configuration`; a long path may still break after a `/`.
 // - Table cells carry their column's header as `data-label`, so a narrow
-//   screen can show each row as a labelled block.
+//   screen can show each row as a labelled block, and each table's scroll
+//   region is named after the heading above it.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolveLink, inside } from './doc-links.mjs';
-import { CHANGELOG_FILE, DOCS_DIR, firstHeading, splitFrontmatter } from './docs-source.mjs';
+import { CHANGELOG_FILE, DOCS_DIR, firstHeading, splitFrontmatter, titleFor } from './docs-source.mjs';
 
 /** Plugin factory: Sätteri calls it once per file and skips files it returns nothing for. */
 export default function docsMarkdown({ fileURL }) {
@@ -21,6 +22,9 @@ export default function docsMarkdown({ fileURL }) {
 	const path = fileURLToPath(fileURL);
 	if (!inside(path, DOCS_DIR) && path !== CHANGELOG_FILE) return undefined;
 	let titleSeen = false;
+	// Each table's scroll region is named after the heading above it.
+	let section = titleFor(path);
+	const tablesIn = new Map();
 
 	const relink = (node, ctx) => {
 		const { href, page, anchor } = resolveLink(node.url, path);
@@ -33,6 +37,7 @@ export default function docsMarkdown({ fileURL }) {
 	return {
 		name: 'nuvem-repo-docs',
 		heading(node, ctx) {
+			if (node.depth > 1 || titleSeen) section = ctx.textContent(node).trim();
 			if (titleSeen || node.depth !== 1) return;
 			titleSeen = true;
 			const parent = ctx.parent(node);
@@ -48,10 +53,15 @@ export default function docsMarkdown({ fileURL }) {
 		table(node, ctx) {
 			const [head, ...rows] = node.children ?? [];
 			if (!head) return;
-			// A scroll container for wide tables, focusable so keyboards can scroll it.
+			// A scroll container for wide tables, focusable so keyboards can scroll
+			// it, and named after its section so a screen reader's list of regions
+			// tells the tables apart. A second table in one section gets a number.
+			const seen = (tablesIn.get(section) ?? 0) + 1;
+			tablesIn.set(section, seen);
+			const label = seen === 1 ? section : `${section}, table ${seen}`;
 			ctx.wrapNode(node, {
 				type: 'paragraph',
-				data: { hName: 'div', hProperties: { className: ['nv-table'], tabIndex: 0, role: 'region', ariaLabel: 'Table' } },
+				data: { hName: 'div', hProperties: { className: ['nv-table'], tabIndex: 0, role: 'region', ariaLabel: label } },
 				children: [],
 			});
 			const labels = head.children.map((cell) => ctx.textContent(cell).trim());
