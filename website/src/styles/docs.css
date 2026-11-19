@@ -231,6 +231,19 @@ starlight-toc a[aria-current='true']::before {
 	border-inline-start: 1px solid var(--nv-rule);
 }
 
+/* A page without "On this page" keeps its column where a page with one has
+   it, so the text does not jump sideways between pages. Starlight centres
+   it instead; this is its own width rule for pages with contents. */
+@media (min-width: 72rem) {
+	:root[data-has-sidebar]:not([data-has-toc]) .main-pane {
+		--sl-content-margin-inline: auto 0;
+		width: min(
+			calc(100% - var(--sl-sidebar-width)),
+			calc(var(--sl-content-width) + (100% - var(--sl-content-width) - var(--sl-sidebar-width)) / 2)
+		);
+	}
+}
+
 .right-sidebar h2,
 mobile-starlight-toc .toggle {
 	color: var(--nv-text);
