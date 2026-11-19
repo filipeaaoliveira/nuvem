@@ -12,6 +12,7 @@
 //   region is named after the heading above it.
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveLink, inside } from './doc-links.mjs';
 import { CHANGELOG_FILE, DOCS_DIR, firstHeading, splitFrontmatter, titleFor } from './docs-source.mjs';
@@ -25,6 +26,9 @@ export default function docsMarkdown({ fileURL }) {
 	// Each table's scroll region is named after the heading above it.
 	let section = titleFor(path);
 	const tablesIn = new Map();
+	// Cells in a table's key column, whose key-like code is drawn as key caps.
+	const keyCells = new Set();
+	const keyPage = KEY_PAGES.some((page) => inside(path, join(DOCS_DIR, page)));
 
 	const relink = (node, ctx) => {
 		const { href, page, anchor } = resolveLink(node.url, path);
@@ -48,7 +52,11 @@ export default function docsMarkdown({ fileURL }) {
 		inlineCode(node, ctx) {
 			// Headings keep plain code so their ids match the link check's.
 			if (ctx.parent(node)?.type === 'heading') return;
-			ctx.replaceNode(node, { type: 'html', value: codeHtml(node.value) });
+			let cell = ctx.parent(node);
+			while (cell && cell.type !== 'tableCell') cell = ctx.parent(cell);
+			const inKeyColumn = Boolean(cell && keyCells.has(cell));
+			const keys = keyCaps(node.value, inKeyColumn || keyPage, !inKeyColumn);
+			ctx.replaceNode(node, { type: 'html', value: keys ?? codeHtml(node.value) });
 		},
 		table(node, ctx) {
 			const [head, ...rows] = node.children ?? [];
@@ -65,9 +73,11 @@ export default function docsMarkdown({ fileURL }) {
 				children: [],
 			});
 			const labels = head.children.map((cell) => ctx.textContent(cell).trim());
+			const keyColumn = labels.findIndex((label) => KEY_COLUMNS.includes(label));
 			for (const row of rows) {
 				row.children.forEach((cell, i) => {
 					if (labels[i]) ctx.setProperty(cell, 'data', { hProperties: { dataLabel: labels[i] } });
+					if (i === keyColumn) keyCells.add(cell);
 				});
 			}
 		},
@@ -89,6 +99,50 @@ function headingSlug(text) {
 		.toLowerCase()
 		.replace(/[^\p{L}\p{N}\s_-]/gu, '')
 		.replace(/\s/g, '-');
+}
+
+/** Table columns that list keys, by their header. */
+const KEY_COLUMNS = ['Key', 'Keys', 'Press'];
+
+/**
+ * Pages whose prose names keys in code, such as "press `r`": the key
+ * reference and the service pages. Paths are relative to `docs/`.
+ */
+const KEY_PAGES = ['reference/keys.md', 'reference/services'];
+
+/** Keys with a name, as the docs write them. `Home` is a workspace, not a key. */
+const NAMED_KEYS = ['Esc', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'PgUp', 'PgDn', 'Shift', 'Ctrl', 'Alt', '↑', '↓', '←', '→'];
+
+/**
+ * One key as the docs write it: a named key, a single character, or either
+ * after `Ctrl-`, `Alt-` or `Shift-`. In prose (`loose` false) a single
+ * character counts only when it is a letter or a mark nuvem binds, so a
+ * value such as `0` or `-` stays code.
+ */
+function isKey(token, loose) {
+	const combo = /^(?:Ctrl|Alt|Shift)-(.+)$/u.exec(token);
+	if (combo) return NAMED_KEYS.includes(combo[1]) || [...combo[1]].length === 1;
+	if (NAMED_KEYS.includes(token)) return true;
+	if ([...token].length !== 1) return false;
+	return loose ? !/\s/u.test(token) : /^[A-Za-z/:?,[\]]$/u.test(token);
+}
+
+/**
+ * Key caps for a code span that names keys, or undefined to leave it code.
+ * Only spans in a table's key column or anywhere on a key page are `read`;
+ * `strict` is false only in a key column. A span may hold alternatives,
+ * `Enter/Esc/q`, or, in a key column, a range of digits, `0-9`.
+ */
+function keyCaps(value, read, strict) {
+	if (!read) return undefined;
+	const kbd = (key) => `<kbd>${escapeHtml(key)}</kbd>`;
+	if (isKey(value, !strict)) return kbd(value);
+	const range = /^(\d)-(\d)$/.exec(value);
+	const or = (mark) => `<span class="nv-key-or">${mark}</span>`;
+	if (range && !strict) return `${kbd(range[1])}${or('–')}${kbd(range[2])}`;
+	const options = value.split('/');
+	if (options.length > 1 && options.every((key) => key && isKey(key, !strict))) return options.map(kbd).join(or('/'));
+	return undefined;
 }
 
 function escapeHtml(text) {

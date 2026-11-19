@@ -116,7 +116,7 @@ rebuild. The site loads nothing from other origins. Keep it that way.
 | --- | --- |
 | `src/content.config.ts` | The loader that reads `docs/` |
 | `src/lib/docs-source.mjs` | File-to-address mapping, titles and the sidebar |
-| `src/lib/markdown-docs.mjs` | Removes the leading title, rewrites links, keeps code tokens whole, labels table cells |
+| `src/lib/markdown-docs.mjs` | Removes the leading title, rewrites links, keeps code tokens whole, labels table cells, draws keys as key caps |
 | `src/lib/doc-links.mjs` | Resolves docs links and fails the build on broken ones |
 | `src/lib/code-plates.mjs` | Code block captions and the shell prompt |
 | `src/lib/security-headers.mjs` | Fills the CSP script hashes in `dist/_headers` |
