@@ -98,9 +98,9 @@ runs, service by service. If a service's new block fails validation, the
 service keeps the settings it is already running: the last good table, not the
 built-in defaults. Its warning ends
 `ignoring this block, keeping the column settings already in use` instead of
-the fallback wording shown earlier. A
-service with nothing running yet does fall back, and keeps the fresh-load
-wording. Deleting a block restores that service's defaults.
+the fallback wording shown earlier. A service with nothing running yet does
+fall back, and keeps the fresh-load wording. Deleting a block restores that
+service's defaults.
 
 A reload never fetches again. The loaded rows, the row selection, the applied
 filters, and the load state all survive it. Only the layout changes, and with
