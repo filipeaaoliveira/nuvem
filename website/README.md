@@ -114,6 +114,8 @@ The home page's sky (its grounds, the cell edges between them, the clouds,
 stars and moon) is drawn by `src/lib/sky-cells.mjs`. Two rules keep it off
 the text: every line of text sits wholly on one ground with 12px of it all
 around, and every decoration stays 16px from text, tiles and the diagram.
+Two more keep it a drawing: no seam leaves a line, and no change of ground
+is a straight line.
 Layout alone cannot prove either, so a browser check does:
 
 ```sh
@@ -121,12 +123,16 @@ npm run build
 npm run check:sky        # or: node scripts/check-sky.mjs 360,1280
 ```
 
-It serves `dist/`, drives Chrome or Chromium headless over the DevTools
-protocol (set `CHROME_PATH` if it is not found), and checks 19 widths from
-360 to 2560, plus the seams between grounds at four pixel ratios. It needs
-no dependency beyond Node and is not part of `npm run build`, so the hosted
-build does not need a browser. The repository's CI does not build the site,
-so run it locally after any change to the home page.
+It serves `dist/` (or another build, with `--dist <dir>`), drives Chrome
+or Chromium headless over the DevTools protocol (set `CHROME_PATH` if it is
+not found), and checks 19 widths from 360 to 2560. With only the grounds
+left on screen (opaque blocks painted in a mask color), it also fails on
+any straight run of off-color pixels longer than 48px at six widths and
+four pixel ratios (a line at a seam), and on any change of ground that
+runs straight for more than 64px (every change must be an edge of cells).
+It needs no dependency beyond Node and is not part of `npm run build`, so
+the hosted build does not need a browser. The repository's CI does not
+build the site, so run it locally after any change to the home page.
 
 ## Headers and the social card
 
