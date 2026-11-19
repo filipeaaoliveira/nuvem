@@ -108,6 +108,11 @@ its `script-src` with a hash of every inline script it emitted
 (`src/lib/security-headers.mjs`), so a new inline script needs only a
 rebuild. The site loads nothing from other origins. Keep it that way.
 
+The build also writes `dist/_redirects`, which makes `/docs` and `/docs/`
+an HTTP 301 to the first docs page on Cloudflare Pages
+(`src/lib/redirects.mjs`). The page Astro writes at `/docs/` for the same
+redirect stays, for `npm run preview` and other static hosts.
+
 `public/og.png` is the 1200 by 630 card that link previews show.
 
 ## Layout
@@ -120,6 +125,7 @@ rebuild. The site loads nothing from other origins. Keep it that way.
 | `src/lib/doc-links.mjs` | Resolves docs links and fails the build on broken ones |
 | `src/lib/code-plates.mjs` | Code block captions and the shell prompt |
 | `src/lib/security-headers.mjs` | Fills the CSP script hashes in `dist/_headers` |
+| `src/lib/redirects.mjs` | Writes `dist/_redirects` from the redirects in `astro.config.mjs` |
 | `src/lib/demo-assets.mjs` | The demo files the home page uses; fails the build when one is missing |
 | `src/lib/terminal-frame.mjs` | Reads a frame from `demo/frames/`, checks its markup and contrast |
 | `src/routeData.ts` | Hides a one-entry contents list; no canonical on the 404 page |
