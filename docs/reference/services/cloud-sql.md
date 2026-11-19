@@ -5,6 +5,9 @@ sidebar:
   order: 4
 ---
 
+The Cloud SQL list shows the project's Cloud SQL instances. From it you can
+open an instance's detail, and start, stop, restart or fail over an instance.
+
 For Cloud SQL instances, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
@@ -24,7 +27,7 @@ equivalent of `gcloud sql users list`), loaded the first time you open the
 Users tab. Passwords and certificates are redacted at parse time. They never
 appear on any tab, including the raw JSON one.
 
-In the Cloud SQL workspace, select an instance and press `:` to open the command
+In the Cloud SQL list, select an instance and press `:` to open the command
 palette. The actions on offer follow the instance status:
 
 - A stopped instance can be started.
@@ -36,7 +39,7 @@ make. Start and Stop show `sql.instances.patch` with `activationPolicy=ALWAYS`
 or `NEVER`. Restart and Fail over show `sql.instances.restart` and
 `sql.instances.failover`. See
 [Before a change runs](overview.md#before-a-change-runs). Press `Enter` to
-confirm or `Esc` to cancel. On success, the app refreshes the instance list, as
+confirm or `Esc` to cancel. On success, nuvem refreshes the instance list, as
 it does for GCE.
 
 The same four actions also run against a marked set. The palette then offers a

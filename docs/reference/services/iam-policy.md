@@ -5,6 +5,9 @@ sidebar:
   order: 14
 ---
 
+The IAM policy table shows the project's IAM policy, one row per role and
+member.
+
 For the project IAM policy, `r` reloads the table. The equivalent `gcloud` command is:
 
 ```bash
@@ -38,16 +41,20 @@ The member cell leads with the badges the row wears:
 
 - `PUBLIC`: the grant is held by `allUsers` (anyone on the internet, with or
   without a Google account) or by `allAuthenticatedUsers` (any authenticated
-  Google account, including accounts outside your organisation).
+  Google account, including accounts outside your organization).
 - `DELETED`: the principal was deleted after the binding was written, so the
   grant names an identity that no longer exists.
 
-Both are stale policy, not errors, so a badged row is coloured as a warning,
-the way an orphaned disk is. `/` can match both. `/PUBLIC` isolates the badged rows
-because the badge is a searched field of its own. `/deleted` does the same because the member itself arrives prefixed
-`deleted:` and the filter is case-insensitive. The badges lead the cell because
-the member column is the one that elides first on a narrow terminal. A trailing
-badge would be the first thing lost on the rows it exists to mark.
+Neither badge is an error, but both mark a grant to review, so a badged row is
+colored as a warning, the way an orphaned disk is.
+
+`/` can match both. `/PUBLIC` isolates the badged rows because the badge is a
+searched field of its own. `/deleted` does the same because the member itself
+arrives prefixed `deleted:` and the filter is case-insensitive.
+
+The badges lead the cell because the member column is the one that is cut
+short first on a narrow terminal. A trailing badge would be the first thing
+lost on the rows it exists to mark.
 
 The policy table is list-only and read-only. `Enter` does nothing on a row,
 there is no detail pane, and nuvem never issues `set-iam-policy`. Editing an

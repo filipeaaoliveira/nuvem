@@ -9,15 +9,17 @@ nuvem has no mouse support. You drive it entirely from the keyboard. This page
 lists every key, grouped by the view it works in. The **Footer label** column
 is the text nuvem shows in the footer and in help (`?`), so you can match a row
 to what is on screen. Keys written as an uppercase letter need `Shift`: `L` is
-`Shift-L`. A key shown as `type` means any printable character, and `j/k` also
-works with the arrow keys.
+`Shift-L`. A `Ctrl-` key is the Ctrl key with that letter and no `Shift`,
+whatever case the page writes it in: `Ctrl-S` and `Ctrl-s` are the same key.
+A key shown as `type` means any printable character, and `j/k` also works with
+the arrow keys.
 
 You can rebind seven keys in the config file. See
 [Hotkeys](../configuration/hotkeys.md). The tables show the default keys.
 
 ## Global keys
 
-These work in every normal view: Home, Configurations, the Resources list and detail, Logging, Tunnels and FinOps. `Ctrl-C` and `Ctrl-x` also work inside modals, the palette, help and text fields. The other global keys are not available while a modal, the palette or a text field has the keyboard.
+These work in every normal view: Home, Configurations, the Resources list and detail, Logging, Tunnels and FinOps. `Ctrl-C` and `Ctrl-x` also work inside dialogs, the palette, help and text fields. The other global keys are not available while a dialog, the palette or a text field has the keyboard.
 
 <!-- help-context: global -->
 
@@ -25,11 +27,11 @@ These work in every normal view: Home, Configurations, the Resources list and de
 | --- | --- | --- |
 | `:` | Command palette | Open the [command palette](../guides/command-palette.md). Rebindable as `command_palette`. |
 | `?` | Help | Show the keys for the current view. Rebindable as `help`. |
-| `r` | Refresh | Refresh the current view: reload the service list, the log window, the configurations, FinOps, or Home's health probe. Rebindable as `refresh`. |
+| `r` | Refresh | Refresh the current view: reload the service list, the log window, the configurations, FinOps, or Home's `gcloud` check. Rebindable as `refresh`. |
 | `q` | Quit | Quit nuvem from Home and from list views. In a detail view, `q` goes back instead. Rebindable as `quit`. |
-| `Ctrl-C` | Quit | Quit from any view, including modals and text fields. |
+| `Ctrl-C` | Quit | Quit from any view, including dialogs and text fields. |
 | `Y` | Copy diagnostic | Copy the sanitized detail of the last diagnostic to the clipboard. |
-| `Ctrl-x` | Cancel running plugin | Cancel every running plugin, from any view, including modals and text fields. |
+| `Ctrl-x` | Cancel running plugin | Cancel every running plugin, from any view, including dialogs and text fields. |
 | `h` | Home | Open [Home](../guides/home-overview.md). Rebindable as `home`. |
 | `c` | Configurations | Open [Configurations](../guides/switch-configurations.md). Rebindable as `configurations`. |
 | `g` | Resources | Open [Resources](../guides/browse-resources.md). Rebindable as `resources`. |
@@ -201,7 +203,10 @@ The tabbed detail pane `Enter` opens.
 
 ## BigQuery drill-down
 
-The tables of a dataset. `Enter` opens a table's column schema.
+The tables of a dataset. `Enter` opens a table's column schema. Both BigQuery
+levels take the resource list's keys, so the mark keys, `t`, `i`, `y` and `n`
+are bound here too. They do nothing in BigQuery, because they act only in the
+services the [Resource list](#resource-list) table names.
 
 <!-- help-context: ResourceDrilldown -->
 
@@ -229,7 +234,8 @@ The tables of a dataset. `Enter` opens a table's column schema.
 
 ## BigQuery column schema
 
-The bottom BigQuery level, where `Enter` opens nothing.
+The bottom BigQuery level, where `Enter` opens nothing. As one level up, the
+mark keys, `t`, `i`, `y` and `n` are bound but do nothing here.
 
 <!-- help-context: ResourceDrilldownLeaf -->
 
@@ -278,8 +284,8 @@ The list of log entries. See [Cloud Logging](../guides/cloud-logging.md).
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
 | `Enter` | Open entry | Open the selected entry's payload and labels. |
 | `t` | Pause/resume tail | Pause or resume the live tail. |
-| `T` | Time range | Cycle the since window, shortest to longest. |
-| `0-6` | Since bucket | Pick a since window directly: `0` 1m, `1` 5m, `2` 15m, `3` 30m, `4` 1h, `5` 6h, `6` 24h. |
+| `T` | Time range | Cycle the time window, shortest to longest. |
+| `0-6` | Since bucket | Pick a time window directly: `0` 1m, `1` 5m, `2` 15m, `3` 30m, `4` 1h, `5` 6h, `6` 24h. |
 | `s` | Raise severity floor | Raise the severity floor one step. |
 | `S` | Lower severity floor | Lower the severity floor one step. |
 | `w` | Wrap | Wrap or truncate long lines. |

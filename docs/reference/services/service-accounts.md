@@ -5,6 +5,8 @@ sidebar:
   order: 13
 ---
 
+The Service accounts list shows the project's IAM service accounts.
+
 For service accounts, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
@@ -15,7 +17,7 @@ The columns are EMAIL, DISPLAY NAME, STATE and UNIQUE ID. The email is the
 account's identity. In `[columns]` and in templates it is called `name`.
 
 STATE reads as a word, so `/disabled` lists the disabled accounts. Filtering
-is entirely client-side here, because the state is a word nuvem paints and not
+is entirely client-side here, because the state is a word nuvem shows and not
 a value in any raw field. Service accounts carry no labels, so `-l k=v` reports
 that label filtering is not supported here.
 

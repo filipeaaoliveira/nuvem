@@ -5,6 +5,9 @@ sidebar:
   order: 9
 ---
 
+The Persistent disks list shows the project's zonal and regional disks, and
+marks the ones that no instance uses.
+
 For persistent disks, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash

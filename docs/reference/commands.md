@@ -136,7 +136,7 @@ Each [plugin](../plugins/overview.md) whose templates the selected row can fill
 appears under its own `label`, rendered for that row. Plugins are offered from
 a Resources list with a row selected, not from a detail pane.
 
-Under `--read-only`, a plugin runs only when nuvem recognises the start of its
+Under `--read-only`, a plugin runs only when nuvem recognizes the start of its
 `args` as a gcloud command that only reads, such as
 `["compute", "instances", "describe", ...]`. Every other plugin stays in the
 list, dimmed and marked `— read-only`, and choosing it reports the refusal.

@@ -5,6 +5,9 @@ sidebar:
   order: 8
 ---
 
+The Cloud Functions list shows every 1st and 2nd gen function in the project,
+across all regions.
+
 For Cloud Functions, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
@@ -19,14 +22,14 @@ generations in one shape, so 1st gen rows do not arrive in the older format.
 The list is read-only and shows name, region, state, generation, update time
 and invoke URL. Name and region lead because a function's name is unique within
 its region, not within the project. Both are needed to tell two rows apart.
-STATE is colour-coded like every other lifecycle column. A function that is
+STATE is color-coded like every other lifecycle column. A function that is
 deploying or being deleted reads as busy, not as broken. A state that nuvem
-does not recognise stays uncoloured.
+does not recognize stays uncolored.
 
 There is no detail pane, so `Enter` does nothing on a function. `functions
 describe` returns the same resource that `functions list` already returned for
 every row, so a pane would be a second call that shows what is on screen. The
 invoke URL has the least room in the table and is the first column dropped on a
-narrow terminal. The preview beside the navigator gives it a line of its own,
-with the rest of the row, so you can still read it where the column is elided
+narrow terminal. The preview beside the list gives it a line of its own, with
+the rest of the row, so you can still read it where the column is cut short
 or gone.

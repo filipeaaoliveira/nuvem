@@ -5,14 +5,16 @@ sidebar:
   order: 11
 ---
 
+The Pub/Sub subscriptions list shows every subscription in the project, with
+its topic and delivery settings.
+
 For Pub/Sub subscriptions, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
 gcloud --configuration <active-config> [--project <project>] pubsub subscriptions list --format=json --limit=500
 ```
 
-One flat table holds every subscription in the project. TOPIC names the topic
-each one belongs to.
+TOPIC names the topic each subscription belongs to.
 
 The columns are NAME, TOPIC, DELIVERY, STATE, ACK(S) (the acknowledgement
 deadline in seconds), RETENTION, DEAD LETTER and LABELS.

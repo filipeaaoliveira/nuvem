@@ -5,6 +5,9 @@ sidebar:
   order: 7
 ---
 
+The Secret Manager list shows the project's secrets and their metadata, never
+their values.
+
 For Secret Manager, `r` reloads the list. The equivalent `gcloud` command is:
 
 ```bash
@@ -31,6 +34,6 @@ If that call fails, nuvem reports the failure. It does not show a secret with
 no versions.
 
 Secret Manager browsing is metadata only. nuvem never makes the call that
-returns a version's payload, so no secret material exists anywhere in the app,
+returns a version's payload, so no secret material exists anywhere in nuvem,
 and there is nothing to redact. The service is read-only: creating, editing,
 disabling, or destroying secrets and versions is out of scope.
