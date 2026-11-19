@@ -5,9 +5,9 @@ sidebar:
   order: 4
 ---
 
-The operations-log entry says a run finished; it does not say what the run
-said. **Plugin output** in the command palette (`:`) opens what the command
-printed, as lines:
+The operations-log entry says that a run finished, not what the run printed.
+To read that, run **Plugin output** from the command palette (`:`). It opens
+what the command printed, as lines:
 
 ```text
 ┌plugin output──────────────────────────────────────────┐
@@ -18,41 +18,46 @@ printed, as lines:
 └run 1 of 3 · line 1 of 84 · ↑↓ scroll · n/p run · y ───┘
 ```
 
-`↑`/`↓` (or `j`/`k`) scroll a line, `PgUp`/`PgDn` twenty — a run shorter than
-one page does not scroll at all, and a longer one stops with its tail on
-screen rather than above a screen of blank rows — and `n`/`p` move
-between the runs the log still holds — most recent first, stopping at either
-end rather than wrapping. `y` copies the run on screen to the clipboard and
-`Esc` closes. The command is offered only once some run has actually printed something, so
-choosing it never opens an empty box: a run that failed before producing any
-output — no gcloud on `PATH`, say — settles in the log with no output to
-attach, and the entry stays absent.
+| Key | Action |
+| --- | --- |
+| `↑`/`↓` (or `j`/`k`) | Scroll one line. |
+| `PgUp`/`PgDn` | Scroll twenty lines. |
+| `n`/`p` | Move between the runs the log still holds, most recent first. Stops at either end and does not wrap. |
+| `y` | Copy the run on screen to the clipboard. |
+| `Esc` | Close the viewer. |
 
-Both streams are kept, and stderr has a reserved share of the bound, so a
-`--format=json` listing far past it cannot silence the warning printed beside
-it. A line the command wrote to stderr is shown marked `stderr │`, including
-for a run that exited 0 — a quota warning printed alongside a successful
-answer is not lost. `y` copies the marks too, so a failed run's trailer stays
-distinguishable from its answer in the clipboard. A run that *failed* keeps its
-stderr too, which is the case with the most to read: the log's own detail line
-is bounded at 200 bytes, and a gcloud error trailer is routinely longer than
-that.
+A run shorter than one page does not scroll at all. A longer one stops with
+its tail on screen, not above a screen of blank rows.
 
-What is kept is bounded: 256 KiB per run, and the log holds ten records. Past
-that bound the **head** is kept — `gcloud` puts the identifying fields first,
-so a truncated `describe` still names what it described — and the last line
-says how much was dropped rather than simply ending. A single line longer than
-the bound (`--format=json` prints one) is cut mid-line rather than dropped, on
-a character boundary. Nothing after the cut is shown even if it would have
-fitted, so the head never has a hole in it. `y` copies what was kept.
+The palette offers **Plugin output** only once some run has printed
+something, so choosing it never opens an empty box. A run that failed before
+it printed anything (for example, with no gcloud on `PATH`) settles in the log
+with no output to attach, and the entry stays absent.
 
-Output is redacted on the way in, by the same rule the status line uses: a
-token that carries a credential becomes `[redacted]`, while one that merely
-names something (`name: db-password`) is left alone. Indentation survives,
-because YAML output is read by its shape; control characters do not.
+nuvem keeps both streams. stderr has a reserved share of the size bound, so a
+`--format=json` listing far past the bound cannot silence the warning printed
+beside it. A line the command wrote to stderr is shown marked `stderr │`, even
+for a run that exited 0, so a quota warning printed beside a successful answer
+is not lost. `y` copies the marks too, so you can tell a failed run's trailer
+from its answer in the clipboard. A run that *failed* keeps its stderr as
+well. That is the case with the most to read: the log's own detail line is
+bounded at 200 bytes, and a gcloud error trailer is often longer.
+
+nuvem keeps at most 256 KiB per run, and the log holds ten records. Past that
+bound, nuvem keeps the *head*. `gcloud` puts the identifying fields first, so
+a truncated `describe` still names what it described. The last line says how
+much was dropped. A single line longer than the bound (`--format=json` prints
+one) is cut mid-line on a character boundary, not dropped. Nothing after the
+cut is shown, even a line that fits, so the head never has a hole in it. `y`
+copies what was kept.
+
+nuvem redacts output as it arrives, by the same rule the status line uses. A
+token that carries a credential becomes `[redacted]`. A token that only names
+something (`name: db-password`) is left alone. Indentation survives, because
+YAML output is read by its shape. Control characters do not survive.
 
 Plugin output lives in memory only, and only for as long as its record is in
-the log — ten operations, or until you quit. Nothing is written to disk. A
-run you are *reading* survives its record being evicted: the viewer holds the
-copy it opened, and says `run no longer in the log` instead of claiming a
-place among runs it has left.
+the log: ten operations, or until you quit. Nothing is written to disk. A run
+you are *reading* survives the eviction of its record. The viewer holds the
+copy it opened, and says `run no longer in the log` instead of a position
+among runs it has left.

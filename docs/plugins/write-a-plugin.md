@@ -40,14 +40,14 @@ This adds a **Describe** command to the GCE instances list. It runs
    chmod o-w ~/.config/nuvem/plugins.toml
    ```
 
-4. Run `nuvem info` again. The line should now read `(1 loaded)`. If it reads
+4. Run `nuvem info` again. The line now reads `(1 loaded)`. If it reads
    `(0 loaded)`, the warning below it says what is wrong.
 
 5. Start nuvem, open GCE instances (`g`, then pick the service), and select an
    instance. Then either:
 
-   - press `,` and then `d`, or
-   - press `:`, type `describe`, and press `Enter`.
+   - Press `,` and then `d`.
+   - Press `:`, type `describe`, and press `Enter`.
 
 6. nuvem shows the exact command, for example:
 
