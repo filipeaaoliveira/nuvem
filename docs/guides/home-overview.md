@@ -11,12 +11,12 @@ already loaded. It never starts a resource load on its own.
 ## Context health
 
 Context health shows whether `gcloud` is available and authenticated, the
-active account, and any classified problem from the last diagnostics probe.
-The probe covers the `gcloud` CLI only. A read through the client libraries
+active account, and any problem the last `gcloud` check found, named by its
+category. That check covers the `gcloud` CLI only. A read through the client libraries
 can fail on its own, for example with an expired token, a disabled API, or no
 route to `googleapis.com`. That failure shows on the service's row, not here.
 
-Press `r` on Home to run the diagnostics probe again. It does not reload the
+Press `r` on Home to run the `gcloud` check again. It does not reload the
 resource inventory. To refresh a service's rows, switch to the Resources
 workspace and press `r` there.
 

@@ -5,7 +5,11 @@ sidebar:
   order: 3
 ---
 
-Every view draws inside the same frame:
+nuvem has six workspaces: Home, Configurations, Resources, Logging, Tunnels
+and FinOps. A workspace is a top-level screen that one key opens, listed under
+[Workspaces](#workspaces). What a workspace shows at a given moment, such as a
+list, a detail pane or a dashboard, is a view. Every view draws inside the
+same frame:
 
 | Part | What it shows |
 | --- | --- |
@@ -13,7 +17,17 @@ Every view draws inside the same frame:
 | Breadcrumb | Where you are: the workspace, then the service, then the open resource. |
 | Body | The workspace itself: a list, a detail pane, a dashboard. |
 | Status line | A status marker and the time of the last refresh. While something loads, or after a warning or an error, it names that operation. Otherwise it names the view on screen. |
-| Footer | The keys that do something in the current view, most useful first. On a narrow terminal, the least useful keys are left out whole, so a key never shows without its label. Press `?` for all of them. |
+| Footer | The keys that do something in the current view, most useful first. On a narrow terminal, the least useful keys are left out whole, and a key never shows without its label. Press `?` for all of them. |
+
+The configuration, account, project, region and zone in the header are the
+context. Switching gcloud configuration, or editing the active
+configuration's project, region or zone, changes the context.
+
+Above a resource list, the tools line shows the applied filter, the row
+count, the sort and a few key hints, such as `w wide`.
+
+A view is a normal view while no confirmation, command palette, help overlay
+or text field has the keyboard. Most keys work only in a normal view.
 
 ## Status markers
 
@@ -43,10 +57,9 @@ color, including under the `no-color` theme:
 
 nuvem needs a terminal at least `60x12` (columns by rows). In a smaller
 terminal, it shows a message that asks for a larger one instead of the
-interface. Modals that
-show a command check that the whole command fits. When it does not, they ask
-for a larger terminal and refuse `Enter`, so you never confirm a command you
-cannot read.
+interface. A confirmation or preview that shows a command checks that the
+whole command fits. If it does not fit, the confirmation asks for a larger
+terminal and refuses `Enter`, so you never confirm a command you cannot read.
 
 When the Resources body is at least 100 columns wide, the list and a preview
 pane sit side by side. See [Browse resources](../guides/browse-resources.md).

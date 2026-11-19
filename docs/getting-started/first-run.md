@@ -28,6 +28,9 @@ such as stopping an instance, reports success but does nothing. See
    gcloud config configurations list
    ```
 
+   If the list is empty, or its `ACCOUNT` column is blank, run `gcloud init`.
+   It signs you in and creates a configuration.
+
 2. Start nuvem:
 
    ```bash

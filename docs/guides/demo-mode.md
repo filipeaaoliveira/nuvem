@@ -15,14 +15,12 @@ nuvem --demo
 
 ## What you see
 
-Every workspace shows sample data: Configurations, Compute Engine, GKE,
-Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager,
-persistent disks, Pub/Sub, BigQuery, VPC, IAM, Cloud Logging and FinOps. Each
-service lists a handful of resources in several states, like a small real
-project. The data uses fixture names such as `dev-project` and
-`example.com`. Its addresses come from private and documentation ranges, and
-from the ranges Google publishes for its own health checks, IAP and Private
-Google Access (`199.36.153.8/30`).
+Every workspace shows sample data: Configurations, every service in
+Resources, Cloud Logging and FinOps. Each service lists a handful of
+resources in several states, like a small real project. The data uses example
+names such as `dev-project` and `example.com`. Its addresses come from private
+and documentation ranges, and from the ranges Google publishes for its own
+health checks, IAP and Private Google Access (`199.36.153.8/30`).
 
 Demo mode opens on [Home](home-overview.md) with every service already listed
 and gcloud already checked, so the first screen shows the inventory instead
@@ -32,12 +30,13 @@ on its own. Demo mode does, because its lists cost nothing.
 Commands that change resources, such as starting or stopping an instance,
 report success but do nothing. Configurations are the exception. Activating
 one, creating one or editing the active context takes effect for the rest of
-the session, and Home and the context line follow the change. nuvem keeps the
+the session, and Home and the header follow the change. nuvem keeps the
 change in memory and never saves it, so your own gcloud configurations stay
 untouched. The next demo session starts on `dev` again.
 
-A project that the sample data does not contain shows only errors. Demo mode
-starts no process, except your system's clipboard tool when you copy a value:
+If you set a project that the sample data does not contain, every list shows
+an error. Demo mode starts no process, except your system's clipboard tool
+when you copy a value:
 
 - SSH and k9s do not open, and the status line says so.
 - A tunnel is simulated. Tunnels lists it, but nothing runs.

@@ -48,7 +48,8 @@ no one outside your machine can reach a forward.
 ## Manage your tunnels
 
 Open the list with `Ctrl-t` from anywhere, or with the palette's `Tunnels`
-entry. A bare `t` already toggles the Logging tail. The list shows each
+entry. A bare `t` already starts a tunnel from a list and pauses the tail in
+Logging, so the Tunnels list needs `Ctrl`. The list shows each
 tunnel's status, kind, local port, target, age, and last message. Inside it:
 
 - `j` / `k` or the arrows move the selection.
@@ -57,7 +58,7 @@ tunnel's status, kind, local port, target, age, and last message. Inside it:
 - `Esc` goes back to the previous view.
 
 Tunnels stay in the list when you switch gcloud configuration. The child
-process keeps running, and each row records the context it was started under.
+process keeps running, and each row records the context it was started in.
 nuvem shuts down every remaining tunnel when you quit, when the terminal
 nuvem runs in closes, or when nuvem is terminated.
 
@@ -72,9 +73,9 @@ row in `Failed` with the underlying error text:
   process's own bind
 - A child process that exits, or never reports that it is ready
 
-Once a tunnel is up, a complaint from the child process that does not stop it
-carrying traffic shows in the message column, and the tunnel keeps running.
-An `ssh` forward that reports one refused connection is an example.
+Once a tunnel is up, the child process can report an error and still carry
+traffic. The error then shows in the message column, and the tunnel keeps
+running. An `ssh` forward that reports one refused connection is an example.
 
 If a kill does not work, the row goes to `Failed` with the reason, so nuvem
 never reports a stop that nobody saw. A killed tunnel always ends in `Stopped`

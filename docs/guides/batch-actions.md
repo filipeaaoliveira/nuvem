@@ -73,7 +73,7 @@ The panel does not take the keyboard, so you can keep working while the batch
 runs. When every target has finished, nuvem refreshes the instance list once.
 The panel closes when that refresh shows the new rows.
 
-The Home overview's "Recent operations" list is a separate history, and it
+The Home overview's Recent operations list is a separate history, and it
 keeps only the most recent entries. After a batch larger than that history,
 only its most recent targets remain in the list.
 
@@ -82,7 +82,7 @@ only its most recent targets remain in the list.
 If you switch gcloud configuration or context while a batch runs, nuvem
 detaches the batch. The progress panel closes at once. Targets that already
 started run to the end, but nuvem discards their results. Targets that had not
-started are cancelled and never run. Each target's "Recent operations"
+started are cancelled and never run. Each target's Recent operations
 entry records what nuvem knows about it, so none stays in progress. A target
 that never sent its call shows `cancelled`. A target whose call was already in
 flight shows `unknown`, because nuvem never saw its outcome.
@@ -90,6 +90,6 @@ flight shows `unknown`, because nuvem never saw its outcome.
 If you confirm a new batch while one is still running, nuvem detaches the
 running batch the same way. Its remaining targets settle as `cancelled` or
 `unknown`, and the progress panel tracks the new batch. Those entries say the
-batch was superseded by a newer one, because you confirmed a replacement and
-cancelled nothing. The statuses are the same as after a context switch,
-because they are all nuvem can prove about each target.
+batch was superseded by a newer one, not that you cancelled it, because you
+confirmed a replacement. The statuses are the same as after a context switch,
+because nuvem can prove nothing more about each target.

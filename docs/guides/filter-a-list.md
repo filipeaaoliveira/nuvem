@@ -28,15 +28,18 @@ service except Cloud Storage:
 
 | Input          | Mode      | Meaning                                             |
 | -------------- | --------- | --------------------------------------------------- |
-| `term`         | `regex`   | Case-insensitive regex, partial match, any field     |
-| `-f term`      | `fuzzy`   | Case-insensitive subsequence match, any field        |
+| `term`         | `regex`   | Case-insensitive regex, partial match, any searchable field |
+| `-f term`      | `fuzzy`   | Case-insensitive subsequence match, any searchable field |
 | `-l k=v[,k=v]` | `label`   | GCP resource labels; every pair must match           |
 | `!term`        | `inverse` | Rows the `regex` predicate does **not** match        |
 
 `regex` is the default, so a plain word matches every row that contains it in
-any field. An empty input means no filter, and so does a prefix with nothing
-after it (`-f`, `-l`, `!`). Every row stays visible and nuvem reports no
-error, because you are still typing.
+any searchable field. The searchable fields are the values the list shows,
+and a few more that some services name under
+[What runs when you apply a filter](#what-runs-when-you-apply-a-filter). An
+empty input means no filter, and so does a prefix with nothing after it
+(`-f`, `-l`, `!`). Every row stays visible and nuvem reports no error, because
+you are still typing.
 
 The `[mode]` chip next to the filter text shows the mode. While the input is
 open, the chip follows the draft. It changes to `[fuzzy]` as soon as you type
@@ -46,7 +49,7 @@ open, the chip follows the draft. It changes to `[fuzzy]` as soon as you type
 
 Label mode is server-side only. `-l` narrows nothing locally on any service.
 Almost no list row carries labels to match against, and where one does (a
-secret's row), the client-side predicate still keeps every row. nuvem pushes
+secret's row), nuvem still keeps every loaded row in label mode. nuvem pushes
 the term to gcloud as a `--filter` and shows whatever comes back as it is.
 
 A label-mode read always goes through `gcloud`, even on the services that
@@ -56,15 +59,15 @@ chip is worse than a slower call. Three consequences follow:
 
 - Label values match case-sensitively on the server, unlike every other mode.
   `-l env=Prod` does not find a `prod` label.
-- `-l` does nothing under `--demo`, which serves embedded fixtures and ignores
-  `--filter`.
+- `-l` does nothing under `--demo`, which serves built-in sample data and
+  ignores `--filter`.
 - Cloud Run exposes no user labels in list output. There, `-l` reports
   `label filtering is not supported for Cloud Run` and leaves the table
   unfiltered.
 
-Keys and values can contain only ASCII letters, digits, `.`, `_`, and `-`. A
-key can never contain `.`, because GCP label keys cannot. Anything else
-reports `label selector is not expressible as a gcloud filter`.
+Values can contain only ASCII letters, digits, `.`, `_`, and `-`. Keys can
+contain the same characters except `.`, because GCP label keys cannot.
+Anything else reports `label selector is not expressible as a gcloud filter`.
 
 Which label field each service pushes:
 
@@ -106,9 +109,9 @@ differs from the filter that is applied.
 ## Filters in Cloud Storage
 
 Cloud Storage keeps the plain case-insensitive substring filter and shows no
-mode chip. Its object browser already sends safe filter text to the server as
-an object prefix, and grammar prefixes conflict with that. So the
-grammar does not apply to Cloud Storage at all. There, `-l env=prod`,
+mode chip. Its object browser already sends filter text with no glob
+characters to the server as an object prefix, and grammar prefixes conflict
+with that. So the grammar does not apply to Cloud Storage at all. There, `-l env=prod`,
 `-f api`, and `!x` are plain text, not modes.
 
 In the bucket list, that text is matched as literal substrings. In the object
@@ -122,9 +125,10 @@ because it never parses the grammar.
 
 ## What runs when you apply a filter
 
-Lists come from the Google Cloud client libraries, or from `bq` for BigQuery,
-and neither is given the filter. In every mode except label mode, the filter
-narrows the loaded rows on the client. List reads are capped at 500 rows, so
+Lists come from the Google Cloud client libraries, or from `bq` for BigQuery.
+Apart from the Cloud Storage object prefix described above, neither is given
+the filter. In every mode except label mode, the filter narrows the loaded
+rows on the client. List reads are capped at 500 rows, so
 in these modes the filter sees only the rows that were loaded.
 
 GCE, GKE, and Cloud SQL refresh the list when you apply or clear the filter.
