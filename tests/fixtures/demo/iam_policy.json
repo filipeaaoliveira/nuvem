@@ -1,0 +1,72 @@
+{
+ "bindings": [
+  {
+   "members": [
+    "user:dev@example.com"
+   ],
+   "role": "roles/owner"
+  },
+  {
+   "members": [
+    "group:platform-team@example.com",
+    "serviceAccount:terraform@dev-project.iam.gserviceaccount.com"
+   ],
+   "role": "roles/editor"
+  },
+  {
+   "members": [
+    "domain:example.com"
+   ],
+   "role": "roles/viewer"
+  },
+  {
+   "members": [
+    "serviceAccount:web@dev-project.iam.gserviceaccount.com"
+   ],
+   "role": "roles/run.invoker"
+  },
+  {
+   "members": [
+    "serviceAccount:orders-api@dev-project.iam.gserviceaccount.com",
+    "serviceAccount:payments-api@dev-project.iam.gserviceaccount.com"
+   ],
+   "role": "roles/cloudsql.client"
+  },
+  {
+   "members": [
+    "serviceAccount:orders-api@dev-project.iam.gserviceaccount.com"
+   ],
+   "role": "roles/secretmanager.secretAccessor"
+  },
+  {
+   "members": [
+    "serviceAccount:batch@dev-project.iam.gserviceaccount.com"
+   ],
+   "role": "roles/storage.objectAdmin"
+  },
+  {
+   "members": [
+    "group:platform-team@example.com"
+   ],
+   "role": "roles/container.developer"
+  },
+  {
+   "members": [
+    "group:oncall@example.com"
+   ],
+   "role": "roles/logging.viewer"
+  },
+  {
+   "condition": {
+    "expression": "request.time.getHours(\"Europe/Lisbon\") < 20",
+    "title": "Deploy hours only"
+   },
+   "members": [
+    "serviceAccount:ci@dev-project.iam.gserviceaccount.com"
+   ],
+   "role": "roles/iam.serviceAccountUser"
+  }
+ ],
+ "etag": "BwYdEmo4x9c=",
+ "version": 1
+}

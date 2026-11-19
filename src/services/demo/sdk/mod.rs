@@ -126,6 +126,21 @@ pub fn named<T: serde::de::DeserializeOwned>(
     ))
 }
 
+/// The rows of a listing whose `name` starts with `prefix`, as JSON: the
+/// children of one parent, for a showcase listing that holds every parent's.
+pub fn rows_under(listing: &str, prefix: &str) -> Result<String, Error> {
+    let rows: Vec<serde_json::Value> = serde_json::from_str(listing).map_err(Error::deser)?;
+    let mine: Vec<serde_json::Value> = rows
+        .into_iter()
+        .filter(|row| {
+            row.get("name")
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|name| name.starts_with(prefix))
+        })
+        .collect();
+    serde_json::to_string(&mine).map_err(Error::ser)
+}
+
 /// The last `/`-separated segment of a resource name: the short name a row
 /// paints, whichever of the API's spellings carried it.
 pub fn short_name(name: &str) -> &str {

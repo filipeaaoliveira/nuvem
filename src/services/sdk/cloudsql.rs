@@ -82,11 +82,17 @@ impl SdkCloudSqlService {
         }
     }
 
-    /// The same service over the demo showcase. It has no showcase documents
-    /// of its own, so it answers from the captures, as
-    /// [`Self::from_fixtures`] does. See [`crate::services::demo::Corpus`].
+    /// The same service over the demo showcase, which is what `nuvem --demo`
+    /// lists. See [`crate::services::demo::Corpus`].
     pub fn from_showcase() -> Self {
-        Self::from_fixtures()
+        let (instances, users, operations) = crate::services::demo::sdk::cloudsql::clients_of(
+            crate::services::demo::Corpus::Showcase,
+        );
+        Self {
+            instances,
+            users,
+            operations,
+        }
     }
 
     /// Every instance in the project.

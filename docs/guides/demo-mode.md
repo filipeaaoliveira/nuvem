@@ -20,7 +20,8 @@ Cloud Run, Cloud Functions, Cloud SQL, Cloud Storage, Secret Manager,
 persistent disks, Pub/Sub, BigQuery, VPC, IAM, Cloud Logging and FinOps. Each
 service lists a handful of resources in several states, the way a small real
 project would. The data uses fixture names such as `dev-project` and
-`example.com`, and addresses from private and documentation ranges.
+`example.com`, addresses from private and documentation ranges, and the ranges
+Google publishes for its own health checks and IAP.
 
 Demo mode opens on [Home](home-overview.md) with every service already listed
 and gcloud already checked, so the first screen shows the inventory rather
@@ -46,16 +47,14 @@ answered from the sample data, or refused, instead of being run.
 ## What differs from a real project
 
 - Label filters (`-l key=value`) do not narrow the sample data.
-- In BigQuery, every dataset shows the same sample tables, and every table
-  opens the same sample schema.
 - FinOps asks about the locations of rows you have already listed, as it does
   against a real project. Demo mode lists every service as it opens, so FinOps
   has its locations from the start.
 
 A few reads always go through a command-line tool rather than a Google Cloud
 client library: BigQuery (`bq`), FinOps budgets, gcloud's own configuration
-list and account check, and label-filtered lists. In demo mode recorded output answers them
-instead of the tool.
+list and account check, and label-filtered lists. In demo mode built-in sample
+output answers them instead of the tool.
 
 Demo mode is useful for trying nuvem, recording demos and screenshots, and
 reproducing a bug report without sharing project data.

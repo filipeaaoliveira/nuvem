@@ -19,6 +19,7 @@ const SERVICE_ACCOUNTS: &str = include_str!("../../../../tests/fixtures/iam_serv
 
 /// The policy capture: `gcloud projects get-iam-policy --format=json`.
 const POLICY: &str = include_str!("../../../../tests/fixtures/iam_policy.json");
+const SHOWCASE_POLICY: &str = include_str!("../../../../tests/fixtures/demo/iam_policy.json");
 
 /// What `nuvem --demo` lists: see [`Corpus::Showcase`].
 const SHOWCASE_SERVICE_ACCOUNTS: &str =
@@ -66,7 +67,9 @@ impl google_cloud_iam_admin_v1::stub::Iam for AccountsStub {
 /// the version field is the API's statement about the response, not a filter
 /// this stub applies.
 #[derive(Debug, Default)]
-pub struct PolicyStub;
+pub struct PolicyStub {
+    pub corpus: Corpus,
+}
 
 impl google_cloud_resourcemanager_v3::stub::Projects for PolicyStub {
     async fn get_iam_policy(
@@ -77,7 +80,8 @@ impl google_cloud_resourcemanager_v3::stub::Projects for PolicyStub {
         google_cloud_gax::response::Response<google_cloud_iam_v1::model::Policy>,
     > {
         let policy: google_cloud_iam_v1::model::Policy =
-            serde_json::from_str(POLICY).map_err(Error::deser)?;
+            serde_json::from_str(self.corpus.pick(POLICY, SHOWCASE_POLICY))
+                .map_err(Error::deser)?;
         Ok(google_cloud_gax::response::Response::from(policy))
     }
 }
@@ -91,6 +95,6 @@ pub fn clients() -> (Iam, Projects) {
 pub fn clients_of(corpus: Corpus) -> (Iam, Projects) {
     (
         Iam::from_stub(AccountsStub { corpus }),
-        Projects::from_stub(PolicyStub),
+        Projects::from_stub(PolicyStub { corpus }),
     )
 }

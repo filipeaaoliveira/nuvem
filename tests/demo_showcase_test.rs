@@ -23,6 +23,15 @@ macro_rules! showcase {
 
 /// Every showcase document, by file name.
 const DOCUMENTS: &[(&str, &str)] = &[
+    (
+        "bigquery_datasets.json",
+        showcase!("bigquery_datasets.json"),
+    ),
+    (
+        "bigquery_table_show.json",
+        showcase!("bigquery_table_show.json"),
+    ),
+    ("bigquery_tables.json", showcase!("bigquery_tables.json")),
     ("cloud_functions.json", showcase!("cloud_functions.json")),
     (
         "cloud_run_revisions_v2.json",
@@ -32,19 +41,28 @@ const DOCUMENTS: &[(&str, &str)] = &[
         "cloud_run_services_v2.json",
         showcase!("cloud_run_services_v2.json"),
     ),
+    (
+        "cloudsql_instances.json",
+        showcase!("cloudsql_instances.json"),
+    ),
+    ("cloudsql_users.json", showcase!("cloudsql_users.json")),
     ("gce_instances.json", showcase!("gce_instances.json")),
     ("gcs_buckets_v2.json", showcase!("gcs_buckets_v2.json")),
+    ("gcs_objects_v2.json", showcase!("gcs_objects_v2.json")),
     ("gke_clusters.json", showcase!("gke_clusters.json")),
+    ("iam_policy.json", showcase!("iam_policy.json")),
     (
         "iam_service_accounts.json",
         showcase!("iam_service_accounts.json"),
     ),
+    ("log_entries.json", showcase!("log_entries.json")),
     ("persistent_disks.json", showcase!("persistent_disks.json")),
     (
         "pubsub_subscriptions.json",
         showcase!("pubsub_subscriptions.json"),
     ),
     ("pubsub_topics.json", showcase!("pubsub_topics.json")),
+    ("secret_versions.json", showcase!("secret_versions.json")),
     ("secrets.json", showcase!("secrets.json")),
     (
         "vpc_firewall_rules.json",
@@ -69,7 +87,8 @@ fn every_showcase_file_is_checked() {
         })
         .collect();
     on_disk.sort();
-    let listed: Vec<String> = DOCUMENTS.iter().map(|(name, _)| name.to_string()).collect();
+    let mut listed: Vec<String> = DOCUMENTS.iter().map(|(name, _)| name.to_string()).collect();
+    listed.sort();
     assert_eq!(on_disk, listed);
 }
 
@@ -258,45 +277,13 @@ async fn settle(session: &mut RuntimeSession) {
     }
 }
 
-/// Nothing in the showcase names a real project, account or address.
-///
-/// Every project path names `dev-project` (or the `_` Storage uses, or a
-/// project number); every email is at `example.com` or is a `dev-project`
-/// service account; every IPv4 address is private, from the documentation
-/// ranges, the whole internet (`0.0.0.0/0`), or one of the ranges Google
-/// documents for its own health checks, IAP and APIs.
+/// Nothing in the showcase names a real project, account or address. See
+/// `support::fixture_names` for what may be named; `demo_runner_test` holds
+/// every screen a demo walk paints to the same rule.
 #[test]
 fn the_showcase_names_only_fixtures() {
-    let allowed_public: [[u8; 2]; 4] = [[35, 235], [130, 211], [35, 191], [199, 36]];
     for (file, text) in DOCUMENTS {
-        for (at, _) in text.match_indices("projects/") {
-            let project: String = text[at + "projects/".len()..]
-                .chars()
-                .take_while(|c| *c != '/' && *c != '"')
-                .collect();
-            assert!(
-                project == PROJECT || project == "_" || project.chars().all(|c| c.is_ascii_digit()),
-                "{file} names project {project:?}"
-            );
-        }
-        for word in text.split(['"', ' ', ',', '\'']) {
-            if let Some((_, domain)) = word.split_once('@') {
-                assert!(
-                    domain == "example.com"
-                        || domain == format!("{PROJECT}.iam.gserviceaccount.com")
-                        || domain == "developer.gserviceaccount.com",
-                    "{file} names an address at {domain}"
-                );
-            }
-            let address = word.split('/').next().unwrap_or("");
-            let octets: Vec<u8> = address.split('.').filter_map(|o| o.parse().ok()).collect();
-            if octets.len() == 4 && address.split('.').count() == 4 {
-                let ok = matches!(octets[..], [10, ..] | [192, 168, ..] | [0, 0, 0, 0])
-                    || (octets[0] == 172 && (16..32).contains(&octets[1]))
-                    || matches!(octets[..3], [192, 0, 2] | [198, 51, 100] | [203, 0, 113])
-                    || allowed_public.contains(&[octets[0], octets[1]]);
-                assert!(ok, "{file} names the address {address}");
-            }
-        }
+        let problems = crate::support::fixture_names::problems(text);
+        assert!(problems.is_empty(), "{file} names {problems:?}");
     }
 }

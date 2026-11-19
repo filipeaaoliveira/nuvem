@@ -1,0 +1,7 @@
+[
+{"host":"","name":"postgres","type":"BUILT_IN"},
+{"host":"","name":"orders_app","type":"BUILT_IN"},
+{"host":"","name":"readonly_bi","type":"BUILT_IN"},
+{"host":"","name":"dev@example.com","type":"CLOUD_IAM_USER"},
+{"host":"","name":"orders-api@dev-project.iam","type":"CLOUD_IAM_SERVICE_ACCOUNT"}
+]

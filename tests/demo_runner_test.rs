@@ -1796,6 +1796,14 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
                 "{kind:?} row {row}, tab {tab}: still loading after the session \
                  settled:\n{frame}"
             );
+            // Everything a demo screen paints names only fixtures: the lists,
+            // every detail tab and its raw JSON, the object browser and each
+            // BigQuery level.
+            let problems = crate::support::fixture_names::problems(&frame);
+            assert!(
+                problems.is_empty(),
+                "{kind:?} row {row}, tab {tab}: the demo paints {problems:?}:\n{frame}"
+            );
             session
                 .dispatch_action(Action::Resources(ResourcesAction::SelectNextTab))
                 .await;
@@ -2117,5 +2125,64 @@ async fn back_from_a_drilled_view_returns_to_the_list_it_came_from() {
                 "{kind:?} after {into:?}: Esc did not return to the level it came from"
             );
         }
+    }
+}
+
+/// The screens outside the per-row walk name only fixtures too: every
+/// service's list and preview, every workspace, a BigQuery table's schema, and
+/// a Cloud Storage object's detail.
+#[tokio::test(flavor = "multi_thread")]
+async fn every_other_demo_screen_names_only_fixtures() {
+    let mut screens = Vec::new();
+    // Each service's list, with the preview of its first row beside it.
+    for kind in ResourceServiceKind::ALL {
+        let session = demo_session_showing(kind).await;
+        screens.push((format!("{kind:?} list"), screen(&session, 160, 40)));
+    }
+    let mut session = demo_session_showing(ResourceServiceKind::ComputeInstances).await;
+    for workspace in [
+        WorkspaceAction::Home,
+        WorkspaceAction::Configurations,
+        WorkspaceAction::Logging,
+        WorkspaceAction::Tunnels,
+        WorkspaceAction::FinOps,
+    ] {
+        session.dispatch_action(Action::Workspace(workspace)).await;
+        drain(&mut session).await;
+        screens.push((format!("{workspace:?}"), screen(&session, 160, 40)));
+    }
+    let mut session = demo_session_showing(ResourceServiceKind::BigQueryDatasets).await;
+    for _ in 0..2 {
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+            .await;
+        drain(&mut session).await;
+    }
+    screens.push(("BigQuery schema".to_string(), screen(&session, 160, 40)));
+    let mut session = demo_session_showing(ResourceServiceKind::CloudStorage).await;
+    session
+        .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+        .await;
+    drain(&mut session).await;
+    for _ in 0..8 {
+        session
+            .dispatch_action(Action::Resources(ResourcesAction::SelectNext))
+            .await;
+    }
+    session
+        .dispatch_action(Action::Resources(ResourcesAction::OpenSelected))
+        .await;
+    drain(&mut session).await;
+    screens.push((
+        "Cloud Storage object".to_string(),
+        screen(&session, 160, 40),
+    ));
+
+    for (name, frame) in screens {
+        let problems = crate::support::fixture_names::problems(&frame);
+        assert!(
+            problems.is_empty(),
+            "{name}: the demo paints {problems:?}:\n{frame}"
+        );
     }
 }

@@ -1,0 +1,11 @@
+[
+{"creationTime":"1767258000000","id":"dev-project:analytics.daily_active_users","kind":"bigquery#table","tableReference":{"datasetId":"analytics","projectId":"dev-project","tableId":"daily_active_users"},"type":"TABLE"},
+{"creationTime":"1767344400000","id":"dev-project:analytics.orders_summary","kind":"bigquery#table","tableReference":{"datasetId":"analytics","projectId":"dev-project","tableId":"orders_summary"},"type":"VIEW"},
+{"creationTime":"1767430800000","id":"dev-project:analytics.sessions","kind":"bigquery#table","tableReference":{"datasetId":"analytics","projectId":"dev-project","tableId":"sessions"},"type":"TABLE"},
+{"creationTime":"1767276000000","id":"dev-project:billing_export.gcp_billing_export_v1","kind":"bigquery#table","tableReference":{"datasetId":"billing_export","projectId":"dev-project","tableId":"gcp_billing_export_v1"},"type":"TABLE"},
+{"creationTime":"1767261600000","id":"dev-project:events_raw.app_events","kind":"bigquery#table","tableReference":{"datasetId":"events_raw","projectId":"dev-project","tableId":"app_events"},"type":"TABLE"},
+{"creationTime":"1767348000000","id":"dev-project:events_raw.app_events_errors","kind":"bigquery#table","tableReference":{"datasetId":"events_raw","projectId":"dev-project","tableId":"app_events_errors"},"type":"TABLE"},
+{"creationTime":"1767258000000","id":"dev-project:marketing.campaigns","kind":"bigquery#table","tableReference":{"datasetId":"marketing","projectId":"dev-project","tableId":"campaigns"},"type":"TABLE"},
+{"creationTime":"1767344400000","id":"dev-project:marketing.campaign_results","kind":"bigquery#table","tableReference":{"datasetId":"marketing","projectId":"dev-project","tableId":"campaign_results"},"type":"VIEW"},
+{"creationTime":"1767265200000","id":"dev-project:ml_features.customer_features","kind":"bigquery#table","tableReference":{"datasetId":"ml_features","projectId":"dev-project","tableId":"customer_features"},"type":"TABLE"}
+]
