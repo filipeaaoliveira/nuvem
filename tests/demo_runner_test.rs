@@ -1773,3 +1773,50 @@ async fn every_row_opens_into_a_settled_view(kind: ResourceServiceKind) {
         }
     }
 }
+
+/// A narrow table drops a column before it truncates a short one.
+///
+/// At 121 columns the Cloud SQL list used to read `Runna…`, `POSTGRE…` and
+/// `AVAIL…` across the row: every column was cut at once. Now a column whose
+/// whole content (header included) fits in a short width is shown whole or
+/// not at all, and a long column is cut no shorter than that width. Walked for
+/// every service's demo table at every width from 20 to 200; the identity
+/// column is exempt only once it is the last column standing.
+#[tokio::test(flavor = "multi_thread")]
+async fn no_demo_table_cuts_a_short_column_at_any_width() {
+    use nuvem::ui::shared::table::{display_width, plan_table};
+    const SHORT: u16 = 14;
+
+    for kind in ResourceServiceKind::ALL {
+        let session = demo_session_showing(kind).await;
+        let table = project_resource_list(&session.app().root.resources)
+            .table
+            .unwrap_or_else(|| panic!("{kind:?} paints no table"));
+        let content = |c: usize| {
+            table
+                .rows
+                .iter()
+                .map(|row| display_width(&row.cells[c].text))
+                .chain([display_width(table.columns[c].header)])
+                .max()
+                .unwrap_or(0)
+                .min(table.columns[c].preferred_width)
+        };
+        for width in 20..=200u16 {
+            let plan = plan_table(&table, width, false);
+            let shown: Vec<_> = plan.columns.iter().filter(|c| c.visible).collect();
+            if shown.len() <= 1 {
+                continue;
+            }
+            for column in shown {
+                let wants = content(column.index).min(SHORT);
+                assert!(
+                    column.width >= wants,
+                    "{kind:?} at {width}: {} is {} wide where it reads at {wants}",
+                    table.columns[column.index].header,
+                    column.width
+                );
+            }
+        }
+    }
+}

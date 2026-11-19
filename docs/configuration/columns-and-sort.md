@@ -121,7 +121,10 @@ nothing to configure there and it ignores the block.
 `w` is unaffected and stays a *width preset*, not a column selection: the config
 answers which columns exist for you, `w` answers how many of them fit right now.
 Narrow (the default) drops columns until the row fits and reports the hidden
-count in the tools line as `+N cols (w)`; wide keeps every column in the list
+count in the tools line as `+N cols (w)`. A column whose values are short, such
+as a status or a region, is shown whole or dropped, never cut short; a column
+with long values is cut to no fewer than 14 characters before another column is
+dropped to make room; wide keeps every column in the list
 and marks the row `▸ more` when it overruns the terminal. Dropping the toggle
 would either force every narrow-terminal user to hand-configure a short list or
 silently change the default table for everyone who never opens the config file.

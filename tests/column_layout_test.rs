@@ -315,15 +315,25 @@ fn visible_keys(table: &TableModel, width: u16) -> Vec<&str> {
         .collect()
 }
 
+/// The distinct column sets the plan passes through from wide to narrow.
+fn drop_sequence(table: &TableModel) -> Vec<Vec<&str>> {
+    let mut sequence: Vec<Vec<&str>> = Vec::new();
+    for width in (1..=200u16).rev() {
+        let keys = visible_keys(table, width);
+        if sequence.last() != Some(&keys) {
+            sequence.push(keys);
+        }
+    }
+    sequence
+}
+
 #[test]
 fn a_configured_list_ending_in_name_still_keeps_name_in_narrow_mode() {
-    // The whole compute catalog, reordered so `name` is last. Min widths are
-    // 6+6+8+8+8+6 = 42 plus five 2-cell gaps = 52, so 51 forces exactly one
-    // drop — and it must be the rightmost *droppable* column, not `name`.
-    // Under plain positional priorities `name` would carry the largest
-    // priority value and be the first column dropped, leaving an operator with
-    // rows they cannot tell apart while `Enter`, `t` and `y` still act on the
-    // selected one.
+    // The whole compute catalog, reordered so `name` is last. The first drop
+    // must be the rightmost *droppable* column, not `name`. Under plain
+    // positional priorities `name` would carry the largest priority value and
+    // be the first column dropped, leaving an operator with rows they cannot
+    // tell apart while `Enter`, `t` and `y` still act on the selected one.
     let app = app_with_rows(
         COMPUTE,
         settings(
@@ -335,7 +345,7 @@ fn a_configured_list_ending_in_name_still_keeps_name_in_narrow_mode() {
     let table = table(&app);
 
     assert_eq!(
-        visible_keys(&table, 51),
+        drop_sequence(&table)[1],
         vec!["status", "zone", "machine-type", "internal-ip", "name"],
         "the rightmost droppable column goes first and `name` stays"
     );
@@ -356,21 +366,22 @@ fn name_survives_a_configured_list_that_ends_in_it_at_every_width() {
     let table = table(&app);
 
     let expected: Vec<Vec<&str>> = vec![
+        vec![
+            "status",
+            "zone",
+            "machine-type",
+            "internal-ip",
+            "external-ip",
+            "name",
+        ],
         vec!["status", "zone", "machine-type", "internal-ip", "name"],
         vec!["status", "zone", "machine-type", "name"],
         vec!["status", "zone", "name"],
         vec!["status", "name"],
         vec!["name"],
     ];
-    for (dropped, expected_keys) in expected.iter().enumerate() {
-        let width = 51 - 10 * dropped as u16;
-        assert_eq!(
-            &visible_keys(&table, width),
-            expected_keys,
-            "at width {width}"
-        );
-    }
-    for width in 1..=51u16 {
+    assert_eq!(drop_sequence(&table), expected);
+    for width in 1..=200u16 {
         assert!(
             visible_keys(&table, width).contains(&"name"),
             "`name` was dropped at width {width}"

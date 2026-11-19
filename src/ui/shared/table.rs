@@ -21,6 +21,13 @@ use crate::ui::theme;
 
 const GAP: u16 = 2;
 
+/// The width a column with long content starts at before the planner decides
+/// what to drop: wide enough to recognise a name, a region or a version
+/// (`europe-west1-b`, `db-custom-2-76`), and no wider, so long columns do not
+/// crowd out the columns after them. Content no wider than this is never
+/// truncated by a narrow table; its column is dropped whole first.
+const READABLE_WIDTH: u16 = 14;
+
 pub const ROW_SELECT_SYMBOL: &str = "> ";
 
 /// Glyph shown in the leading mark column for a marked row. Two display
@@ -122,7 +129,18 @@ pub fn plan_table(model: &TableModel, available_width: u16, wide: bool) -> Table
     }
 
     let mut visible = vec![true; n];
-    let mut widths: Vec<u16> = (0..n).map(|c| model.columns[c].min_width).collect();
+    // Each column starts at the width it reads at, not at its floor. A column
+    // whose whole content is short — a status, a region, an availability —
+    // reads only at its full width, so it starts there: `Runna…` and
+    // `AVAIL…` say less than the column a drop would have removed. A column
+    // with long content starts at `READABLE_WIDTH`, enough to recognise a
+    // value, and grows from there below.
+    //
+    // So a narrow table drops a low-priority column before it truncates the
+    // short ones, rather than cutting every column at once.
+    let readable =
+        |c: usize| -> u16 { target(c).min(model.columns[c].min_width.max(READABLE_WIDTH)) };
+    let mut widths: Vec<u16> = (0..n).map(readable).collect();
 
     // The column with the smallest priority value is protected from dropping,
     // and that column is NAME in every table: each catalog gives NAME priority
