@@ -5,6 +5,7 @@
 // Docs links go through docHref(), so a renamed page fails the build.
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { docHref } from '../lib/doc-links.mjs';
+import CellCloud from '../components/landing/CellCloud.astro';
 
 const links = [
 	{ href: await docHref('getting-started/install.md'), name: 'Install', text: 'Homebrew, Cargo, a release binary or a build from source.' },
@@ -24,6 +25,7 @@ const links = [
 		next: false,
 	}}
 >
+	<CellCloud class="nv-lost-cloud" shape="large" body="#fbe6a0" shade="#f58e84" cell={7} />
 	<p>There is no page at this address. The link may be out of date, or the address may have a typo.</p>
 	<p>Most readers are looking for one of these:</p>
 	<ul class="nv-not-found">
@@ -55,6 +57,26 @@ const links = [
 </script>
 
 <style>
+	/* The site's cloud, set in terminal cells, drifted off on its own. */
+	:global(.nv-lost-cloud) {
+		margin-block: var(--nv-space-4) var(--nv-space-6);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		:global(.nv-lost-cloud) {
+			animation: nv-lost-drift 40s ease-in-out infinite alternate;
+		}
+	}
+
+	@keyframes nv-lost-drift {
+		from {
+			translate: 0 0;
+		}
+		to {
+			translate: 2rem 0;
+		}
+	}
+
 	.nv-search-link {
 		padding: 0;
 		border: 0;

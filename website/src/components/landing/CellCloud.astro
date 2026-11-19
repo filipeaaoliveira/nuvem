@@ -1,0 +1,34 @@
+---
+// A cloud set in terminal cells: full cells in the body color with a
+// one-pixel gap between them, as type sits on a printed page, and a
+// half-tone underside (a checker of quarter cells, like ░) in the shade
+// color. Drawn on whole pixels at `cell` pixels a cell, and shown at exactly
+// that size, so every cell stays sharp. The shapes live in sky-cells.mjs.
+//
+// Decoration only: the SVG is hidden from assistive technology.
+import { cloudSvg } from '../../lib/sky-cells.mjs';
+
+interface Props {
+	shape?: 'large' | 'small' | 'wisp';
+	/** Body color, as #rrggbb. */
+	body: string;
+	/** Color of the half-tone underside, as #rrggbb. */
+	shade: string;
+	/** Size of a cell in whole pixels. */
+	cell?: number;
+	class?: string;
+}
+
+const { shape = 'large', body, shade, cell = 8, class: className = '' } = Astro.props;
+const markup = cloudSvg(shape, cell, body, shade).replace('<svg ', `<svg class="cell-cloud ${className}" data-deco `);
+---
+
+<Fragment set:html={markup} />
+
+<style is:global>
+	.cell-cloud {
+		display: block;
+		max-width: none;
+		pointer-events: none;
+	}
+</style>
