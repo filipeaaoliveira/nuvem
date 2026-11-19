@@ -18,7 +18,10 @@ gcloud --configuration <active-config> storage buckets list --format=json
 The bucket list shows name, location, storage class, last-updated time,
 versioning, and public access prevention where available. Press `Enter` on a
 bucket to open the object browser. Other services show a flat list. The object
-browser follows prefixes like folders and shows a breadcrumb.
+browser follows prefixes like folders. The breadcrumb names the bucket and the
+folders you opened, and ends in an object's own name when you open its detail.
+The status line names the bucket or folder on screen, such as
+`gs://dev-project-assets/css/`.
 
 Object rows show name, size, storage class, updated time, content type, and
 encryption and retention indicators (never key material). Press `n` to load the

@@ -145,7 +145,7 @@ A service's list in Resources.
 | `Tab` | Focus sidebar | Move focus between the service sidebar and the list or detail pane. |
 | `/` | Filter | Edit the filter for this list. See [Filter a list](../guides/filter-a-list.md). |
 | `s` | Sort column | Sort by the selected column. Press again to reverse the direction. |
-| `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (keep every column). |
+| `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (full width from the left, `▸ more` for what does not fit). |
 | `←/→` | Select column | Move the selected column, which `s` sorts by. |
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
 | `Enter` | Open | Open the selected row: a detail pane, the Cloud Storage object browser, or the next BigQuery level. |
@@ -215,7 +215,7 @@ services the [Resource list](#resource-list) table names.
 | `v` | Toggle sidebar | Show or hide the service sidebar. |
 | `Tab` | Focus sidebar | Move focus between the service sidebar and the list or detail pane. |
 | `/` | Filter | Edit the filter for this list. See [Filter a list](../guides/filter-a-list.md). |
-| `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (keep every column). |
+| `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (full width from the left, `▸ more` for what does not fit). |
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
 | `Enter` | Open | Open the selected row: a detail pane, the Cloud Storage object browser, or the next BigQuery level. |
 | `Space` | Mark | Mark or unmark the selected row (GCE instances and Cloud SQL only). See [Batch actions](../guides/batch-actions.md). |
@@ -244,7 +244,7 @@ mark keys, `t`, `i`, `y` and `n` are bound but do nothing here.
 | `v` | Toggle sidebar | Show or hide the service sidebar. |
 | `Tab` | Focus sidebar | Move focus between the service sidebar and the list or detail pane. |
 | `/` | Filter | Edit the filter for this list. See [Filter a list](../guides/filter-a-list.md). |
-| `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (keep every column). |
+| `w` | Wide columns | Switch between narrow columns (drop columns to fit) and wide columns (full width from the left, `▸ more` for what does not fit). |
 | `j/k` | Move selection | Move the selection down or up. The arrow keys do the same. |
 | `Space` | Mark | Mark or unmark the selected row (GCE instances and Cloud SQL only). See [Batch actions](../guides/batch-actions.md). |
 | `V` | Range mark | Mark every row from the last marked row to the selected row (`Shift-V`). |
