@@ -12,15 +12,14 @@ two places:
 - The command palette (`:`), where it finds the command that opens the
   service.
 
-The two places match different built-in names:
+Both places match the built-in aliases in the **Aliases** column of
+[Services](../reference/services/overview.md), so `:sm` and `/sm` both find
+**Secret Manager**:
 
 - The sidebar search matches each service's label, its category, and every
-  alias in the **Aliases** column of [Services](../reference/services/overview.md).
-- The command palette matches each command's label and its own palette
-  aliases. Only five services have palette aliases: GCE instances, GKE
-  clusters, Cloud SQL, Cloud Storage and Cloud Run. See
-  [Palette commands](../reference/commands.md#services). For the others, type
-  part of the label: `:secret` finds **Secret Manager**, but `:sm` does not.
+  alias.
+- The command palette matches each command's label and every alias, but not
+  the category. See [Palette commands](../reference/commands.md#services).
 
 An alias you add in `[aliases]` works in both places.
 
