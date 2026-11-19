@@ -381,19 +381,19 @@ const CLOUD_SQL_COLUMNS_BODY: &str = "columns = [\"tier\", \"engine\", \"name\",
 const CLOUD_SQL_ROWS: &[ExpectedRow] = &[
     &[
         ("tier", "db-custom-2-7680"),
-        ("engine", "MySQL (MYSQL_8_0)"),
+        ("engine", "MySQL 8.0"),
         ("name", "orders-primary"),
         ("status", "Failed"),
     ],
     &[
         ("tier", "db-f1-micro"),
-        ("engine", "MariaDB (MARIA_10_6)"),
+        ("engine", "MariaDB 10.6"),
         ("name", "warehouse-archive"),
         ("status", "Maintenance"),
     ],
     &[
         ("tier", "db-n1-highmem-4"),
-        ("engine", "Postgres (PG_14)"),
+        ("engine", "Postgres 14"),
         ("name", "billing-replica-eu"),
         ("status", "Runnable"),
     ],
@@ -427,10 +427,11 @@ fn cloud_sql_case() -> Case {
 }
 
 /// Built from [`CLOUD_SQL_ROWS`]. The engine cell is the one expectation that
-/// is not a field copy, so it is taken apart here exactly the way
-/// `cloud_sql_engine_cell` puts it together — `Engine (VERSION)`. If the
-/// composition ever changed, the painted text would stop matching the fixture
-/// and this case would fail, which is the point of covering it.
+/// is not a field copy, so it is taken apart here the way
+/// `cloud_sql_engine_cell` puts it together: `Engine 10.6` from an engine and
+/// an `ENGINE_10_6` constant. If the composition ever changed, the painted text
+/// would stop matching the fixture and this case would fail, which is the
+/// point of covering it.
 fn cloud_sql_instances() -> Vec<CloudSqlInstance> {
     CLOUD_SQL_ROWS
         .iter()
@@ -438,17 +439,18 @@ fn cloud_sql_instances() -> Vec<CloudSqlInstance> {
             let field = |key: &str| owned(row, key, "cloud sql fixture");
             let composed = field("engine");
             let (engine, database_version) = composed
-                .split_once(" (")
+                .rsplit_once(' ')
                 .map(|(engine, version)| {
                     (
                         engine.to_string(),
-                        version
-                            .strip_suffix(')')
-                            .expect("composed engine cell ends with ')'")
-                            .to_string(),
+                        format!(
+                            "{}_{}",
+                            engine.to_uppercase().replace(' ', ""),
+                            version.replace('.', "_")
+                        ),
                     )
                 })
-                .unwrap_or_else(|| panic!("{composed:?} is not an `Engine (VERSION)` cell"));
+                .unwrap_or_else(|| panic!("{composed:?} is not an `Engine 1.2` cell"));
             let status = match field("status").as_str() {
                 "Runnable" => CloudSqlStatus::Runnable,
                 "Stopped" => CloudSqlStatus::Stopped,

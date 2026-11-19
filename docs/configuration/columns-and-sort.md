@@ -123,8 +123,9 @@ answers which columns exist for you, `w` answers how many of them fit right now.
 Narrow (the default) drops columns until the row fits and reports the hidden
 count in the tools line as `+N cols (w)`. A column whose values are short, such
 as a status or a region, is shown whole or dropped, never cut short; a column
-with long values is cut to no fewer than 14 characters before another column is
-dropped to make room; wide keeps every column in the list
+with long values is cut to no fewer than 16 characters before another column is
+dropped to make room; `name` is shown whole for as long as any other column
+can be dropped instead; and no column header is cut; wide keeps every column in the list
 and marks the row `▸ more` when it overruns the terminal. Dropping the toggle
 would either force every narrow-terminal user to hand-configure a short list or
 silently change the default table for everyone who never opens the config file.

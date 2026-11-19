@@ -692,7 +692,7 @@ fn cloud_sql_default_table_columns_are_unchanged() {
         golden(&table(ResourceServiceKind::CloudSql).columns),
         vec![
             ("name", "NAME", 6, 26, 0, CellAlign::Left, true),
-            ("engine", "ENGINE", 7, 20, 2, CellAlign::Left, true),
+            ("engine", "ENGINE", 7, 24, 2, CellAlign::Left, true),
             ("region", "REGION", 6, 16, 3, CellAlign::Left, true),
             ("tier", "TIER", 6, 18, 4, CellAlign::Left, true),
             (
@@ -838,7 +838,7 @@ fn every_service_pairs_each_header_with_its_own_cell() {
             ResourceServiceKind::CloudSql,
             vec![
                 plain("name", "orders"),
-                plain("engine", "PostgreSQL (POSTGRES_15)"),
+                plain("engine", "PostgreSQL 15"),
                 plain("region", "europe-west1"),
                 plain("tier", "db-custom-2-7680"),
                 plain("availability", "HA (regional)"),
