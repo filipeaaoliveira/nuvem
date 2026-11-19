@@ -20,10 +20,20 @@ pub struct InteractiveProcessSpec {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InteractiveProcessOutcome {
     Succeeded,
-    ExitedNonZero { code: i32 },
-    TerminatedBySignal { signal: i32 },
+    ExitedNonZero {
+        code: i32,
+    },
+    TerminatedBySignal {
+        signal: i32,
+    },
     MissingBinary,
-    LaunchFailed { message: String },
+    LaunchFailed {
+        message: String,
+    },
+    /// Demo mode: nothing was started. A demo session runs against sample
+    /// data, and an SSH shell or a k9s session would reach a real host or
+    /// cluster through the operator's own gcloud configuration.
+    NotStartedInDemo,
 }
 
 /// Runs a resolved [`InteractiveProcessSpec`] to completion.
