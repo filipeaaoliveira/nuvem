@@ -1,0 +1,30 @@
+---
+// The foot of the docs' mobile menu. Below 50rem the header hides its Docs
+// and GitHub links on docs pages (see Header.astro), so both are here.
+// There is one theme and one language, so Starlight's two selects are left out.
+import SocialIcons from 'virtual:starlight/components/SocialIcons';
+import { DOCS_ROUTE } from '../lib/docs-source.mjs';
+---
+
+<div class="site-links">
+	<a class="docs-link" href={`/${DOCS_ROUTE}/`} aria-current="true">Docs</a>
+	<SocialIcons />
+</div>
+
+<style>
+	.site-links {
+		display: flex;
+		gap: var(--nv-space-5);
+		align-items: center;
+		padding-block: var(--nv-space-4);
+		border-top: 1px solid var(--nv-rule);
+	}
+
+	/* The menu is only on docs pages, so the link marks where you are, as in the header. */
+	.docs-link {
+		color: var(--nv-naples);
+		font-size: var(--nv-text-body);
+		font-weight: 650;
+		text-decoration: none;
+	}
+</style>
