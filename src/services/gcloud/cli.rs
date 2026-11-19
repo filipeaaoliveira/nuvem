@@ -1903,7 +1903,8 @@ mod tests {
     /// is a separate crate, so binding it there would mean making it `pub` to
     /// satisfy a documentation test.
     ///
-    /// Both documents spell the ceiling as words (`two minute ceiling`), so a
+    /// Both documents spell the ceiling as words (`two minute ceiling`, or
+    /// hyphenated as `two-minute ceiling`), so a
     /// bare search for `"120"` would find nothing and a search for `"two"`
     /// would match a dozen unrelated sentences. The word is read out of the
     /// claim's own idiom and compared with the constant spelled out, and every
@@ -1921,7 +1922,7 @@ mod tests {
         const MINUTE_WORDS: [&str; 11] = [
             "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
         ];
-        const IDIOM: &str = " minute ceiling";
+        const IDIOM: &str = "minute ceiling";
 
         let minutes = RUN_TIMEOUT.as_secs() / 60;
         assert_eq!(
@@ -1947,6 +1948,7 @@ mod tests {
             let mut rest = document;
             while let Some(at) = rest.find(IDIOM) {
                 let word = rest[..at]
+                    .trim_end_matches('-')
                     .split_whitespace()
                     .next_back()
                     .unwrap_or_default()
