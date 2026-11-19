@@ -39,7 +39,8 @@ non-HA instance targeted by Fail over) are skipped rather than silently
 dropped.
 
 The batch confirmation names the service it targets, and lists every eligible
-target by name together with its exact per-item `gcloud` command, followed by
+target by name together with the API call it will make for that target, such
+as `compute.instances.stop zones/europe-west1-b/instances/web-01`, followed by
 any skipped targets and their reason (`ineligible (<status>)`, or
 `ineligible (requires an HA (regional) instance)` for a Cloud SQL failover on a
 zonal instance), so the operator can verify the complete target set before

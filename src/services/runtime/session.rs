@@ -5107,9 +5107,9 @@ impl RuntimeSession {
 
         let runner = self.gcloud_runner.clone();
         // The same rule every read follows: native when this session holds
-        // clients, gcloud otherwise. A demo session holds none, which is what
-        // keeps its mutations from reaching a real API -- demo intercepts by
-        // matching the argv, and a request would go straight past that.
+        // clients, gcloud otherwise. A demo session holds fixture clients,
+        // built from stubs with no credentials and no transport, so its
+        // mutations answer from the stub and reach no real API.
         let sdk = self.sdk_clients.clone();
         let sender = self.effect_result_sender.clone();
         // Read here, where the action is spawned, so the guard the result is

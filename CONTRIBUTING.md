@@ -11,8 +11,9 @@ you need:
 
 - `gcloud` (the Google Cloud CLI) on your `PATH` for manual testing — reads go
   through the native client libraries, but their token comes from
-  `gcloud config config-helper`, and every mutation, tunnel and plugin is still
-  a `gcloud` invocation. The test suite does not need it.
+  `gcloud config config-helper`, and configuration changes, SSH, tunnels and
+  plugins are still `gcloud` invocations. Lifecycle actions go through the
+  client libraries. The test suite does not need it.
 - A C compiler and `cmake`: the TLS stack under the Google Cloud clients builds
   native code.
 - `cargo-nextest` (`cargo install cargo-nextest --locked`) — CI runs the suite

@@ -16,8 +16,11 @@ Only inside WSL. Process control uses POSIX APIs.
 
 ## Can nuvem change my resources without asking?
 
-No. Every command that changes a cloud resource shows the exact command and
-waits for `Enter`. `--read-only` refuses them all.
+No. Every change shows what it is about to do and waits for `Enter`: for a
+lifecycle action, the API call with its target, project and impact; for
+anything that runs `gcloud`, the command line. See
+[Before a change runs](../reference/services/overview.md#before-a-change-runs).
+`--read-only` refuses them all.
 
 ## Why does BigQuery need `bq`?
 

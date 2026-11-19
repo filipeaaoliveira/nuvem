@@ -1116,3 +1116,180 @@ fn every_docs_page_has_a_title_and_description() {
         );
     }
 }
+
+// ---------------------------------------------------------------------------
+// The lifecycle confirmation
+// ---------------------------------------------------------------------------
+
+/// The section of the services overview that says what a change shows.
+fn before_a_change_runs() -> String {
+    let text = page("docs/reference/services/overview.md");
+    let at = text
+        .find("\n## Before a change runs")
+        .expect("the services overview has a `Before a change runs` section");
+    text[at..].to_string()
+}
+
+/// The table under `Before a change runs` documents every lifecycle action the
+/// code enumerates, with the call its confirmation shows, read off the same
+/// function the request is built from.
+///
+/// Walks `ComputeInstanceAction::ALL` and `CloudSqlInstanceAction::ALL`, so an
+/// action added to the code is undocumented until it has a row, and a call
+/// that changes method or field no longer matches its row.
+#[test]
+fn every_lifecycle_action_is_documented_with_the_call_it_shows() {
+    use nuvem::app::state::resources::{
+        CloudSqlInstanceAction, ComputeInstanceAction, cloud_sql_lifecycle_call,
+        compute_lifecycle_call,
+    };
+    use nuvem_domain::gcp::configuration::{GcloudConfigurationName, GcloudContext};
+
+    let context = GcloudContext {
+        configuration: GcloudConfigurationName::new("dev"),
+        account: None,
+        project: Some("dev-project".to_string()),
+        region: None,
+        zone: None,
+    };
+    let cell = |call: nuvem_domain::gcp::resource_call::ResourceCall| match &call.field {
+        Some(field) => {
+            let name = field.name.rsplit('.').next().unwrap_or(field.name);
+            format!("`{}` with `{name}={}`", call.summary(), field.value)
+        }
+        None => format!("`{}`", call.summary()),
+    };
+    let mut real: BTreeSet<(String, String, String)> = BTreeSet::new();
+    for action in ComputeInstanceAction::ALL {
+        real.insert((
+            "GCE instances".to_string(),
+            action.label().to_string(),
+            cell(compute_lifecycle_call(
+                &context,
+                "web-01",
+                "europe-west1-b",
+                action,
+            )),
+        ));
+    }
+    for action in CloudSqlInstanceAction::ALL {
+        real.insert((
+            "Cloud SQL".to_string(),
+            action.label().to_string(),
+            cell(cloud_sql_lifecycle_call(&context, "orders-db", action)),
+        ));
+    }
+
+    let section = before_a_change_runs();
+    let documented: BTreeSet<(String, String, String)> = first_table(&section)
+        .into_iter()
+        .map(|row| (row[0].clone(), row[1].clone(), row[2].clone()))
+        .collect();
+    assert_eq!(
+        documented, real,
+        "the lifecycle table must list every action with the call its \
+         confirmation shows"
+    );
+}
+
+/// The section names the confirmation's fields as the dialog draws them.
+///
+/// The dialog is drawn for real, in a demo session, for a GCE and a Cloud SQL
+/// action, and every `Label:` line in it must be named in the section as
+/// `` `Label` ``: a field added to or renamed in the dialog is a field the
+/// docs stop describing. The `Call:` line itself must start with the call the
+/// docs table gives for that action.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_lifecycle_confirmation_is_described_as_the_dialog_draws_it() {
+    use clap::Parser;
+    use nuvem::app::{Action, AppState, CommandAction, ResourcesAction, WorkspaceAction};
+    use nuvem::services::runtime::session::RuntimeSession;
+    use nuvem_domain::gcp::resource::ResourceServiceKind;
+
+    async fn settle(session: &mut RuntimeSession) {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            let in_flight = session.effect_tasks_in_flight();
+            let progressed = matches!(
+                tokio::time::timeout(
+                    std::time::Duration::from_millis(5),
+                    session.process_next_effect_result()
+                )
+                .await,
+                Ok(true)
+            );
+            if !progressed && in_flight == 0 {
+                return;
+            }
+            assert!(std::time::Instant::now() < deadline, "the session settles");
+        }
+    }
+
+    let section = before_a_change_runs();
+    for (kind, call) in [
+        (
+            ResourceServiceKind::ComputeInstances,
+            "compute.instances.stop ",
+        ),
+        (ResourceServiceKind::CloudSql, "sql.instances.patch "),
+    ] {
+        let cli =
+            nuvem::Cli::parse_from(["nuvem", "--demo", "--config", "/nonexistent/nuvem.toml"]);
+        let config = nuvem::Config::resolve(&cli).config;
+        let state_path = nuvem::config::state::state_path_for(&config.config_path);
+        let mut session = RuntimeSession::new(config, cli, AppState::new(), state_path);
+        session.initialize().await;
+        settle(&mut session).await;
+        let mut actions = vec![
+            Action::Workspace(WorkspaceAction::Resources),
+            Action::Resources(ResourcesAction::SelectService(kind)),
+            Action::Command(CommandAction::Open),
+        ];
+        actions.extend(
+            "stop selected"
+                .chars()
+                .map(|c| Action::Command(CommandAction::AppendChar(c))),
+        );
+        actions.push(Action::Command(CommandAction::Submit));
+        for action in actions {
+            session.dispatch_action(action).await;
+            settle(&mut session).await;
+        }
+
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(160, 40)).expect("terminal");
+        terminal
+            .draw(|frame| nuvem::ui::render(frame, &session))
+            .expect("draws");
+        let buffer = terminal.backend().buffer();
+        let lines: Vec<String> = (0..40u16)
+            .map(|y| (0..160u16).map(|x| buffer[(x, y)].symbol()).collect())
+            .collect();
+        let fields: Vec<(String, String)> = lines
+            .iter()
+            .filter_map(|line| {
+                let inner = line.split('│').nth(1)?;
+                let (label, value) = inner.split_once(": ")?;
+                (!label.is_empty() && label.chars().all(|c| c.is_ascii_alphabetic()))
+                    .then(|| (label.to_string(), value.trim().to_string()))
+            })
+            .collect();
+        assert!(
+            fields.iter().any(|(label, _)| label == "Call"),
+            "{kind:?}: the walk must reach the confirmation:\n{}",
+            lines.join("\n")
+        );
+        for (label, value) in &fields {
+            assert!(
+                section.contains(&format!("`{label}`")),
+                "{kind:?}: the dialog shows `{label}:` and the docs do not name it"
+            );
+            if label == "Call" {
+                assert!(
+                    value.starts_with(call),
+                    "{kind:?}: the dialog's call is {value:?}, not the documented {call:?}"
+                );
+            }
+        }
+    }
+}

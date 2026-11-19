@@ -41,7 +41,7 @@ answered from the sample data, or refused, instead of being run.
 3. Press `/` and type part of a name to filter the list.
 4. Press `:` and type `logs` to open Cloud Logging.
 5. On a GCE instance, press `:` and choose **Stop selected GCE instance** to see
-   the confirmation and the exact `gcloud` command it would run.
+   the confirmation and the API call it would make.
 6. Press `?` for every key in the current view.
 
 ## What differs from a real project

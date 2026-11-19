@@ -28,10 +28,11 @@ In the Cloud SQL workspace, select an instance and press `:` to open the command
 palette. Mutation availability follows the instance status: stopped instances
 can be started; runnable instances can be stopped or restarted; and Failover is
 offered only for runnable HA/REGIONAL instances. Every mutation opens the shared
-confirmation modal showing the exact gcloud command before it runs — Start/Stop
-via `sql instances patch --activation-policy=ALWAYS|NEVER`, Restart and Failover
-via the `sql instances restart`/`failover` verbs. Press `Enter` to confirm or
-`Esc` to cancel. On success the app refreshes the instance list as with GCE.
+confirmation, which shows the API call it will make: Start and Stop as
+`sql.instances.patch` with `activationPolicy=ALWAYS` or `NEVER`, Restart and
+Fail over as `sql.instances.restart` and `sql.instances.failover`; see
+[Before a change runs](overview.md#before-a-change-runs). Press `Enter` to
+confirm or `Esc` to cancel. On success the app refreshes the instance list as with GCE.
 The same four mutations also run against a marked set, in which case the
 palette offers a command when any marked instance is eligible for it — see
 [Batch actions on marked rows](../../guides/batch-actions.md).

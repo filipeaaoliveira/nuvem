@@ -1742,7 +1742,8 @@ fn render_list_with_optional_header(
 /// Builds the display lines for a batch action confirmation.
 ///
 /// SAFETY: this lists EVERY eligible target by name together with
-/// the exact per-item gcloud command that will run, then every skipped target
+/// the API call that will be made for it (`ResourceCall::preview`), then every
+/// skipped target
 /// with its reason. Marks can be hidden by the active filter, so the operator
 /// must be shown the concrete full list — it is never summarised or truncated
 /// here (the modal scrolls when it overflows).
@@ -1795,7 +1796,7 @@ pub fn resource_batch_confirmation_lines(
 /// Maximum number of per-target lines rendered by
 /// `resource_batch_progress_lines` before the remainder is summarised as a
 /// `+N more` line. Unlike the batch confirmation (which must list every
-/// target so the operator can verify the exact command set before
+/// target so the operator can verify the exact set of calls before
 /// committing), this is a live progress glance, so a long target list is
 /// capped for readability instead of scrolled.
 const MAX_BATCH_PROGRESS_TARGET_LINES: usize = 20;
