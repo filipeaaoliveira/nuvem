@@ -7,7 +7,10 @@
 #   nuvem-demo-poster.png  still frame for the video's poster and for
 #                          reduced-motion readers
 #
-# Needs vhs (which brings ttyd) and ffmpeg. The nuvem binary comes from
+# The terminal's colours come from scripts/ansi2html.py, the same palette the
+# docs frames use: the script prepends them to the tape as a `Set Theme` line.
+#
+# Needs vhs (which brings ttyd), ffmpeg and python3. The nuvem binary comes from
 # NUVEM_BIN (a path or a command on PATH), or else target/release/nuvem, or
 # else target/debug/nuvem; build one first. Usage: scripts/render-demo.sh
 set -euo pipefail
@@ -23,7 +26,7 @@ die() {
 # shellcheck source=scripts/demo-lib.sh
 source "$root/scripts/demo-lib.sh"
 
-for tool in vhs ttyd ffmpeg; do
+for tool in vhs ttyd ffmpeg python3; do
   command -v "$tool" >/dev/null ||
     die "$tool is not on PATH; see demo/README.md for how to install it"
 done
@@ -34,10 +37,16 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 write_demo_launcher "$work/nuvem-demo" "$bin" "$work"
 
+theme=$(python3 "$root/scripts/ansi2html.py" --vhs-theme)
+{
+  printf 'Set Theme %s\n' "$theme"
+  cat "$root/demo/tour.tape"
+} >"$work/tour.tape"
+
 (
   cd "$work"
   NUVEM_DEMO_LAUNCHER="$work/nuvem-demo" \
-    vhs --quiet "$root/demo/tour.tape" -o tour.gif -o tour.mp4 -o tour.webm
+    vhs --quiet tour.tape -o tour.gif -o tour.mp4 -o tour.webm
 )
 
 # VHS already encodes both videos as yuv420p with no audio track. Remux the

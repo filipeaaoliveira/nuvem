@@ -2,8 +2,9 @@
 #
 # Run it through that script rather than with `vhs` directly: the script picks
 # the binary, writes the launcher this tape types (it runs the app with a
-# scrubbed environment, so no local config reaches the recording), and turns
-# VHS's raw capture into the published GIF, WebM, MP4 and poster.
+# scrubbed environment, so no local config reaches the recording), prepends
+# the terminal colours (the palette in scripts/ansi2html.py), and turns VHS's
+# raw capture into the published GIF, WebM, MP4 and poster.
 #
 # The tour: home, the service navigator, a resource list, a filter, a detail
 # view with its tabs, the command palette, help, and back home, where the
@@ -19,10 +20,6 @@ Set Padding 18
 Set Framerate 24
 Set TypingSpeed 140ms
 Set CursorBlink false
-
-# Wada Sanzo, combination 47. nuvem draws with the 16 ANSI colours only, so the
-# terminal palette is what themes the app.
-Set Theme { "name": "nuvem-47", "background": "#1b1816", "foreground": "#f1ece6", "cursor": "#fbe6a0", "selection": "#423b36", "black": "#1b1816", "red": "#e2625e", "green": "#54afb4", "yellow": "#fbe6a0", "blue": "#423b36", "magenta": "#f58e84", "cyan": "#54afb4", "white": "#f1ece6", "brightBlack": "#8c8178", "brightRed": "#f58e84", "brightGreen": "#9fd3d5", "brightYellow": "#fbe6a0", "brightBlue": "#54afb4", "brightMagenta": "#f58e84", "brightCyan": "#9fd3d5", "brightWhite": "#faf7f3" }
 
 # Start the app off camera, so no shell prompt or path appears in a frame.
 Hide

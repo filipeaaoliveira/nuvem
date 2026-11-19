@@ -105,8 +105,10 @@ tmux capture-pane -e -p -t <pane> | scripts/ansi2html.py > frame.html
 ```
 
 `ansi2html.py` carries its own test cases: colour forms, out-of-range
-values, escape sequences it must drop, control characters and dim text. Run
-them after changing it:
+values, escape sequences it must drop, control characters and dim text. The
+same run checks that every text colour in the palette reaches a 4.5:1
+contrast ratio on the background and on the selected row. Run them after
+changing it:
 
 ```bash
 scripts/ansi2html.py --self-test
@@ -115,18 +117,23 @@ scripts/ansi2html.py --self-test
 ## Colours
 
 nuvem draws with the 16 ANSI colours, so the terminal palette decides how it
-looks. The tape and `ansi2html.py` use the same palette, Wada Sanzo's
-combination 47 from *A Dictionary of Color Combinations*:
+looks. The palette is defined once, in `scripts/ansi2html.py`, and comes from
+Wada Sanzo's combination 47 in *A Dictionary of Color Combinations*. The
+frames use it directly. `render-demo.sh` gets it from
+`scripts/ansi2html.py --vhs-theme` and puts it at the top of the tape as a
+`Set Theme` line, so `tour.tape` itself names no colours.
 
-| ANSI colour | Hex | nuvem uses it for |
-|---|---|---|
-| background | `#1b1816` | |
-| foreground | `#f1ece6` | body text |
-| cyan, green | `#54afb4` | titles, focused borders, key hints, healthy status |
-| yellow | `#fbe6a0` | active tab, sort column, pending status |
-| red | `#e2625e` | error status |
-| magenta | `#f58e84` | overlay borders, changed values |
-| blue | `#423b36` | selected row background |
-| bright black | `#8c8178` | borders, muted text |
+| ANSI colour | Hex | nuvem uses it for | Contrast on background | Contrast on selected row |
+|---|---|---|---|---|
+| background | `#1b1816` | | | |
+| foreground | `#f1ece6` | body text | 15.0:1 | 9.4:1 |
+| cyan, green | `#64b5b9` | titles, focused borders, key hints, healthy status | 7.5:1 | 4.6:1 |
+| yellow, bright yellow | `#fbe6a0` | active tab, sort column, pending and stale status | 14.2:1 | 8.9:1 |
+| red, magenta | `#f58e84` | error status, overlay borders, changed values | 7.6:1 | 4.8:1 |
+| blue | `#423b36` | selected row background | | |
+| bright black | `#afa69e` | borders, muted text | 7.4:1 | 4.6:1 |
 
-If you change one, change it in both files.
+Red and magenta share Coral Red because nuvem paints both as text: red only
+for error statuses, and magenta for changed values as well as overlay
+borders. Eugenia Red (`#e2625e`), the combination's other red, reads at
+3.2:1 on the selected row, so it has no slot here.
