@@ -39,7 +39,7 @@ service.
 | invalid input | Check the command arguments and try again | persistent |
 | cancelled | The operation was cancelled; retry when ready | persistent |
 
-## Common problems
+## Symptoms and fixes
 
 ### nuvem exits with code 3
 
