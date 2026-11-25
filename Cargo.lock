@@ -1249,9 +1249,9 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-logging-v2"
-version = "1.14.0"
+version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc161d96aa91ebef6a63b83b7f2f324f82e5357d98f63d95bbc08723f6dfcb6a"
+checksum = "c0cec63fd73348ccfb06dfcf63da283ed83032b514288f832181b1842303820e"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1263,6 +1263,9 @@ dependencies = [
  "google-cloud-lro",
  "google-cloud-rpc",
  "google-cloud-wkt",
+ "http",
+ "prost",
+ "prost-types",
  "serde",
  "serde_json",
  "serde_with",
