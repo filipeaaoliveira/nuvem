@@ -1299,9 +1299,9 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-recommender-v1"
-version = "1.12.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6b1a55f88789595c82467574e57ab5baf408a986cecadd4d487d46d1c4a2dd2"
+checksum = "b033bc412cd0da30c35a24ef3a254aad51fc9de609f2f48d62a40af8572396dd"
 dependencies = [
  "async-trait",
  "bytes",
@@ -3601,7 +3601,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
