@@ -1384,9 +1384,9 @@ dependencies = [
 
 [[package]]
 name = "google-cloud-run-v2"
-version = "1.14.0"
+version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e5c477482406848f6b68bea240eef19e97c692a7218a4a9c1b0a8a9c150556a"
+checksum = "0d717d596d6264e32eedb0085e47e4a5c86872b4433a7f62d1da4c50d5f3eb95"
 dependencies = [
  "async-trait",
  "bytes",
